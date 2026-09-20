@@ -9,6 +9,8 @@ from eth_account.messages import encode_defunct
 
 import app.api.v1.endpoints.causes as causes_ep
 import app.api.v1.endpoints.donations as donations_ep
+from app.services import chain as chain_mod
+from app.services import reconcile as reconcile_mod
 import app.api.v1.endpoints.users as users_ep
 from app.db import Base
 from app.db.models import Cause, Donation, Evidence, User, Verification
@@ -81,7 +83,7 @@ def verified_cause(client, session, owner, status="Verified", target=50):
 def fake_donation(monkeypatch, onchain, donor, amount=10_000_000, state=None):
     monkeypatch.setattr(donations_ep, "read_donation_received",
                         lambda tx: {"cause_id": onchain, "donor": donor.wallet.address, "amount": amount})
-    monkeypatch.setattr(donations_ep, "read_cause_state", lambda i: state)
+    monkeypatch.setattr(chain_mod, "read_cause_state", lambda i: state)
 
 
 def confirm(client, cause_id, donor, tx="0x" + "a1" * 32):
@@ -120,7 +122,7 @@ class TestDonateInstructionUC009:
 
 
 class TestRegisterDonationUC014:
-    def test_uc014_registers_donation_and_updates_progress(self, real_test_client, real_db_session, monkeypatch, make_user):
+    def test_uc014_br001_br005_uc007_br002_uc008_br001_registers_donation_and_updates_progress(self, real_test_client, real_db_session, monkeypatch, make_user):
         owner, donor = make_user(), make_user()
         cause_id, onchain = verified_cause(real_test_client, real_db_session, owner)
         fake_donation(monkeypatch, onchain, donor)
@@ -193,7 +195,7 @@ class TestDashboardUC011:
     def _get(self, client, person):
         return client.get("/api/v1/users/me/dashboard", headers=person.headers)
 
-    def test_uc011_donor_sees_own_donations_and_total(self, real_test_client, real_db_session, monkeypatch, make_user):
+    def test_uc011_br003_donor_sees_own_donations_and_total(self, real_test_client, real_db_session, monkeypatch, make_user):
         owner, donor = make_user(), make_user()
         cause_id, onchain = verified_cause(real_test_client, real_db_session, owner)
         fake_donation(monkeypatch, onchain, donor)
@@ -244,7 +246,7 @@ class TestDashboardUC011:
     def test_uc011_a3_wallet_not_linked_is_reported(self, real_test_client, make_user):
         assert self._get(real_test_client, make_user(with_wallet=False)).json()["wallet_linked"] is False
 
-    def test_uc011_br002_data_comes_from_the_session_not_from_a_parameter(self, real_test_client, real_db_session, make_user):
+    def test_uc011_br001_br002_data_comes_from_the_session_not_from_a_parameter(self, real_test_client, real_db_session, make_user):
         a, b = make_user(), make_user()
         verified_cause(real_test_client, real_db_session, b)
         assert self._get(real_test_client, a).json()["causes"] == []        # a no ve las causas de b
@@ -302,3 +304,69 @@ class TestWithdrawInstructionUC010:
         real_db_session.query(Cause).filter(Cause.id == cause_id).update({"onchain_cause_id": None})
         real_db_session.commit()
         assert self._post(real_test_client, cause_id, owner).status_code == 400
+
+
+class TestReconcileDonationsUC016:
+    """UC-016: donaciones del contrato que el donante no registró (cadena simulada, BD real)."""
+
+    def _event(self, onchain, wallet, amount=5_000_000, tx=None):
+        return {"tx_hash": tx or "0x" + uuid.uuid4().hex + uuid.uuid4().hex, "cause_id": onchain,
+                "donor": wallet, "amount": amount, "block": 1}
+
+    def _patch(self, monkeypatch, events, state=None):
+        monkeypatch.setattr(reconcile_mod.chain, "get_w3", lambda: type("W", (), {"eth": type("E", (), {"block_number": 100})()})())
+        monkeypatch.setattr(reconcile_mod.chain, "read_donation_logs", lambda a, b: events)
+        monkeypatch.setattr(reconcile_mod.chain, "read_cause_state", lambda i: state)
+
+    def test_uc016_registers_missing_donations_and_br001_is_idempotent(self, real_test_client, real_db_session, monkeypatch, make_user):
+        owner, donor = make_user(), make_user()
+        cause_id, onchain = verified_cause(real_test_client, real_db_session, owner)
+        event = self._event(onchain, donor.wallet.address)
+        self._patch(monkeypatch, [event])
+
+        created = reconcile_mod.reconcile_donations(real_db_session)
+        assert len(created) == 1
+        row = real_db_session.query(Donation).filter(Donation.tx_hash == event["tx_hash"]).one()
+        assert row.cause_id == cause_id and row.donor_id == donor.id and row.amount == Decimal("5")
+
+        assert reconcile_mod.reconcile_donations(real_db_session) == []  # BR-001: segunda ejecución sin duplicados
+        assert real_db_session.query(Donation).filter(Donation.cause_id == cause_id).count() == 1
+        detail = real_test_client.get(f"/api/v1/causes/{cause_id}").json()
+        assert Decimal(detail["collected"]) == Decimal("5")
+
+    def test_uc016_br001_a_donation_already_registered_by_uc014_is_not_duplicated(self, real_test_client, real_db_session, monkeypatch, make_user):
+        owner, donor = make_user(), make_user()
+        cause_id, onchain = verified_cause(real_test_client, real_db_session, owner)
+        fake_donation(monkeypatch, onchain, donor)
+        registered = confirm(real_test_client, cause_id, donor)
+        assert registered.status_code == 200
+
+        self._patch(monkeypatch, [self._event(onchain, donor.wallet.address, 10_000_000, tx="0x" + "a1" * 32)])
+        assert reconcile_mod.reconcile_donations(real_db_session) == []
+        assert real_db_session.query(Donation).filter(Donation.cause_id == cause_id).count() == 1
+
+    def test_uc016_a1_donation_from_a_wallet_without_account_is_skipped(self, real_test_client, real_db_session, monkeypatch, make_user):
+        owner = make_user()
+        cause_id, onchain = verified_cause(real_test_client, real_db_session, owner)
+        self._patch(monkeypatch, [self._event(onchain, Account.create().address)])
+        assert reconcile_mod.reconcile_donations(real_db_session) == []
+        assert real_db_session.query(Donation).filter(Donation.cause_id == cause_id).count() == 0
+
+    def test_uc016_a2_donation_to_an_unknown_onchain_cause_is_skipped(self, real_test_client, real_db_session, monkeypatch, make_user):
+        donor = make_user()
+        self._patch(monkeypatch, [self._event(999_999_999, donor.wallet.address)])
+        assert reconcile_mod.reconcile_donations(real_db_session) == []
+
+    def test_uc016_a3_unreachable_chain_changes_nothing(self, real_test_client, real_db_session, monkeypatch, make_user):
+        monkeypatch.setattr(reconcile_mod.chain, "get_w3", lambda: (_ for _ in ()).throw(RuntimeError("rpc down")))
+        assert reconcile_mod.reconcile_donations(real_db_session) == []
+        self._patch(monkeypatch, None)  # el RPC responde el bloque pero falla al leer los logs
+        assert reconcile_mod.reconcile_donations(real_db_session) == []
+
+    def test_uc016_uc014_br004_completed_state_is_synced_from_the_contract(self, real_test_client, real_db_session, monkeypatch, make_user):
+        owner, donor = make_user(), make_user()
+        cause_id, onchain = verified_cause(real_test_client, real_db_session, owner, target=5)
+        self._patch(monkeypatch, [self._event(onchain, donor.wallet.address, 5_000_000)], state={"status": 3, "collected": 5_000_000})
+        assert len(reconcile_mod.reconcile_donations(real_db_session)) == 1
+        real_db_session.expire_all()
+        assert real_db_session.query(Cause).filter(Cause.id == cause_id).one().status == "Completed"

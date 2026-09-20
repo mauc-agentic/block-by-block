@@ -1,4 +1,4 @@
-from app.db.models.base import User, Cause, Donation, Verification, Evidence
+from app.db.models.base import User, Cause, Donation, Verification, Evidence, WalletMessage
 from app.db.models.base import CauseStatus
 
 __all__ = [
@@ -7,5 +7,6 @@ __all__ = [
     "Donation",
     "Verification",
     "Evidence",
+    "WalletMessage",
     "CauseStatus",
 ]

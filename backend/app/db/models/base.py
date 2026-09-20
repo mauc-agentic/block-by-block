@@ -110,3 +110,13 @@ class Evidence(Base):
 
     def __repr__(self):
         return f"<Evidence cause={self.cause_id} {self.content_type} {self.sha256[:10]}>"
+
+
+class WalletMessage(Base):
+    """UC-003 BR-003: mensajes ya usados para vincular una wallet (cada mensaje sirve una sola vez)."""
+    __tablename__ = "wallet_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    message_hash = Column(String(64), unique=True, nullable=False, index=True)  # SHA-256 del mensaje firmado
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

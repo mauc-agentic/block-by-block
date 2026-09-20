@@ -20,6 +20,7 @@ arquitectura, lee:
 - `docs/glossary.md` (lenguaje común: usar SIEMPRE estos términos, en interfaz y en código)
 - `docs/api_contract.md` (contrato único front/back/contrato; el bloque de endpoints y esquemas se genera desde el código)
 - `docs/traceability.md` (estado por capa de cada UC y definición de terminado)
+- `docs/use_case_audit.md` (qué falta de cada UC: implementación, pruebas, ajustes de spec y decisiones abiertas)
 - `docs/frontend_spec.md` (qué debe construir el frontend para el flujo completo, con criterios de aceptación y guion de la prueba de punta a punta)
 - `docs/requirements.md` (FR-*, NFR-*, C-*)
 - `docs/entity_model.md`
@@ -88,6 +89,8 @@ Prefijo de la API: `/api/v1`. Estado por capa en `docs/traceability.md`; brechas
 | UC-012 | Administrar contrato          | —                                                              | `pause`, `unpause`, `setAgent` (`onlyOwner`) | —                                    | FR-018, NFR-008, NFR-009          | Approved    |
 | UC-013 | Publicar causa on-chain       | `POST /causes/{id}/publish`, `POST /causes/{id}/publish/confirm` (`services/chain.py`) | `createCause`, evento `CauseCreated` | `/cause/create` (firma pendiente)        | FR-004, FR-019, C-009             | Implemented    |
 | UC-014 | Registrar donación            | `POST /causes/{id}/donations/confirm`                          | evento `DonationReceived`                | `/cause/[id]`                            | FR-020, FR-009, FR-012, NFR-011   | Approved    |
+| UC-015 | Cerrar sesión                 | —                                                              | —                                        | `Header`, `/dashboard` (botón)           | FR-026, NFR-007                   | Reviewed    |
+| UC-016 | Reconciliar donaciones        | Por implementar (`services/reconcile.py`)                      | evento `DonationReceived`                | —                                        | FR-027, FR-020, NFR-011           | Reviewed    |
 
 Test cases (journeys end-to-end): **TC-001** flujo feliz receptor→donante→retiro (UC-001,003,004,013,005,006,007,008,009,014,011,010) ·
 **TC-002** causa rechazada bloquea fondos (UC-004,005,006,007,009,010) · **TC-003** fallo del proveedor de IA deja la causa Pending

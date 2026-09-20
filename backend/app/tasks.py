@@ -9,9 +9,12 @@ from concurrent.futures import ThreadPoolExecutor
 
 from app.db import SessionLocal
 from app.db.models import Cause, CauseStatus, Evidence
+from app.core import get_settings
 from app.services.agent import verify_cause_task
+from app.services.reconcile import reconcile_donations
 
 logger = logging.getLogger(__name__)
+settings = get_settings()
 
 _executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="verify-cause-")
 _inflight: set[int] = set()
@@ -84,7 +87,41 @@ def resume_pending_verifications() -> list[int]:
     return queued
 
 
+_reconciler_stop = threading.Event()
+RECONCILE_STARTUP_DELAY = 30  # segundos: no compite con el arranque del servicio
+
+
+def _reconcile_once() -> None:
+    db = SessionLocal()
+    try:
+        reconcile_donations(db)
+    except Exception as exc:
+        db.rollback()
+        logger.error("UC-016: reconciliation failed: %s", exc)
+    finally:
+        db.close()
+
+
+def _reconcile_loop(interval: int) -> None:
+    if _reconciler_stop.wait(RECONCILE_STARTUP_DELAY):
+        return
+    while True:
+        _reconcile_once()
+        if _reconciler_stop.wait(interval):
+            return
+
+
+def start_reconciler() -> bool:
+    """UC-016: revisa periódicamente las donaciones del contrato; RECONCILE_INTERVAL_SECONDS=0 lo desactiva."""
+    interval = settings.reconcile_interval_seconds
+    if interval <= 0:
+        return False
+    threading.Thread(target=_reconcile_loop, args=(interval,), name="reconcile-donations", daemon=True).start()
+    return True
+
+
 def shutdown_executor():
+    _reconciler_stop.set()
     """Detiene el thread pool (llamar en el apagado de la aplicación)."""
     _executor.shutdown(wait=True)
     logger.info("Verification executor shut down")

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Big_Shoulders, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { PendingDonationsNotice } from "@/components/PendingDonationsNotice";
 import "./globals.css";
 
 const bigShoulders = Big_Shoulders({
@@ -51,6 +52,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col font-sans bg-paper text-ink">
         <Header />
+        <div className="mx-auto w-full max-w-6xl px-4 empty:hidden sm:px-6">
+          <PendingDonationsNotice />
+        </div>
         <main className="flex-1">{children}</main>
         <Footer />
       </body>

@@ -182,7 +182,7 @@ class TestEvidenceUC005:
 
     @pytest.mark.parametrize("body,ctype,expected", [(PNG, "image/gif", 400), (b"not an image", "image/png", 400),
                                                      (PNG + b"\x00" * (5 * 1024 * 1024), "image/png", 413)])
-    def test_uc005_a1_invalid_image_rejected(self, real_test_client, recipient, body, ctype, expected):
+    def test_uc005_a1_br002_br004_invalid_image_rejected(self, real_test_client, recipient, body, ctype, expected):
         cause = _new_cause(real_test_client, recipient)
         r = real_test_client.post(f"/api/v1/causes/{cause['id']}/upload-image", headers=recipient.headers,
                                   files={"image": ("x", body, ctype)})
@@ -194,7 +194,7 @@ class TestEvidenceUC005:
                                   files={"image": ("a.png", PNG, "image/png")})
         assert r.status_code in (401, 403)
 
-    def test_fr021_evidence_hidden_while_pending_and_served_after_verdict(self, real_test_client, real_db_session, recipient):
+    def test_uc005_br005_fr021_evidence_hidden_while_pending_and_served_after_verdict(self, real_test_client, real_db_session, recipient):
         cause = _new_cause(real_test_client, recipient)
         real_test_client.post(f"/api/v1/causes/{cause['id']}/upload-image", headers=recipient.headers,
                               files={"image": ("a.png", PNG, "image/png")})
@@ -252,7 +252,7 @@ class TestAgentCycleUC006:
         listed = real_test_client.get("/api/v1/causes").json()
         assert self.cause_id in [c["id"] for c in listed]
 
-    def test_uc006_a1_rejected_verdict_updates_status(self, real_test_client, real_db_session, monkeypatch, recipient):
+    def test_uc006_a1_rejected_verdict_updates_status_uc007_br001_hidden_from_list(self, real_test_client, real_db_session, monkeypatch, recipient):
         self.cause_id = self._prepare(real_test_client, real_db_session, recipient, monkeypatch)
         self._run(self.cause_id, monkeypatch, {"verified": False, "confidence": 0.9, "reason": "no coincide"})
         cause = self._status(real_db_session, self.cause_id)

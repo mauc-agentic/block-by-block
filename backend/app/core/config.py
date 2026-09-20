@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     hsk_rpc_url: str = os.getenv("HSK_RPC_URL", "https://testnet.hsk.xyz")
     hsk_chain_id: int = int(os.getenv("HSK_CHAIN_ID", 133))
     cause_vault_address: str = os.getenv("CAUSE_VAULT_ADDRESS", "0x")
+    cause_vault_start_block: int = int(os.getenv("CAUSE_VAULT_START_BLOCK", 0))  # Bloque de despliegue; 0 = solo los últimos bloques
+    reconcile_interval_seconds: int = int(os.getenv("RECONCILE_INTERVAL_SECONDS", 600))  # 0 desactiva la reconciliación periódica
     agent_address: str = os.getenv("AGENT_ADDRESS", "0x")
     agent_private_key: str = os.getenv("AGENT_PRIVATE_KEY", "0x")
 

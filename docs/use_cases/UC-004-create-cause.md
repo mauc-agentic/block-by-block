@@ -23,9 +23,8 @@
 4. Usuario envía el formulario.
 5. Sistema valida los datos.
 6. Sistema registra la causa en estado Pending, asociada al usuario como receptor de esa causa.
-7. Usuario firma en su wallet la creación de la causa en el contrato.
-8. Sistema enlaza la causa con su identificador on-chain.
-9. Sistema dirige al usuario a subir la evidencia (UC-005).
+7. Sistema dirige al usuario a publicar la causa en el contrato (UC-013).
+8. Sistema dirige al usuario a subir la evidencia (UC-005) y, al terminar, a ver su causa En revisión (UC-008).
 
 ## Alternative Flows
 
@@ -47,7 +46,7 @@
 
 ### A3: Firma rechazada
 
-**Trigger:** El usuario cancela la transacción (step 7)  
+**Trigger:** El usuario cancela la firma de la publicación (step 7, UC-013)  
 **Flow:**
 
 1. Sistema conserva la causa como Pending sin identificador on-chain y permite reintentar.

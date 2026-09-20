@@ -3,23 +3,22 @@
 // firma al proveedor inyectado por la extensión; la verificación vive en el
 // backend (verify_wallet_signature, BR-001).
 
-import { encodeFunctionData } from "viem";
+import { decodeFunctionResult, encodeFunctionData, type Abi } from "viem";
+import {
+  ERC20_ABI,
+  HSK_CHAIN_ID_DECIMAL,
+  HSK_CHAIN_ID_HEX,
+  HSK_CHAIN_PARAMS,
+  TOKEN_ADDRESS,
+  VAULT_ABI,
+} from "@/lib/chain";
 import { getStoredToken, getStoredUser, type AuthUser } from "@/lib/auth";
 import type { PublishInstruction } from "@/lib/causes";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
-export const HSK_CHAIN_ID_DECIMAL = 133;
-export const HSK_CHAIN_ID_HEX = `0x${HSK_CHAIN_ID_DECIMAL.toString(16)}`;
-
-const HSK_CHAIN_PARAMS = {
-  chainId: HSK_CHAIN_ID_HEX,
-  chainName: "HSK Chain Testnet",
-  nativeCurrency: { name: "HSK", symbol: "HSK", decimals: 18 },
-  rpcUrls: ["https://testnet.hsk.xyz"],
-  blockExplorerUrls: ["https://testnet-explorer.hskchain.net/"],
-};
+export { HSK_CHAIN_ID_DECIMAL, HSK_CHAIN_ID_HEX };
 
 type EthereumProvider = {
   isRabby?: boolean;
@@ -283,59 +282,154 @@ export async function linkWallet(): Promise<AuthUser> {
   }
 }
 
-// UC-013 BR-001: el backend solo entrega la instrucción; aquí se codifica y
-// firma `createCause` con la wallet del receptor, sin custodia del backend.
-const CREATE_CAUSE_ABI = [
-  {
-    type: "function",
-    name: "createCause",
-    stateMutability: "nonpayable",
-    inputs: [
-      { name: "_title", type: "string" },
-      { name: "_description", type: "string" },
-      { name: "_targetAmount", type: "uint256" },
-    ],
-    outputs: [{ name: "", type: "uint256" }],
-  },
-] as const;
+// C-009: el backend solo entrega la instrucción; aquí se codifica y firma con
+// la wallet del usuario, sin custodia del backend.
+export type ContractCall = {
+  from: string;
+  to: string;
+  abi: Abi;
+  functionName: string;
+  args: readonly unknown[];
+};
 
-/** UC-013: firma y envía `createCause` al contrato con la wallet vinculada. */
-export async function publishCauseOnChain(
-  instruction: PublishInstruction,
-  fromAddress: string
-): Promise<string> {
+function requireProvider(): EthereumProvider {
   const provider = getInjectedProvider();
   if (!provider) {
     throw new WalletError(
       "No detectamos una wallet compatible. Instala Rabby (rabby.io) y recarga la página."
     );
   }
+  return provider;
+}
 
+/** Cuenta activa en la wallet, sin abrir ninguna ventana. */
+export async function getActiveAccount(): Promise<string | null> {
+  const provider = getInjectedProvider();
+  if (!provider) return null;
+  const accounts = (await provider.request({ method: "eth_accounts" })) as string[];
+  return accounts[0] ?? null;
+}
+
+/** S3-6: la cuenta activa debe ser la wallet vinculada del usuario (frontend_spec §3.8). */
+export async function ensureLinkedAccount(linkedAddress: string): Promise<void> {
+  const provider = requireProvider();
+  await ensureHskNetwork(provider);
+  const active = await getActiveAccount();
+  if (!active || active.toLowerCase() !== linkedAddress.toLowerCase()) {
+    throw new WalletError(
+      "La cuenta activa en Rabby no es la wallet vinculada a tu cuenta. Cambia a esa cuenta en Rabby y vuelve a intentar."
+    );
+  }
+}
+
+/** Firma y envía una llamada a un contrato; devuelve el hash. 4001 -> WalletRejectedError. */
+export async function sendContractTx(call: ContractCall): Promise<string> {
+  const provider = requireProvider();
   try {
     await ensureHskNetwork(provider);
-
-    const [title, description, targetAmount] = instruction.params;
     const data = encodeFunctionData({
-      abi: CREATE_CAUSE_ABI,
-      functionName: "createCause",
-      args: [String(title), String(description), BigInt(targetAmount)],
+      abi: call.abi,
+      functionName: call.functionName,
+      args: call.args,
     });
-
     return (await withTimeout(
       provider.request({
         method: "eth_sendTransaction",
-        params: [{ from: fromAddress, to: instruction.contract, data }],
+        params: [{ from: call.from, to: call.to, data }],
       }),
       WALLET_PROMPT_TIMEOUT_MS,
       WALLET_TIMEOUT_MESSAGE
     )) as string;
   } catch (err) {
+    if (isRpcError(err, 4001)) throw new WalletRejectedError("Cancelaste la firma.");
+    throw toWalletError(err, "No se pudo enviar la transacción.");
+  }
+}
+
+const RECEIPT_POLL_MS = 2_000;
+const RECEIPT_TIMEOUT_MS = 90_000;
+
+/** Espera el recibo de una tx (sondeo cada 2 s, tope 90 s); status 0x0 -> error. */
+export async function waitForReceipt(
+  hash: string,
+  opts: { intervalMs?: number; timeoutMs?: number } = {}
+): Promise<void> {
+  const provider = requireProvider();
+  const interval = opts.intervalMs ?? RECEIPT_POLL_MS;
+  const deadline = Date.now() + (opts.timeoutMs ?? RECEIPT_TIMEOUT_MS);
+  while (Date.now() < deadline) {
+    const receipt = (await provider.request({
+      method: "eth_getTransactionReceipt",
+      params: [hash],
+    })) as { status?: string } | null;
+    if (receipt) {
+      if (receipt.status === "0x0") throw new WalletError("La transacción fue revertida en la cadena.");
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, interval));
+  }
+  throw new WalletError("La transacción tarda en confirmarse. Revisa el explorador en unos minutos.");
+}
+
+async function ethCall(to: string, abi: Abi, functionName: string, args: readonly unknown[]) {
+  const provider = requireProvider();
+  const data = encodeFunctionData({ abi, functionName, args });
+  const result = (await provider.request({
+    method: "eth_call",
+    params: [{ to, data }, "latest"],
+  })) as `0x${string}`;
+  return decodeFunctionResult({ abi, functionName, data: result });
+}
+
+/** Saldo de MockUSDT (micro-USDT) de una dirección. */
+export async function readUsdtBalance(owner: string): Promise<bigint> {
+  return (await ethCall(TOKEN_ADDRESS, ERC20_ABI, "balanceOf", [owner])) as bigint;
+}
+
+/** Allowance de MockUSDT (micro-USDT) que `owner` dio a `spender`. */
+export async function readUsdtAllowance(owner: string, spender: string): Promise<bigint> {
+  return (await ethCall(TOKEN_ADDRESS, ERC20_ABI, "allowance", [owner, spender])) as bigint;
+}
+
+/** S4-6: agrega USDT (6 decimales) a la wallet. */
+export async function watchUsdt(): Promise<boolean> {
+  const provider = requireProvider();
+  try {
+    return Boolean(
+      await provider.request({
+        method: "wallet_watchAsset",
+        params: {
+          type: "ERC20",
+          options: { address: TOKEN_ADDRESS, symbol: "USDT", decimals: 6 },
+        },
+      } as never)
+    );
+  } catch (err) {
+    throw toWalletError(err, "No se pudo agregar el token a tu wallet.");
+  }
+}
+
+/** UC-013: firma y envía `createCause` al contrato con la wallet vinculada. */
+export async function publishCauseOnChain(
+  instruction: PublishInstruction,
+  fromAddress: string
+): Promise<string> {
+  const [title, description, targetAmount] = instruction.params;
+  try {
+    return await sendContractTx({
+      from: fromAddress,
+      to: instruction.contract,
+      abi: VAULT_ABI,
+      functionName: "createCause",
+      args: [String(title), String(description), BigInt(targetAmount)],
+    });
+  } catch (err) {
     // A3: el receptor cancela la firma en su wallet.
-    if (isRpcError(err, 4001)) {
+    if (err instanceof WalletRejectedError) {
       throw new WalletRejectedError(
         "Cancelaste la firma. Tu causa sigue guardada, puedes reintentar publicarla en la cadena."
       );
     }
-    throw toWalletError(err, "No se pudo enviar la transacción de publicación.");
+    throw err;
   }
 }

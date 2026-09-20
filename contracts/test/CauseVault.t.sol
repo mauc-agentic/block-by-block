@@ -151,9 +151,9 @@ contract CauseVaultTest is Test {
         CauseVault.Donation[] memory causeDonations = vault.getDonationsForCause(causeId);
         assertEq(causeDonations.length, 0);
 
-        // Step 4: Receptor intenta retirar → REVERT (UC-010)
+        // Step 4: Receptor intenta retirar → REVERT: la causa no está verificada (UC-010 A3)
         vm.prank(receptor);
-        vm.expectRevert("CauseVault: no funds to withdraw");
+        vm.expectRevert("CauseVault: cause not verified");
         vault.withdrawFunds(causeId);
     }
 
@@ -161,13 +161,13 @@ contract CauseVaultTest is Test {
     // TESTS DE VALIDACIONES
     // ========================================================================
 
-    function test_UC004_CreateCauseWithZeroAmount() public {
+    function test_UC004_BR002_CreateCauseWithZeroAmountReverts() public {
         vm.prank(receptor);
         vm.expectRevert("CauseVault: target amount must be > 0");
         vault.createCause("Bad", "Bad cause", 0);
     }
 
-    function test_UC009_DonateWithZeroAmount() public {
+    function test_UC009_BR003_DonateWithZeroAmountReverts() public {
         // Setup: crear y verificar causa
         vm.prank(receptor);
         uint256 causeId = vault.createCause("Test", "Test", 100 * 10 ** 6);
@@ -181,7 +181,7 @@ contract CauseVaultTest is Test {
         vault.donate(causeId, 0);
     }
 
-    function test_UC010_OnlyRecipientCanWithdraw() public {
+    function test_UC010_BR001_A2_OnlyRecipientCanWithdraw() public {
         // Setup: crear, verificar, donar
         vm.prank(receptor);
         uint256 causeId = vault.createCause("Test", "Test", 100 * 10 ** 6);
@@ -199,7 +199,7 @@ contract CauseVaultTest is Test {
         vault.withdrawFunds(causeId);
     }
 
-    function test_UC006_OnlyAgentCanVerify() public {
+    function test_UC006_BR001_OnlyAgentCanVerify() public {
         // Setup: crear causa
         vm.prank(receptor);
         uint256 causeId = vault.createCause("Test", "Test", 100 * 10 ** 6);
@@ -229,9 +229,10 @@ contract CauseVaultTest is Test {
     }
 
     function test_GetRecipientCauses() public {
-        vm.prank(receptor);
+        vm.startPrank(receptor); // vm.prank solo vale para la siguiente llamada
         uint256 causeId1 = vault.createCause("Cause 1", "Desc", 100 * 10 ** 6);
         uint256 causeId2 = vault.createCause("Cause 2", "Desc", 200 * 10 ** 6);
+        vm.stopPrank();
 
         uint256[] memory causes = vault.getRecipientCauses(receptor);
         assertEq(causes.length, 2);
@@ -242,11 +243,140 @@ contract CauseVaultTest is Test {
     function test_GetCausesCount() public {
         assertEq(vault.getCausesCount(), 0);
 
-        vm.prank(receptor);
+        vm.startPrank(receptor);
         vault.createCause("Cause 1", "Desc", 100 * 10 ** 6);
         assertEq(vault.getCausesCount(), 1);
 
         vault.createCause("Cause 2", "Desc", 200 * 10 ** 6);
+        vm.stopPrank();
         assertEq(vault.getCausesCount(), 2);
+    }
+
+    // ========================================================================
+    // UC-012: ADMINISTRAR EL CONTRATO (TC-004)
+    // ========================================================================
+
+    function _verifiedCauseWithFunds(uint256 donation) internal returns (uint256 id) {
+        vm.prank(receptor);
+        id = vault.createCause("Causa", "Desc", 100 * 10 ** 6);
+        vm.prank(agent);
+        vault.verifyCause(id, true, "QmHash");
+        vm.prank(donante);
+        vault.donate(id, donation);
+    }
+
+    function test_UC012_BR001_A2_OnlyOwnerCanPauseUnpauseAndRotateAgent() public {
+        vm.startPrank(donante);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, donante));
+        vault.pause();
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, donante));
+        vault.unpause();
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, donante));
+        vault.setAgent(donante);
+        vm.stopPrank();
+
+        assertFalse(vault.paused());
+        assertEq(vault.agent(), agent);
+    }
+
+    function test_UC012_BR002_PauseBlocksNewCausesAndDonationsButNeverWithdrawals() public {
+        uint256 id = _verifiedCauseWithFunds(30 * 10 ** 6);
+
+        vm.prank(owner);
+        vault.pause();
+        assertTrue(vault.paused());
+
+        vm.prank(donante);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        vault.donate(id, 10 * 10 ** 6);
+
+        vm.prank(receptor);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        vault.createCause("Otra", "Desc", 50 * 10 ** 6);
+
+        // Los fondos nunca quedan bloqueados: el receptor puede retirar durante la pausa
+        uint256 before = usdt.balanceOf(receptor);
+        vm.prank(receptor);
+        vault.withdrawFunds(id);
+        assertEq(usdt.balanceOf(receptor), before + 30 * 10 ** 6);
+    }
+
+    function test_UC012_UnpauseRestoresDonations() public {
+        uint256 id = _verifiedCauseWithFunds(10 * 10 ** 6);
+
+        vm.startPrank(owner);
+        vault.pause();
+        vault.unpause();
+        vm.stopPrank();
+        assertFalse(vault.paused());
+
+        vm.prank(donante);
+        vault.donate(id, 5 * 10 ** 6);
+        assertEq(vault.getCause(id).collected, 15 * 10 ** 6);
+    }
+
+    function test_UC012_A1_OwnerRotatesAgentAndTheOldOneLosesAuthority() public {
+        address newAgent = makeAddr("newAgent");
+        vm.prank(receptor);
+        uint256 id = vault.createCause("Causa", "Desc", 100 * 10 ** 6);
+
+        vm.prank(owner);
+        vault.setAgent(newAgent);
+        assertEq(vault.agent(), newAgent);
+
+        vm.prank(agent);
+        vm.expectRevert("CauseVault: not agent");
+        vault.verifyCause(id, true, "QmOld");
+
+        vm.prank(newAgent);
+        vault.verifyCause(id, true, "QmNew");
+        assertTrue(vault.getCause(id).verified);
+    }
+
+    function test_UC012_A3_BR003_AgentCanNeverBeTheZeroAddress() public {
+        vm.prank(owner);
+        vm.expectRevert("CauseVault: agent zero address");
+        vault.setAgent(address(0));
+        assertEq(vault.agent(), agent);
+    }
+
+    // ========================================================================
+    // UC-010: RETIRAR FONDOS
+    // ========================================================================
+
+    function test_UC010_A1_NoFundsToWithdrawReverts() public {
+        vm.prank(receptor);
+        uint256 id = vault.createCause("Causa", "Desc", 100 * 10 ** 6);
+        vm.prank(agent);
+        vault.verifyCause(id, true, "QmHash");
+
+        vm.prank(receptor);
+        vm.expectRevert("CauseVault: no funds to withdraw");
+        vault.withdrawFunds(id);
+    }
+
+    function test_UC010_A3_BR002_WithdrawRevertsForAnUnverifiedCause() public {
+        vm.prank(receptor);
+        uint256 id = vault.createCause("Causa", "Desc", 100 * 10 ** 6);
+
+        vm.prank(receptor);
+        vm.expectRevert("CauseVault: cause not verified");
+        vault.withdrawFunds(id);
+    }
+
+    function test_UC010_BR003_BR004_WithdrawTransfersEverythingAndZeroesTheBalanceFirst() public {
+        uint256 id = _verifiedCauseWithFunds(30 * 10 ** 6);
+
+        uint256 before = usdt.balanceOf(receptor);
+        vm.prank(receptor);
+        vault.withdrawFunds(id);
+
+        assertEq(usdt.balanceOf(receptor), before + 30 * 10 ** 6);
+        assertEq(vault.getCause(id).collected, 0);
+        assertEq(usdt.balanceOf(address(vault)), 0);
+
+        vm.prank(receptor);
+        vm.expectRevert("CauseVault: no funds to withdraw");
+        vault.withdrawFunds(id);
     }
 }

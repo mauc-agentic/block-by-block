@@ -20,7 +20,7 @@ class TestWalletSignatureValidation:
             "account": acct
         }
 
-    def test_valid_signature(self, wallet):
+    def test_uc003_br001_valid_signature_proves_ownership(self, wallet):
         """BR-001: Valida una firma correcta."""
         message = "Link wallet to Block by Block — 2026-09-20T10:30:00Z"
 
@@ -37,7 +37,7 @@ class TestWalletSignatureValidation:
 
         assert result is True
 
-    def test_invalid_signature_wrong_message(self, wallet):
+    def test_uc003_a1_invalid_signature_wrong_message(self, wallet):
         """BR-001: Rechaza firma para mensaje diferente."""
         message1 = "Link wallet to Block by Block — 2026-09-20T10:30:00Z"
         message2 = "Link wallet to Block by Block — 2026-09-20T10:31:00Z"
@@ -55,7 +55,7 @@ class TestWalletSignatureValidation:
 
         assert result is False
 
-    def test_invalid_signature_wrong_address(self, wallet):
+    def test_uc003_a1_invalid_signature_wrong_address(self, wallet):
         """BR-001: Rechaza firma para dirección diferente."""
         message = "Link wallet to Block by Block — 2026-09-20T10:30:00Z"
 
@@ -73,7 +73,7 @@ class TestWalletSignatureValidation:
 
         assert result is False
 
-    def test_invalid_signature_malformed(self, wallet):
+    def test_uc003_a1_invalid_signature_malformed(self, wallet):
         """BR-001: Rechaza firma malformada."""
         message = "Link wallet to Block by Block — 2026-09-20T10:30:00Z"
         malformed_sig = "0x" + "00" * 65  # Firma inválida
@@ -86,7 +86,7 @@ class TestWalletSignatureValidation:
 
         assert result is False
 
-    def test_case_insensitive_address(self, wallet):
+    def test_uc003_br001_case_insensitive_address(self, wallet):
         """BR-001: Validar firma es case-insensitive para direcciones."""
         message = "Link wallet to Block by Block — 2026-09-20T10:30:00Z"
 

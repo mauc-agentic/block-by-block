@@ -119,3 +119,50 @@ class TestContractReads:
         patch_chain(contract=FakeContract(token="0xTokenAddress"))
         assert chain.get_token_address() == "0xTokenAddress"
         chain.get_token_address.cache_clear()
+
+
+class TestReadDonationLogsUC016:
+    """UC-016: lectura de eventos por tramos, sin red."""
+
+    class FakeContractWithLogs:
+        address = VAULT
+
+        def __init__(self, per_call=None, fail=False):
+            self.calls, self._per_call, self._fail = [], per_call or {}, fail
+            outer = self
+            events = SimpleNamespace(DonationReceived=lambda: SimpleNamespace(get_logs=outer._get_logs))
+            self.events = events
+
+        def _get_logs(self, from_block, to_block):
+            if self._fail:
+                raise RuntimeError("rpc limit")
+            self.calls.append((from_block, to_block))
+            return self._per_call.get(from_block, [])
+
+    class W3:
+        @staticmethod
+        def to_hex(value):
+            return "0x" + value.hex().upper()
+
+    def _log(self, block=10):
+        return {"transactionHash": bytes.fromhex("ab" * 32), "blockNumber": block,
+                "args": {"causeId": 4, "donor": DONOR, "amount": 7_000_000}}
+
+    def _patch(self, monkeypatch, contract):
+        monkeypatch.setattr(chain, "get_w3", lambda: self.W3())
+        monkeypatch.setattr(chain, "get_contract", lambda w3: contract)
+
+    def test_uc016_reads_in_chunks_and_normalizes_events(self, monkeypatch):
+        contract = self.FakeContractWithLogs(per_call={0: [self._log()]})
+        self._patch(monkeypatch, contract)
+        events = chain.read_donation_logs(0, 250_000)
+        assert contract.calls == [(0, 99_999), (100_000, 199_999), (200_000, 250_000)]
+        assert events == [{"tx_hash": "0x" + "ab" * 32, "cause_id": 4, "donor": DONOR, "amount": 7_000_000, "block": 10}]
+
+    def test_uc016_a3_returns_none_when_the_rpc_fails(self, monkeypatch):
+        self._patch(monkeypatch, self.FakeContractWithLogs(fail=True))
+        assert chain.read_donation_logs(0, 10) is None
+
+    def test_uc016_empty_range_returns_an_empty_list(self, monkeypatch):
+        self._patch(monkeypatch, self.FakeContractWithLogs())
+        assert chain.read_donation_logs(50, 10) == []

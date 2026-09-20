@@ -68,3 +68,7 @@ Cada donación mostrada enlaza a su transacción on-chain para verificación pú
 ### BR-002: Donar solo si verificada
 
 La acción de donar solo se ofrece en causas verificadas que no alcanzaron su meta.
+
+### BR-003: Visibilidad del detalle
+
+El detalle de una causa es público para cualquier estado: título, descripción, estado y veredicto. La foto no se muestra mientras la causa está Pending.

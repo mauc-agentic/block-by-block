@@ -1,7 +1,7 @@
 # Traceability Matrix: una sola pieza (frontend + backend + contrato)
 
 Cada caso de uso se realiza en **tres capas** y no se considera terminado hasta que las tres coinciden con su especificación.
-Estado auditado el 2026-09-20 contra `main` + rama `backend`. Vocabulario: [glossary.md](glossary.md). Trabajo pendiente del frontend, con criterios de aceptación: [frontend_spec.md](frontend_spec.md). Contrato: [api_contract.md](api_contract.md).
+Estado auditado el 2026-09-20 contra `main` + rama `backend`. Vocabulario: [glossary.md](glossary.md). Trabajo pendiente del frontend, con criterios de aceptación: [frontend_spec.md](frontend_spec.md). Qué falta de cada UC y decisiones abiertas: [use_case_audit.md](use_case_audit.md). Contrato: [api_contract.md](api_contract.md).
 Detalle de brechas: [IMPLEMENTATION-STATUS.md](IMPLEMENTATION-STATUS.md).
 
 **Estado del UC:** `Implemented` solo cuando existen todas las capas que necesita (contrato, backend y pantalla) con pruebas; mientras falte alguna, el UC queda `Approved`
@@ -21,28 +21,30 @@ Leyenda de estado por capa: **Done** (código + prueba), **Impl** (código, prue
 | UC-013 | Publicar causa on-chain | `POST /causes/{id}/publish`, `…/publish/confirm` | `createCause`, `CauseCreated` | `app/cause/create/page.tsx` (firma con wallet + reintento de confirmación), `lib/wallet.ts` (`publishCauseOnChain`) | Done | Done | Impl |
 | UC-005 | Subir evidencia | `POST /causes/{id}/upload-image`, `GET …/evidence` | — | `app/cause/create/page.tsx`, `lib/causes.ts` (`uploadCauseImage`) | Done | n/a | Impl |
 | UC-006 | Verificar causa con IA | `services/agent.py` (automático); `verification_reason`/`verification_confidence` en `CauseResponse`/`DashboardCause` | `verifyCause` | `components/dashboard/MyCauseRow.tsx` (modal con motivo y confianza del veredicto), `components/Modal.tsx` | Done | Done | Impl |
-| UC-007 | Explorar causas verificadas | `GET /causes` | — | `components/CausesSection.tsx`, `CauseCard.tsx`, `lib/causes.ts` (datos reales; `featuredCauses` solo si aún no hay ninguna Verified) | Done | n/a | Impl |
-| UC-008 | Ver detalle de causa | `GET /causes/{id}` | — | — (`/cause/[id]`) | Done | n/a | Open |
-| UC-009 | Donar | `POST /causes/{id}/donate` | `approve`, `donate` | — (`/cause/[id]`) | Done | Impl | Open |
+| UC-007 | Explorar causas verificadas | `GET /causes` | — | `app/causes/page.tsx`, `components/CausesSection.tsx`, `CauseListCard.tsx`, `lib/api.ts` (solo datos reales; vacío = mensaje) | Done | n/a | Impl (`tests/causes-list.test.tsx`) |
+| UC-008 | Ver detalle de causa | `GET /causes/{id}` | — | `app/cause/[id]/page.tsx`, `RetryVerification.tsx` | Done | n/a | Impl (`tests/cause-detail.test.tsx`) |
+| UC-009 | Donar | `POST /causes/{id}/donate` | `approve`, `donate` | `components/DonateBlock.tsx`, `lib/pendingDonations.ts`, `PendingDonationsNotice.tsx` | Done | Impl | Impl (`tests/donate.test.tsx`) |
 | UC-014 | Registrar donación | `POST /causes/{id}/donations/confirm` | `DonationReceived` | — (reintento tras firmar) | Done | Done | Open |
-| UC-010 | Retirar fondos | `POST /causes/{id}/withdraw` | `withdrawFunds` | — (`/dashboard/recipient`) | Done | Impl | Open |
-| UC-011 | Ver dashboard | `GET /users/me/dashboard` | `getCause` (saldo) | `app/dashboard/page.tsx`, `components/dashboard/*` | Done | n/a | Impl (muestra causas propias y alerta de wallet; falta sección de donaciones y retiro) |
-| UC-012 | Administrar contrato | — | `pause`, `unpause`, `setAgent` | — (sin pantalla) | n/a | Impl (sin pruebas, GAP-030) | n/a |
+| UC-015 | Cerrar sesión | — | — | `components/Header.tsx`, `app/dashboard/page.tsx` (botón "Cerrar sesión") | n/a | n/a | Impl |
+| UC-016 | Reconciliar donaciones | `services/reconcile.py` (arranque, cada 10 min y `scripts/reconcile_donations.py`) | evento `DonationReceived` | — | Impl (falta correr sus pruebas contra la BD) | Done | n/a |
+| UC-010 | Retirar fondos | `POST /causes/{id}/withdraw` | `withdrawFunds` | `components/dashboard/MyCauseRow.tsx` (retirar) | Done | Impl | Impl (`tests/dashboard.test.tsx`) |
+| UC-011 | Ver dashboard | `GET /users/me/dashboard` | `getCause` (saldo) | `app/dashboard/page.tsx`, `components/dashboard/*` | Done | n/a | Impl (causas propias, mis donaciones, retirar, alerta de wallet; `tests/dashboard.test.tsx`) |
+| UC-012 | Administrar contrato | — | `pause`, `unpause`, `setAgent` | — (sin pantalla) | n/a | Done | n/a |
 
 ## 2. Pruebas por capa
 
 | UC | Pruebas de backend | Pruebas de contrato (Foundry) | Pruebas de frontend |
 |----|--------------------|-------------------------------|---------------------|
-| UC-001, UC-002 | `test_signup_persists_to_supabase`, `test_login_queries_supabase` (+ Google, rama `auth`) | — | Ninguna |
+| UC-001, UC-002 | `test_uc001_signup_persists_to_supabase`, `test_uc002_login_queries_supabase` (+ Google, rama `auth`) | — | Ninguna |
 | UC-003 | `test_helpers.py`, `test_wallet.py` (firma) | — | Ninguna |
-| UC-004, UC-013 | `TestPublishUC013`, `test_uc004_uc009_authenticated_flow`, `scripts/e2e_verification.py` | `test_UC004_CreateCauseWithZeroAmount` | Ninguna (falta `describe('UC-004 …')` / `describe('UC-013 …')`, GAP-027) |
-| UC-005 | `TestEvidenceUC005` | — | Ninguna (GAP-027) |
-| UC-006 | `test_agent.py`, `test_uc006_br009_*` (motivo visible), `TestAgentCycleUC006`, `scripts/e2e_verification.py` | `test_UC006_OnlyAgentCanVerify` | n/a |
-| UC-007, UC-008 | `test_uc014_registers_donation_and_updates_progress` | `test_GetCausesCount` | Ninguna (GAP-027) |
-| UC-009, UC-014 | `TestDonateInstructionUC009`, `TestRegisterDonationUC014`, `test_chain.py`, `scripts/e2e_donation.py` | `test_TC001_HappyPath`, `test_UC009_DonateWithZeroAmount` | Ninguna |
-| UC-010 | `scripts/e2e_donation.py` (retiro real) | `test_UC010_OnlyRecipientCanWithdraw` | Ninguna |
-| UC-011 | `TestDashboardUC011` | `test_GetRecipientCauses` (falla, GAP-006) | Ninguna |
-| UC-012 | — | — (falta, TC-004) | n/a |
+| UC-004, UC-013 | `TestPublishUC013`, `test_uc004_a2_br003_authenticated_create_flow`, `scripts/e2e_verification.py` | `test_UC004_BR002_CreateCauseWithZeroAmountReverts` | Ninguna (falta `describe('UC-004 …')` / `describe('UC-013 …')`, GAP-027) |
+| UC-005 | `TestEvidenceUC005` | — | `tests/causes-list.test.tsx`, `tests/cause-detail.test.tsx` |
+| UC-006 | `test_agent.py`, `test_uc006_br009_*` (motivo visible), `TestAgentCycleUC006`, `scripts/e2e_verification.py` | `test_UC006_BR001_OnlyAgentCanVerify` | n/a |
+| UC-007, UC-008 | `test_uc014_registers_donation_and_updates_progress` | `test_GetCausesCount` | `tests/causes-list.test.tsx`, `tests/cause-detail.test.tsx` |
+| UC-009, UC-014 | `TestDonateInstructionUC009`, `TestRegisterDonationUC014`, `test_chain.py`, `scripts/e2e_donation.py` | `test_TC001_HappyPath`, `test_UC009_BR003_DonateWithZeroAmountReverts` | `tests/donate.test.tsx` |
+| UC-010 | `scripts/e2e_donation.py` (retiro real) | `test_UC010_BR001_A2_OnlyRecipientCanWithdraw` | `tests/dashboard.test.tsx` |
+| UC-011 | `TestDashboardUC011` | `test_GetRecipientCauses` | `tests/dashboard.test.tsx` |
+| UC-012 | — | `test_UC012_*` (5 pruebas Foundry, TC-004) | n/a |
 
 ## 3. Requisitos de frontend
 

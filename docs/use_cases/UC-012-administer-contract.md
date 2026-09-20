@@ -7,7 +7,7 @@
 **Primary Actor:** Administrador  
 **Secondary Actors:** Agente Verificador  
 **Goal:** Pausar o reanudar la plataforma en el contrato y rotar la dirección autorizada del agente  
-**Status:** Approved
+**Status:** Implemented
 
 **Requirements:** [FR-018, NFR-008, NFR-009](../requirements.md)
 
@@ -20,7 +20,7 @@
 
 1. Administrador decide intervenir el contrato (incidente, mantenimiento o llave del agente comprometida).
 2. Administrador solicita al contrato pausar la plataforma.
-3. Contrato queda en pausa y bloquea creación de causas, donaciones y retiros.
+3. Contrato queda en pausa y bloquea la creación de causas y las donaciones; los retiros siguen permitidos.
 4. Administrador corrige la situación.
 5. Administrador solicita al contrato reanudar la plataforma.
 6. Contrato vuelve a aceptar operaciones.
@@ -71,7 +71,7 @@
 
 ### BR-002: Pausa efectiva
 
-Mientras el contrato está en pausa no se aceptan donaciones ni retiros.
+Mientras el contrato está en pausa no se aceptan nuevas causas ni donaciones. Los retiros siguen permitidos para que ningún receptor quede sin acceso a sus fondos durante un incidente.
 
 ### BR-003: Agente válido
 

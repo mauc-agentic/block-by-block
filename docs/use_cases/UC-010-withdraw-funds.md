@@ -63,6 +63,14 @@
 1. Sistema informa que el retiro no se realizó y los fondos siguen disponibles.
 2. Use case ends.
 
+### A5: Cuenta activa distinta de la vinculada
+
+**Trigger:** La wallet activa no es la vinculada a la cuenta del receptor (step 5)  
+**Flow:**
+
+1. Sistema no permite firmar e indica que debe usar la wallet vinculada a su cuenta.
+2. Use case ends.
+
 ## Postconditions
 
 ### Success Postconditions

@@ -30,7 +30,7 @@
 **Trigger:** No existe ninguna causa verificada (step 2)  
 **Flow:**
 
-1. Sistema muestra un mensaje indicando que aún no hay causas disponibles.
+1. Sistema muestra únicamente un mensaje indicando que aún no hay causas disponibles; nunca muestra causas de ejemplo como si fueran reales.
 2. Use case ends.
 
 ## Postconditions

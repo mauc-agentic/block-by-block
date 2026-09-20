@@ -82,7 +82,7 @@ class TestSupabaseIntegration:
         assert result.fetchone()[0] == 1
         connection.close()
 
-    def test_signup_persists_to_supabase(self, real_test_client, real_db_session):
+    def test_uc001_signup_persists_to_supabase(self, real_test_client, real_db_session):
         """UC-001: Verifica que signup guarda datos en Supabase."""
         from app.db.models import User
         from sqlalchemy import delete
@@ -111,7 +111,7 @@ class TestSupabaseIntegration:
         real_db_session.delete(user)
         real_db_session.commit()
 
-    def test_login_queries_supabase(self, real_test_client, real_db_session):
+    def test_uc002_login_queries_supabase(self, real_test_client, real_db_session):
         """UC-002: Verifica que login consulta Supabase."""
         from app.db.models import User
         from app.core.security import hash_password
@@ -257,7 +257,7 @@ class TestSupabaseIntegration:
         assert isinstance(data, list)
         # Puede haber 0 o más causas verificadas
 
-    def test_uc004_uc009_authenticated_flow(self, real_test_client, real_db_session):
+    def test_uc004_a2_br003_authenticated_create_flow(self, real_test_client, real_db_session):
         """UC-004, UC-008, UC-009 BR-001: endpoints autenticados con sesión real."""
         import uuid
         from app.db.models import User, Cause

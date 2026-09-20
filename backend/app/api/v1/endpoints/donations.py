@@ -17,12 +17,11 @@ from app.schemas import (
     DonationRecordResponse,
 )
 from app.services.chain import (
-    CAUSE_STATUS_COMPLETED,
     get_token_address,
-    read_cause_state,
     read_donation_received,
     vault_address,
 )
+from app.services.reconcile import sync_completed_status
 from app.utils.helpers import convert_usdt_to_wei, convert_wei_to_usdt
 
 router = APIRouter(prefix="/causes", tags=["donations"])
@@ -116,11 +115,7 @@ def confirm_donation(
         return _record(existing, cause)
     db.refresh(donation)
 
-    # BR-004: Completed lo decide el contrato
-    state = read_cause_state(cause.onchain_cause_id)
-    if state and state["status"] == CAUSE_STATUS_COMPLETED and cause.status != CauseStatus.Completed.value:
-        cause.status = CauseStatus.Completed.value
-        db.commit()
+    sync_completed_status(db, cause)  # BR-004: Completed lo decide el contrato
 
     return _record(donation, cause)
 

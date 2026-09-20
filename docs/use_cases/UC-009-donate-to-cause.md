@@ -71,6 +71,22 @@
 2. Sistema informa que la causa no acepta donaciones.
 3. Use case ends.
 
+### A6: Cuenta activa distinta de la vinculada
+
+**Trigger:** La wallet activa no es la vinculada a la cuenta del donante (step 5)  
+**Flow:**
+
+1. Sistema no permite firmar e indica que debe usar la wallet vinculada a su cuenta.
+2. Use case ends.
+
+### A7: Red incorrecta
+
+**Trigger:** La wallet no está en la red de la plataforma (step 5)  
+**Flow:**
+
+1. Sistema solicita cambiar a la red de la plataforma.
+2. Use case continues at step 5.
+
 ## Postconditions
 
 ### Success Postconditions

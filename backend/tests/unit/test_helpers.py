@@ -6,7 +6,7 @@ from eth_account import Account
 from eth_account.messages import encode_defunct
 
 
-def test_verify_wallet_signature_valid():
+def test_uc003_br001_verify_wallet_signature_valid():
     """BR-001: Valida una firma correcta."""
     from app.utils.helpers import verify_wallet_signature
 
@@ -25,7 +25,7 @@ def test_verify_wallet_signature_valid():
     assert result is True
 
 
-def test_verify_wallet_signature_invalid_message():
+def test_uc003_a1_verify_wallet_signature_invalid_message():
     """BR-001: Rechaza firma para mensaje diferente."""
     from app.utils.helpers import verify_wallet_signature
 
@@ -45,7 +45,7 @@ def test_verify_wallet_signature_invalid_message():
     assert result is False
 
 
-def test_verify_wallet_signature_invalid_address():
+def test_uc003_a1_verify_wallet_signature_invalid_address():
     """BR-001: Rechaza firma para dirección diferente."""
     from app.utils.helpers import verify_wallet_signature
 
@@ -65,7 +65,7 @@ def test_verify_wallet_signature_invalid_address():
     assert result is False
 
 
-def test_verify_wallet_signature_malformed():
+def test_uc003_a1_verify_wallet_signature_malformed():
     """BR-001: Rechaza firma malformada."""
     from app.utils.helpers import verify_wallet_signature
 
@@ -82,7 +82,7 @@ def test_verify_wallet_signature_malformed():
     assert result is False
 
 
-def test_verify_wallet_signature_case_insensitive():
+def test_uc003_br001_verify_wallet_signature_case_insensitive():
     """BR-001: Validar firma es case-insensitive."""
     from app.utils.helpers import verify_wallet_signature
 

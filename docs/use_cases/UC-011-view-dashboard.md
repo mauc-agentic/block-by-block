@@ -21,7 +21,7 @@
 2. Sistema reúne la actividad del usuario como donante (sus donaciones) y como receptor (sus causas).
 3. Sistema muestra ambos resúmenes.
 4. Usuario recorre la información.
-5. Usuario elige una acción disponible (explorar causas, crear causa o retirar fondos).
+5. Usuario elige una acción disponible (explorar causas, crear causa, ver una causa, retirar fondos o reintentar la verificación de una causa en revisión).
 
 ## Alternative Flows
 

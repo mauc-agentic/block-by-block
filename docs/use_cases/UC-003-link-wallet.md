@@ -61,6 +61,14 @@
 1. Sistema solicita cambiar a HSK Chain testnet.
 2. Use case continues at step 2.
 
+### A5: Cambio de wallet con causas publicadas
+
+**Trigger:** El usuario ya tiene una wallet vinculada, intenta vincular otra y tiene causas publicadas en el contrato (step 7)  
+**Flow:**
+
+1. Sistema rechaza el cambio e indica que la wallet no puede cambiar mientras existan causas publicadas.
+2. Use case ends.
+
 ## Postconditions
 
 ### Success Postconditions
@@ -84,3 +92,7 @@ Cada dirección se asocia como máximo a una cuenta, y cada cuenta tiene como m�
 ### BR-003: Mensaje de un solo uso
 
 El mensaje a firmar es único por intento y no puede reutilizarse.
+
+### BR-004: Wallet estable con causas publicadas
+
+Una cuenta con causas publicadas en el contrato no puede cambiar su wallet vinculada, porque el contrato registra a esa wallet como titular de los fondos de sus causas.

@@ -26,7 +26,7 @@ Vocabulario de estado FR: `Open → In Progress → Implemented → Verified`. `
 | FR-015 | Reporte de fraude          | As a donante, I want reportar una causa sospechosa so that la comunidad se proteja del fraude.                                                  | Low      | Deferred     |
 | FR-016 | Reputación on-chain        | As a donante, I want ver el historial on-chain de un receptor so that evalúo su confiabilidad.                                                  | Low      | Deferred     |
 | FR-017 | Rampa de pesos             | As a donante, I want convertir pesos colombianos a stablecoin (Bre-B) so that pueda donar sin conocimientos cripto.                             | Low      | Deferred     |
-| FR-018 | Administración del contrato | As a administrador de la plataforma, I want pausar y reanudar el contrato y rotar la dirección del agente so that puedo reaccionar ante un incidente o una llave comprometida. | Medium | In Progress |
+| FR-018 | Administración del contrato | As a administrador de la plataforma, I want pausar y reanudar el contrato y rotar la dirección del agente so that puedo reaccionar ante un incidente o una llave comprometida. | Medium | Implemented |
 | FR-019 | Publicar causa on-chain    | As a receptor, I want que mi causa quede registrada en el contrato y enlazada con su registro en la plataforma so that la verificación y las donaciones apunten a la misma causa. | High | Verified |
 | FR-020 | Registrar donación         | As a donante, I want que mi donación confirmada quede reflejada en la plataforma so that aparezca en mi dashboard y en el avance de la causa. | High | In Progress |
 | FR-021 | Almacenar evidencia        | As a receptor, I want que mi foto se conserve de forma consultable so that el agente la evalúe con la imagen real y la evidencia sea auditable. | High | Verified |
@@ -34,12 +34,14 @@ Vocabulario de estado FR: `Open → In Progress → Implemented → Verified`. `
 | FR-023 | Acceso con Google           | As a visitante, I want registrarme e iniciar sesión con mi cuenta de Google so that accedo sin crear otra contraseña. | Medium | Verified |
 | FR-024 | Wallet en el navegador      | As a usuario, I want conectar mi wallet en la interfaz y firmar la publicación, el `approve`, la donación y el retiro so that opero sin salir de la plataforma. | High | In Progress |
 | FR-025 | Seguimiento de transacciones | As a usuario, I want ver el avance de mi transacción (aprobando, donando, registrando) y poder recuperarla si cierro la pestaña so that no pierdo una donación que ya firmé. | High | Open |
+| FR-026 | Cerrar sesión | As a usuario, I want cerrar mi sesión so that nadie más use mi cuenta en este dispositivo. | Medium | In Progress |
+| FR-027 | Reconciliar donaciones | As a donante, I want que mis donaciones confirmadas en el contrato aparezcan en la plataforma aunque no las haya registrado yo so that no pierdo el reflejo de mi aporte. | High | Open |
 
 ## Non-Functional Requirements
 
 | ID      | Title                        | Requirement                                                                                                           | Category        | Priority | Status       |
 |---------|------------------------------|-----------------------------------------------------------------------------------------------------------------------|-----------------|----------|--------------|
-| NFR-001 | Cobertura de pruebas         | La cobertura de líneas combinada de contrato y backend debe ser de al menos 85 %. Medido 2026-09-20: contrato 88.5 %, backend 92 %. | Maintainability | High     | Implemented  |
+| NFR-001 | Cobertura de pruebas         | La cobertura de líneas combinada de contrato y backend debe ser de al menos 85 %. Medido 2026-09-20: contrato 100 %, backend 92 %. | Maintainability | High     | Implemented  |
 | NFR-002 | Latencia de listado          | `GET /causes` debe responder en menos de 2 s con hasta 500 causas. Sin medición todavía.                              | Performance     | Medium   | In Progress  |
 | NFR-003 | Tiempo de verificación       | El agente debe completar la verificación y publicar la tx en menos de 60 s (p95), sin contar la confirmación de bloque. Sin medición todavía. | Performance | High | In Progress  |
 | NFR-004 | Reintentos de OpenRouter     | Las llamadas a OpenRouter deben reintentarse hasta 3 veces con backoff exponencial y timeout de 30 s por intento.     | Reliability     | Medium   | Implemented  |
@@ -90,3 +92,4 @@ Vocabulario de estado FR: `Open → In Progress → Implemented → Verified`. `
 | 2026-09-20 | Con la pantalla `/cause/create` (firma de `createCause`, PR #8) pasan a Implemented UC-004, UC-005, UC-013 y FR-004, FR-005, FR-019: ya existen todas sus capas. |
 | 2026-09-20 | FR-004, FR-005 y FR-019 pasan a Verified: Carlos creó y publicó una causa desde la interfaz con su wallet real (causa #348, id on-chain 7) y la IA real la evaluó con veredicto on-chain. |
 | 2026-09-20 | Nuevo FR-025 (seguimiento y recuperación de transacciones en la interfaz). Nuevo endpoint `POST /causes/{id}/withdraw` (instrucción de firma de retiro, UC-010 BR-005). Especificación de frontend del flujo completo: `frontend_spec.md`. |
+| 2026-09-20 | Nuevos FR-026 (cerrar sesión) y FR-027 (reconciliar donaciones) con UC-015 y UC-016. FR-018 pasa a Implemented: el contrato tiene 17 pruebas Foundry, 5 de ellas de UC-012. Decisión D9: la pausa del contrato no bloquea retiros (UC-012 BR-002 y TC-004 ajustados al contrato). |

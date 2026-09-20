@@ -22,6 +22,7 @@ import {
 } from "@/lib/causes";
 import { WalletError, publishCauseOnChain } from "@/lib/wallet";
 
+const ALREADY_PUBLISHED = "Cause already published on-chain";
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png"];
 
@@ -51,28 +52,13 @@ export default function CreateCausePage() {
   const [stage, setStage] = useState<Stage | null>(null);
   const [stageError, setStageError] = useState<string | null>(null);
 
+  // UC-004 A2 / S5-2: sin sesión -> login; sin wallet vinculada -> /wallet antes de crear nada.
   useEffect(() => {
     if (!token) router.replace("/auth/login");
-  }, [token, router]);
+    else if (!user?.wallet_address) router.replace("/wallet");
+  }, [token, user, router]);
 
-  if (!token) return null;
-
-  // A2 / A6: sin wallet vinculada no se puede publicar ni verificar la causa.
-  if (!user?.wallet_address) {
-    return (
-      <AuthCard
-        title="Vincula tu wallet primero"
-        subtitle="Necesitas una wallet vinculada para firmar la publicación de tu causa en el contrato (UC-003)."
-      >
-        <Link
-          href="/wallet"
-          className="inline-block bg-blueprint px-4 py-2.5 text-center text-sm font-medium text-paper transition-colors hover:bg-blueprint-dark"
-        >
-          Vincular wallet
-        </Link>
-      </AuthCard>
-    );
-  }
+  if (!token || !user?.wallet_address) return null;
 
   async function publishAndUpload(created: CauseResponse, file: File, walletAddress: string) {
     if (!token) {
@@ -82,13 +68,17 @@ export default function CreateCausePage() {
 
     setStage("publishing");
     setStageError(null);
-    let published: CauseResponse;
+    let published: CauseResponse = created;
     try {
       const instruction = await requestPublishInstruction(token, created.id);
       const txHash = await publishCauseOnChain(instruction, walletAddress);
       published = await confirmPublish(token, created.id, txHash);
       setCause(published);
     } catch (err) {
+      // S5-3: la causa ya estaba publicada; se sigue con la foto sin volver a firmar.
+      if (err instanceof CauseError && err.message === ALREADY_PUBLISHED) {
+        return uploadStep(token, published);
+      }
       setStage("publish_failed");
       setStageError(
         err instanceof WalletError || err instanceof CauseError
@@ -98,10 +88,16 @@ export default function CreateCausePage() {
       return;
     }
 
+    await uploadStep(token, published, file);
+  }
+
+  async function uploadStep(authToken: string, target: CauseResponse, file: File | null = image) {
+    if (!file) return;
     setStage("uploading");
     try {
-      await uploadCauseImage(token, published.id, file);
+      await uploadCauseImage(authToken, target.id, file);
       setStage("done");
+      router.push(`/cause/${target.id}`); // S5-1: termina en el detalle, "En revisión"
     } catch (err) {
       setStage("upload_failed");
       setStageError(err instanceof CauseError ? err.message : "No se pudo subir la evidencia.");
@@ -167,16 +163,8 @@ export default function CreateCausePage() {
   }
 
   async function retryUpload() {
-    if (!token || !cause || !image) return;
-    setStage("uploading");
-    setStageError(null);
-    try {
-      await uploadCauseImage(token, cause.id, image);
-      setStage("done");
-    } catch (err) {
-      setStage("upload_failed");
-      setStageError(err instanceof CauseError ? err.message : "No se pudo subir la evidencia.");
-    }
+    if (!token || !cause) return;
+    await uploadStep(token, cause);
   }
 
   if (stage === "done") {

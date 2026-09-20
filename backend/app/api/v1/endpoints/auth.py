@@ -2,6 +2,9 @@
 # UC-001, UC-002, UC-003: Auth endpoints
 
 from fastapi import APIRouter, HTTPException, Depends, status
+import hashlib
+
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -12,7 +15,7 @@ from app.core.security import (
     get_current_user,
 )
 from app.db import get_db
-from app.db.models import User
+from app.db.models import Cause, User, WalletMessage
 from app.schemas import (
     UserCreate,
     UserLogin,
@@ -124,21 +127,35 @@ def link_wallet(
     current_user: UserResponse = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """UC-003: Vincular wallet con validación de firma (BR-001)."""
+    """UC-003: Vincular wallet con validación de firma (BR-001), mensaje de un solo uso (BR-003) y wallet estable (BR-004)."""
 
     # BR-001: Validar firma contra la dirección declarada
     if not verify_wallet_signature(req.message, req.signature, req.wallet_address):
         raise HTTPException(status_code=400, detail="Invalid wallet signature")
 
+    # BR-003: el mensaje sirve una sola vez; se consume al verificar la firma, aunque una regla posterior rechace la vinculación
+    db.add(WalletMessage(message_hash=hashlib.sha256(req.message.encode()).hexdigest(), user_id=current_user.id))
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Message already used")
+
+    new_wallet = req.wallet_address.lower()
+
     # BR-002: Validar que la wallet no esté vinculada a otra cuenta
-    if db.query(User).filter(
-        User.wallet_address == req.wallet_address.lower(),
-        User.id != current_user.id
-    ).first():
+    if db.query(User).filter(User.wallet_address == new_wallet, User.id != current_user.id).first():
         raise HTTPException(status_code=400, detail="Wallet already linked to another account")
 
     user = db.query(User).filter(User.id == current_user.id).first()
-    user.wallet_address = req.wallet_address.lower()
+
+    # BR-004 / A5: con causas publicadas la wallet no cambia (el contrato la registra como titular de sus fondos)
+    if user.wallet_address and user.wallet_address != new_wallet and db.query(Cause).filter(
+        Cause.recipient_id == user.id, Cause.onchain_cause_id.isnot(None)
+    ).first():
+        raise HTTPException(status_code=400, detail="Wallet cannot change while you have published causes")
+
+    user.wallet_address = new_wallet
     db.commit()
     db.refresh(user)
 

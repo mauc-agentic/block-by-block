@@ -1,17 +1,15 @@
 import Link from "next/link";
-import { fetchVerifiedCauses, featuredCauses, toDisplayCause, type Cause } from "@/lib/causes";
-import { CauseCard } from "./CauseCard";
+import { listVerifiedCauses, type CauseListItem } from "@/lib/api";
+import { CauseListCard } from "./CauseListCard";
 
-// UC-007: causas verificadas reales; mientras no exista ninguna, se muestran
-// las causas de muestra (featuredCauses) para no dejar la sección vacía.
-async function loadCauses(): Promise<Cause[]> {
+// UC-007 A1: solo causas verificadas reales; sin ninguna, se muestra el mensaje
+// de vacío, nunca causas de ejemplo (D2, GAP-041).
+async function loadCauses(): Promise<CauseListItem[]> {
   try {
-    const verified = await fetchVerifiedCauses();
-    if (verified.length > 0) return verified.map(toDisplayCause);
+    return (await listVerifiedCauses()).slice(0, 6);
   } catch {
-    // Backend no disponible: se cae al listado de muestra.
+    return [];
   }
-  return featuredCauses;
 }
 
 export async function CausesSection() {
@@ -38,11 +36,17 @@ export async function CausesSection() {
           </Link>
         </div>
 
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {causes.map((cause) => (
-            <CauseCard key={cause.id} cause={cause} />
-          ))}
-        </div>
+        {causes.length === 0 ? (
+          <p className="mt-10 border border-dashed border-line p-8 text-center text-sm text-ink-soft">
+            Aún no hay causas verificadas.
+          </p>
+        ) : (
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {causes.map((cause) => (
+              <CauseListCard key={cause.id} cause={cause} />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

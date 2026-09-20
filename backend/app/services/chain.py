@@ -102,3 +102,33 @@ def read_cause_state(onchain_cause_id: int) -> Optional[dict]:
 def get_token_address() -> str:
     """Dirección del token ERC-20 que usa la bóveda (para la instrucción `approve`)."""
     return get_contract(get_w3()).functions.token().call()
+
+
+LOG_CHUNK_BLOCKS = 100_000
+
+
+def read_donation_logs(from_block: int, to_block: int) -> Optional[list[dict]]:
+    """
+    UC-016: eventos DonationReceived emitidos por CauseVault entre dos bloques (solo lectura).
+
+    Devuelve None si la red no responde (UC-016 A3). Lee en tramos para respetar los límites del RPC.
+    """
+    try:
+        w3 = get_w3()
+        event = get_contract(w3).events.DonationReceived()
+        found = []
+        start = max(from_block, 0)
+        while start <= to_block:
+            end = min(start + LOG_CHUNK_BLOCKS - 1, to_block)
+            for log in event.get_logs(from_block=start, to_block=end):
+                found.append({
+                    "tx_hash": w3.to_hex(log["transactionHash"]).lower(),
+                    "cause_id": int(log["args"]["causeId"]),
+                    "donor": log["args"]["donor"],
+                    "amount": int(log["args"]["amount"]),
+                    "block": int(log["blockNumber"]),
+                })
+            start = end + 1
+        return found
+    except Exception:
+        return None

@@ -59,6 +59,15 @@
 1. Sistema informa que debe reintentar más tarde.
 2. Use case ends.
 
+### A5: Cierre de pestaña tras firmar
+
+**Trigger:** El donante cierra la página después de firmar y antes de que se registre la donación (step 1)  
+**Flow:**
+
+1. Sistema conserva la referencia de la transacción en el dispositivo del donante.
+2. Al volver a abrir la plataforma, sistema reintenta el registro y avisa al donante.
+3. Use case continues at step 2.
+
 ## Postconditions
 
 ### Success Postconditions

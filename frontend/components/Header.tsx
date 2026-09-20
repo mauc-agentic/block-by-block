@@ -7,7 +7,7 @@ import { useState } from "react";
 import { clearSession, getStoredUser, type AuthUser } from "@/lib/auth";
 
 const navLinks = [
-  { href: "/#causas", label: "Causas" },
+  { href: "/causes", label: "Causas" },
   { href: "/#como-funciona", label: "Cómo funciona" },
   { href: "/faq", label: "Preguntas frecuentes" },
 ];

@@ -46,7 +46,7 @@ Variables públicas nuevas (`frontend/.env.example`): `NEXT_PUBLIC_TOKEN_ADDRESS
 ## 3. Reglas transversales (aplican a todas las pantallas)
 
 1. **Un solo cliente de API** (`lib/api.ts`): antepone `NEXT_PUBLIC_API_URL`, agrega `Authorization: Bearer <bbb_token>`, parsea JSON y convierte los errores en `ApiError { status, detail }`.
-   Los tipos salen de la API: `npx openapi-typescript $API/openapi.json -o lib/api-types.ts`. Nada de tipos escritos a mano que dupliquen el contrato.
+   Los tipos salen de la API: `npx openapi-typescript $API/openapi.json -o lib/api-types.ts`. Nada de tipos escritos a mano que dupliquen el contrato. *(Implementación actual: `lib/api.ts` tiene los tipos alineados a mano con `schemas/common.py`; pendiente generarlos con `openapi-typescript` cuando la API esté despierta.)*
 2. **Formato** (`lib/format.ts`): los montos llegan como string de 6 decimales (`"12.500000"`); se muestran como `12,50 USDT` (es-CO, 2 decimales) y **jamás** se
    convierten con `parseFloat` para firmar (se usa `parseUnits(valor, 6)` de `viem`). Direcciones y hashes abreviados (`0x94C5…706f`) con botón de copiar y enlace al explorador.
    Fechas en la zona horaria del usuario.

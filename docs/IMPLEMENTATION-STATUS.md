@@ -17,7 +17,7 @@ La sección 2 se **genera** de los propios documentos (`cd backend && python -m 
   (formulario, subida de foto y firma de `createCause` con la wallet, UC-004/005/013). **Le faltan** el detalle de causa, donar (`approve` + `donate`) y retirar. Es lo que hoy
   impide correr el flujo completo desde la interfaz (TC-005).
 - **Calidad:** 177 pruebas automatizadas de backend (3 omitidas a propósito), cobertura de líneas **92 %** (meta 85 %); contrato **88.5 %** con 2 pruebas Foundry fallando.
-- **Riesgos abiertos principales:** firmar `approve`, `donate` y `withdrawFunds` en el frontend y sus pantallas (GAP-024/026), pruebas Foundry (GAP-006), wallet del agente = wallet personal (GAP-032),
+- **Riesgos abiertos principales:** ejecutar TC-005 en vivo con las pantallas nuevas del frontend, wallet del agente = wallet personal (GAP-032),
   donaciones sin reconciliar si el cliente no confirma (GAP-034) y secreto rotado que sigue en el historial de `main` (GAP-017).
 
 ---
@@ -40,9 +40,11 @@ La sección 2 se **genera** de los propios documentos (`cd backend && python -m 
 | UC-009 | Donate To Cause | Approved |
 | UC-010 | Withdraw Funds | Approved |
 | UC-011 | View Dashboard | Approved |
-| UC-012 | Administer Contract | Approved |
+| UC-012 | Administer Contract | Implemented |
 | UC-013 | Publish Cause On-Chain | Implemented |
 | UC-014 | Register Donation | Approved |
+| UC-015 | Log Out | Reviewed |
+| UC-016 | Reconcile Donations | Reviewed |
 
 ### Casos de prueba (journeys)
 
@@ -51,14 +53,14 @@ La sección 2 se **genera** de los propios documentos (`cd backend && python -m 
 | TC-001 | Recipient To Donor Happy Path | Implemented |
 | TC-002 | Rejected Cause Blocks Funds | Implemented |
 | TC-003 | AI Provider Failure Keeps Cause Pending | Implemented |
-| TC-004 | Contract Pause And Agent Rotation | Draft |
+| TC-004 | Contract Pause And Agent Rotation | Implemented |
 | TC-005 | Live End-to-End With Real Users | Draft |
 
 ### Requisitos por estado
 
 | Tipo | Verified | Implemented | In Progress | Open | Deferred | Total |
 |------|----------|-------------|-------------|------|----------|-------|
-| Funcionales (FR) | 9 | 2 | 9 | 1 | 4 | 25 |
+| Funcionales (FR) | 9 | 3 | 9 | 2 | 4 | 27 |
 | No funcionales (NFR) | 0 | 8 | 4 | 3 | 2 | 17 |
 | Restricciones (C) | 0 | 10 | 2 | 0 | 1 | 13 |
 
@@ -70,10 +72,11 @@ Requisitos aún no terminados:
 - **FR-011** Retirar fondos — In Progress
 - **FR-012** Dashboard de donante — In Progress
 - **FR-013** Dashboard de receptor — In Progress
-- **FR-018** Administración del contrato — In Progress
 - **FR-020** Registrar donación — In Progress
 - **FR-024** Wallet en el navegador — In Progress
 - **FR-025** Seguimiento de transacciones — Open
+- **FR-026** Cerrar sesión — In Progress
+- **FR-027** Reconciliar donaciones — Open
 - **NFR-002** Latencia de listado — In Progress
 - **NFR-003** Tiempo de verificación — In Progress
 - **NFR-008** Secretos fuera del repo — In Progress
@@ -88,7 +91,7 @@ Requisitos aún no terminados:
 
 | Crítica | Alta | Media | Baja | Abiertas | Resueltas | Total |
 |---------|------|-------|------|----------|-----------|-------|
-| 0 | 3 | 15 | 3 | 21 | 18 | 39 |
+| 0 | 0 | 13 | 3 | 16 | 25 | 41 |
 <!-- END SUMMARY -->
 
 ---
@@ -97,7 +100,7 @@ Requisitos aún no terminados:
 
 | Componente | Estado real |
 |------------|-------------|
-| **Contrato `CauseVault`** | Desplegado en HSK testnet. Foundry: **7 de 9 pruebas pasan, 2 fallan** (GAP-006); cobertura de líneas 88.5 %, ramas 69.7 %. Sin pruebas de pausa ni de rotación de agente (GAP-030). |
+| **Contrato `CauseVault`** | Desplegado en HSK testnet. Foundry: **17 de 17 pruebas pasan**; cobertura de líneas **100 %**, ramas 78.8 %. Sin cambios de código: la pausa no bloquea retiros y se documentó así (D9). Sigue abierto GAP-022 (donar sobre la meta). |
 | **Backend FastAPI** | 17 endpoints: auth (correo y Google), wallet, causas, publicar y confirmar, evidencia, reintento de verificación, donar y confirmar, dashboard. **Desplegado en Render**; la última versión con `POST /causes/{id}/verify` está en `main` y pendiente de redespliegue. |
 | **Agente IA (UC-006)** | Ciclo cerrado y verificado en real: IA → veredicto on-chain → estado de la causa. Reintento manual, barrido al arrancar y una verificación a la vez por causa. Ensayo previo de una foto con `try_ai_verdict`. |
 | **Frontend Next.js** | Rutas: `/`, `/faq`, `/terms`, `/auth/login`, `/auth/signup`, `/wallet`, `/dashboard`, `/cause/create`. La landing lista causas verificadas reales. Firma `createCause` con Rabby y confirma con reintentos. Sin `/cause/[id]`, sin firma de `approve`/`donate`/`withdrawFunds` y **sin pruebas**. Desplegado en Vercel. |
@@ -149,9 +152,9 @@ Especificación detallada de cada pantalla, con criterios de aceptación y orden
 |---|-------|-------------|--------|
 | 1 | ~~Pantalla **crear causa** con subida de foto~~ **Hecho y verificado en vivo** (`/cause/create`, causa #348 de Carlos) | Frontend | GAP-026 |
 | 2 | ~~**Publicar** en el contrato: firmar `createCause`~~ **Hecho y verificado en vivo** (id on-chain 7) | Frontend | GAP-024 |
-| 3 | Pantalla de **detalle** (`/cause/[id]`; hoy 404 en Vercel) con estado (esperar el veredicto), barra de avance y donaciones, y botón "Reintentar verificación" | Frontend | GAP-026 |
-| 4 | **Donar**: `approve` + `donate` con Rabby, `confirm` con reintentos y hash guardado en `localStorage` | Frontend | GAP-024, GAP-023 |
-| 5 | **Retirar** (`withdrawFunds(onchain_cause_id)`) y añadir MockUSDT a Rabby (`wallet_watchAsset`) | Frontend | GAP-024 |
+| 3 | ~~Pantalla de **detalle** (`/cause/[id]`; hoy 404 en Vercel) con estado (esperar el veredicto), barra de avance y donaciones, y botón "Reintentar verificación" ~~ **Hecho en código** (S2, con pruebas; falta verificar en vivo) | Frontend | GAP-026 |
+| 4 | ~~**Donar**: `approve` + `donate` con Rabby, `confirm` con reintentos y hash guardado en `localStorage`~~ **Hecho en código** (S3, con pruebas; falta verificar en vivo) | Frontend | GAP-024, GAP-023 |
+| 5 | ~~**Retirar** (`withdrawFunds(onchain_cause_id)`) y añadir MockUSDT a Rabby (`wallet_watchAsset`)~~ **Hecho en código** (S4, con pruebas; falta verificar en vivo) | Frontend | GAP-024 |
 | 6 | **Crear la causa de la demo con una necesidad genuina y ensayar su foto** con `try_ai_verdict` (3 de 3 aprobadas): la IA ya rechazó una petición sin necesidad real (#348), y una causa Rechazada no se puede reintentar | Miguel | GAP-033 |
 | 7 | ~~**Redesplegar Render** con el último `main`~~ **Hecho** (`/verify`, `/donate`, `/donations/confirm` y `/users/me/dashboard` desplegados); falta despertar el servicio antes de la demo | Miguel / Carlos Andres | GAP-035 |
 | 8a | **Donación de demostración hecha** (10 USDT de Miguel a la causa #352 con `scripts/donate.py`, on-chain confirmada); falta registrarla con la sesión de Miguel (`donations/confirm`) hasta que exista la pantalla de donar | Miguel | GAP-024 |
@@ -160,8 +163,11 @@ Especificación detallada de cada pantalla, con criterios de aceptación y orden
 
 ### P1 — Antes de dar el MVP por cerrado
 
+Auditoría de especificación de los 14 UC (qué falta implementar, probar y ajustar, y 8 decisiones abiertas): [use_case_audit.md](use_case_audit.md).
+
 | # | Tarea | Responsable | Brecha |
 |---|-------|-------------|--------|
+| 9a | **Decidir D1..D8 del audit** (re-vincular wallet, causas de muestra en la landing, visibilidad de causas no verificadas, límites del contrato…) y reflejarlas en los UC antes de tocar código | Equipo | GAP-040, GAP-041 |
 | 9 | Corregir las 2 pruebas Foundry y agregar las de pausa y rotación de agente | Contrato | GAP-006, GAP-030 |
 | 10 | Bloquear donaciones a causas `Completed` en el contrato | Contrato | GAP-022 |
 | 11 | Reconciliar donaciones on-chain que el cliente no confirmó (tarea que lea eventos `DonationReceived`) | Backend | GAP-034 |
@@ -184,24 +190,24 @@ Severidad: **Crítica** bloquea el MVP, **Alta** bloquea el flujo demostrable, *
 
 | ID | Severidad | Brecha | Requisito |
 |----|-----------|--------|-----------|
-| GAP-006 | Alta | Foundry: `test_TC002_RejectedCauseBlocksFunds` espera "no funds to withdraw" pero el contrato revierte con "cause not verified" (correcto según UC-010 A3); `test_GetRecipientCauses` falla por índice fuera de rango | NFR-001 |
-| GAP-024 | Alta | El frontend vincula wallet (UC-003) y firma `createCause` (UC-013), pero aún no firma `approve`, `donate` ni `withdrawFunds` | FR-024 |
-| GAP-026 | Alta | Faltan las pantallas de detalle de causa (UC-008), donar y registrar la donación (UC-009, UC-014), retirar (UC-010) y la página `/causes` con el listado completo (UC-007) | FR-008..011 |
+| GAP-024 | Resuelta | El frontend firma `approve`, `donate` y `withdrawFunds` (`sendContractTx`, `waitForReceipt`, `DonateBlock`, `MyCauseRow`); pruebas Vitest con wallet simulada. Falta ejecutar TC-005 en vivo | FR-024 |
+| GAP-026 | Resuelta | Pantallas `/causes`, `/cause/[id]` (con donar y sondeo), dashboard con retirar y donaciones (S1–S5 de `frontend_spec.md`); falta ejecutar TC-005 en vivo | FR-008..011 |
 | GAP-009 | Media | UC-003 BR-003 (mensaje de un solo uso) no se aplica: la misma firma puede reutilizarse | FR-003 |
 | GAP-013 | Media | `Base.metadata.create_all` no altera columnas existentes y `migrations/alembic` está vacío; el esquema cambia con scripts manuales | NFR-013 |
 | GAP-014 | Media | Sin logging estructurado ni middleware global de errores; `GET /health` no comprueba base de datos ni RPC | NFR-012 |
 | GAP-017 | Media | El `SECRET_KEY` real subido a `main` fue rotado, pero el merge de una rama con historial previo reintrodujo esos commits en `main` | NFR-008 |
 | GAP-022 | Media | El contrato acepta donaciones a causas `Completed` (solo exige `verified`), contra UC-009 A4 | FR-010 |
 | GAP-023 | Media | El RPC de HSK es un balanceador con nodos desfasados: `confirm` puede responder 400 "not confirmed" justo tras firmar; el cliente debe reintentar | FR-020 |
-| GAP-025 | Media | `frontend/lib/causes.ts` tiene datos de muestra con otra forma (camelCase, números) que la API (snake_case, decimales como string) | NFR-016 |
-| GAP-027 | Media | El frontend no tiene pruebas ni la convención `describe('UC-###')` | NFR-017 |
-| GAP-030 | Media | Sin pruebas Foundry de `pause`, `unpause` ni `setAgent` (UC-012, TC-004) | NFR-001 |
+| GAP-025 | Resuelta | `lib/api.ts` con tipos alineados a la API (snake_case, decimales como string); se eliminaron los datos de muestra y `Cause`/`toDisplayCause` | NFR-016 |
+| GAP-027 | Resuelta | Vitest + Testing Library + MSW: 63 pruebas con `describe('UC-###')` / `it('S#-#')` (`npm test`) | NFR-017 |
 | GAP-031 | Media | NFR-002 (listado < 2 s con 500 causas) no se ha medido; NFR-003 (verificación < 60 s p95) solo tiene muestras sueltas en vivo: 12 s, 16 s, 37 s y 61 s desde la subida de la foto, la última por encima de la meta | NFR-002, NFR-003 |
 | GAP-032 | Media | La wallet del agente es la wallet personal de Miguel y la dueña del contrato; su llave privada vive en las variables de Render | NFR-008 |
 | GAP-033 | Media | Si la IA rechaza una foto legítima no hay revisión humana ni forma de forzar el veredicto (FR-014 diferido); mitigación: ensayar con `try_ai_verdict` | FR-014 |
 | GAP-034 | Media | Si el cliente no llama a `donations/confirm`, la donación existe on-chain pero no en la plataforma ni en el dashboard; falta una reconciliación por eventos | FR-020 |
 | GAP-038 | Media | El veredicto de la IA varía entre ejecuciones con la misma foto y descripción (0.90 y 0.70 el 2026-09-20) y las causas aprobadas quedan cerca del umbral 0.80 (0.85); una causa Rechazada no se puede reintentar. Mitigación: ensayar 3 veces con `try_ai_verdict` y describir lugar, fecha y daño | FR-006, FR-014 |
 | GAP-039 | Media | Una verificación en Render no produjo veredicto (causa #353): la tarea se perdió o falló sin dejar rastro y el barrido de arranque no la recuperó; sin logs accesibles ni métricas de la cola | FR-006, NFR-012 |
+| GAP-040 | Media | Decisión D1 del audit: el backend permite re-vincular otra wallet a una cuenta; si ya publicó causas, los fondos siguen en la wallet anterior y `withdrawFunds` fallaría desde la nueva | FR-003, FR-011 |
+| GAP-041 | Resuelta | La landing ya no muestra causas de muestra: solo causas reales o el mensaje de vacío (D2) | FR-008 |
 | GAP-035 | Baja | El plan gratuito de Render duerme y tarda ~50 s en despertar | NFR-015 |
 | GAP-036 | Baja | iCloud Drive sincroniza el Escritorio y crea copias de archivos con sufijo ` 2`, ` 3` que pueden pisar código | — |
 | GAP-019 | Baja | `on_event`, `from_orm` y `datetime.utcnow` están deprecados | — |
@@ -227,6 +233,8 @@ Severidad: **Crítica** bloquea el MVP, **Alta** bloquea el flujo demostrable, *
 | GAP-021 | Resuelta | `create_all` no altera columnas; la migración de Google se aplicó como script manual versionado | NFR-013 |
 | GAP-028 | Resuelta | La columna `users.user_type` desapareció por la decisión de producto "sin rol fijo por cuenta"; código, pruebas y documentos se alinearon | FR-001 |
 | GAP-037 | Resuelta | La API no exponía el motivo del veredicto: una causa Rechazada aparecía sin explicación para su titular; ahora `verification_reason` y `verification_confidence` viajan en el detalle y el dashboard, y la interfaz los muestra en un modal (UC-006 BR-009) | FR-009, FR-013 |
+| GAP-006 | Resuelta | Foundry: las 2 pruebas que fallaban eran errores de las pruebas (mensaje esperado equivocado y `vm.prank` de una sola llamada); corregidas. Contrato: 17 pruebas pasan, 100 % de líneas | NFR-001 |
+| GAP-030 | Resuelta | Sin pruebas de pausa, reanudar ni rotación de agente: ahora hay 5 pruebas `test_UC012_*` y TC-004 automatizado | NFR-001 |
 | GAP-029 | Resuelta | Si Render reiniciaba a mitad de una verificación, la causa quedaba Pending; hay barrido al arrancar, reintento del titular y control de duplicados | UC-006 |
 
 ---
@@ -257,8 +265,8 @@ Severidad: **Crítica** bloquea el MVP, **Alta** bloquea el flujo demostrable, *
 |---------|-------------------|------|
 | `pytest` (unit + integración) | 96 + 81 = 177 pruebas; 3 omitidas a propósito; 0 fallos | — |
 | Cobertura del backend | 92 % (929 líneas, 74 sin cubrir) | ≥ 85 % |
-| Cobertura del contrato (líneas) | 88.5 % (54/61) | ≥ 85 % |
-| `forge test` | 7 pasan, 2 fallan | 100 % |
+| Cobertura del contrato (líneas) | 100 % (61/61) | ≥ 85 % |
+| `forge test` | 17 pasan, 0 fallan | 100 % |
 | Pruebas de frontend | 0 | ≥ 1 por pantalla ligada a un UC (NFR-017) |
 | Endpoints | 17 | — |
 
