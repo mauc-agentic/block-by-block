@@ -3,7 +3,9 @@
 // firma al proveedor inyectado por la extensión; la verificación vive en el
 // backend (verify_wallet_signature, BR-001).
 
+import { encodeFunctionData } from "viem";
 import { getStoredToken, getStoredUser, type AuthUser } from "@/lib/auth";
+import type { PublishInstruction } from "@/lib/causes";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
@@ -278,5 +280,62 @@ export async function linkWallet(): Promise<AuthUser> {
     return await submitWalletLink({ wallet_address: address, signature, message });
   } catch (err) {
     throw toWalletError(err, "No se pudo vincular la wallet.");
+  }
+}
+
+// UC-013 BR-001: el backend solo entrega la instrucción; aquí se codifica y
+// firma `createCause` con la wallet del receptor, sin custodia del backend.
+const CREATE_CAUSE_ABI = [
+  {
+    type: "function",
+    name: "createCause",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "_title", type: "string" },
+      { name: "_description", type: "string" },
+      { name: "_targetAmount", type: "uint256" },
+    ],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+] as const;
+
+/** UC-013: firma y envía `createCause` al contrato con la wallet vinculada. */
+export async function publishCauseOnChain(
+  instruction: PublishInstruction,
+  fromAddress: string
+): Promise<string> {
+  const provider = getInjectedProvider();
+  if (!provider) {
+    throw new WalletError(
+      "No detectamos una wallet compatible. Instala Rabby (rabby.io) y recarga la página."
+    );
+  }
+
+  try {
+    await ensureHskNetwork(provider);
+
+    const [title, description, targetAmount] = instruction.params;
+    const data = encodeFunctionData({
+      abi: CREATE_CAUSE_ABI,
+      functionName: "createCause",
+      args: [String(title), String(description), BigInt(targetAmount)],
+    });
+
+    return (await withTimeout(
+      provider.request({
+        method: "eth_sendTransaction",
+        params: [{ from: fromAddress, to: instruction.contract, data }],
+      }),
+      WALLET_PROMPT_TIMEOUT_MS,
+      WALLET_TIMEOUT_MESSAGE
+    )) as string;
+  } catch (err) {
+    // A3: el receptor cancela la firma en su wallet.
+    if (isRpcError(err, 4001)) {
+      throw new WalletRejectedError(
+        "Cancelaste la firma. Tu causa sigue guardada, puedes reintentar publicarla en la cadena."
+      );
+    }
+    throw toWalletError(err, "No se pudo enviar la transacción de publicación.");
   }
 }
