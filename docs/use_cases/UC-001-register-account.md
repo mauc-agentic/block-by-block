@@ -6,7 +6,7 @@
 **Use Case Name:** Register Account  
 **Primary Actor:** Visitante  
 **Goal:** Crear una cuenta como donante o receptor  
-**Status:** Draft
+**Status:** Reviewed
 
 **Requirements:** [FR-001, NFR-006, NFR-007](../requirements.md)
 
@@ -44,12 +44,24 @@
 2. Visitante corrige los datos.
 3. Use case continues at step 4.
 
+### A3: Registro con proveedor externo
+
+**Trigger:** El visitante elige continuar con una cuenta externa (Google) en lugar de completar el formulario (step 2)  
+**Flow:**
+
+1. Sistema redirige al visitante al proveedor externo para que confirme su identidad y elija su rol (donante o receptor).
+2. Visitante autoriza a Block by Block a verificar su identidad ante el proveedor externo.
+3. Sistema recibe el correo verificado y la identidad confirmada por el proveedor externo.
+4. Sistema deriva un nombre de usuario a partir del perfil externo.
+5. Use case continues at step 5.
+
 ## Postconditions
 
 ### Success Postconditions
 
 - Existe un usuario con el rol elegido y sin wallet vinculada
-- La contraseña queda almacenada de forma no reversible
+- Para cuentas registradas con correo y contraseña, la contraseña queda almacenada de forma no reversible
+- Para cuentas registradas con un proveedor externo, la cuenta queda asociada a esa identidad externa
 - Existe una sesión activa para el nuevo usuario
 
 ### Failure Postconditions
@@ -65,8 +77,12 @@ Cada cuenta tiene exactamente un rol: donante o receptor. El rol no cambia despu
 
 ### BR-002: Unicidad
 
-El correo y el nombre de usuario deben ser únicos en la plataforma.
+El correo, el nombre de usuario y la identidad confirmada por un proveedor externo deben ser únicos en la plataforma.
 
 ### BR-003: Contraseña mínima
 
-La contraseña debe tener al menos 8 caracteres y nunca se devuelve en respuestas.
+Para cuentas registradas con correo y contraseña, la contraseña debe tener al menos 8 caracteres y nunca se devuelve en respuestas. Las cuentas registradas mediante un proveedor externo no tienen contraseña propia de la plataforma.
+
+### BR-004: Nombre de usuario derivado único
+
+Si el nombre de usuario derivado del perfil externo ya existe, el sistema genera una variante única antes de crear la cuenta.

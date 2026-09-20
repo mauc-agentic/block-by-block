@@ -21,6 +21,7 @@ rectangle "Block by Block" {
 }
 
 visitor --> UC001
+visitor --> UC007
 donor --> UC002
 recipient --> UC002
 donor --> UC003

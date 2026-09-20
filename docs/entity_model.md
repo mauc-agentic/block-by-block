@@ -12,17 +12,19 @@ erDiagram
 
 ### USER
 
-Cuenta de la plataforma, con rol de donante o receptor y wallet opcional.
+Cuenta de la plataforma, con rol de donante o receptor y wallet opcional. Puede autenticarse con contraseña propia o con un proveedor externo (OAuth).
 
-| Attribute       | Description                           | Data Type | Length/Precision | Validation Rules                    |
-|-----------------|---------------------------------------|-----------|------------------|-------------------------------------|
-| id              | Unique identifier                     | Long      | 19               | Primary Key, Sequence               |
-| username        | Nombre público del usuario            | String    | 100              | Not Null, Unique                    |
-| email           | Correo de acceso                      | String    | 255              | Not Null, Unique, Format: Email     |
-| hashed_password | Contraseña con hash bcrypt            | String    | 255              | Not Null                            |
-| wallet_address  | Dirección de wallet vinculada         | String    | 42               | Optional, Unique                    |
-| user_type       | Rol del usuario                       | String    | 20               | Not Null, Values: donor, recipient  |
-| created_at      | Fecha de creación                     | DateTime  | -                | Not Null                            |
+| Attribute       | Description                           | Data Type | Length/Precision | Validation Rules                                           |
+|-----------------|---------------------------------------|-----------|------------------|-------------------------------------------------------------|
+| id              | Unique identifier                     | Long      | 19               | Primary Key, Sequence                                       |
+| username        | Nombre público del usuario            | String    | 100              | Not Null, Unique                                             |
+| email           | Correo de acceso                      | String    | 255              | Not Null, Unique, Format: Email                              |
+| hashed_password | Contraseña con hash bcrypt            | String    | 255              | Optional (requerido si auth_provider = local)                |
+| auth_provider   | Proveedor de autenticación            | String    | 20               | Not Null, Values: local, google, Default: local              |
+| external_id     | Identificador en el proveedor externo | String    | 255              | Optional, Unique (requerido si auth_provider ≠ local)        |
+| wallet_address  | Dirección de wallet vinculada         | String    | 42               | Optional, Unique                                             |
+| user_type       | Rol del usuario                       | String    | 20               | Not Null, Values: donor, recipient                           |
+| created_at      | Fecha de creación                     | DateTime  | -                | Not Null                                                     |
 
 ### CAUSE
 
