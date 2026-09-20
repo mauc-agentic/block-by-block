@@ -11,7 +11,7 @@ Vocabulario de estado FR: `Open → In Progress → Implemented → Verified`. `
 |--------|----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|----------|--------------|
 | FR-001 | Registro de cuenta         | As a visitante, I want registrarme so that puedo donar a causas o publicar la mía, sin elegir un rol fijo.                                      | High     | Implemented  |
 | FR-002 | Inicio de sesión           | As a usuario registrado, I want iniciar sesión so that accedo a mi dashboard y acciones.                                                        | High     | Implemented  |
-| FR-003 | Vincular wallet            | As a usuario, I want vincular mi wallet demostrando que la controlo so that puedo donar o recibir fondos con mi dirección.                      | High     | Implemented  |
+| FR-003 | Vincular wallet            | As a usuario, I want vincular mi wallet demostrando que la controlo so that puedo donar o recibir fondos con mi dirección.                      | High     | Verified  |
 | FR-004 | Crear causa                | As a receptor, I want describir mi necesidad con título, descripción y monto objetivo so that los donantes puedan conocerla.                    | High     | Implemented  |
 | FR-005 | Subir evidencia            | As a receptor, I want subir una foto de mi necesidad so that el agente pueda verificarla.                                                       | High     | Verified  |
 | FR-006 | Verificación por IA        | As a receptor, I want que mi causa sea evaluada automáticamente por IA so that pueda recibir donaciones sin esperar a un revisor humano.        | High     | Verified  |

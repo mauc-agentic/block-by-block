@@ -46,7 +46,7 @@ Leyenda de estado por capa: **Done** (código + prueba), **Impl** (código, prue
 | Requisito | Estado | Capa que lo realiza |
 |-----------|--------|---------------------|
 | FR-001, FR-002, FR-023 | Implemented | `app/auth/*`, `lib/auth.ts` |
-| FR-003 | Implemented (sin prueba de frontend, GAP-027) | `app/wallet/*`, `lib/wallet.ts` |
+| FR-003 | Verified (verificado manualmente en producción con Rabby; sin prueba automatizada de frontend, GAP-027) | `app/wallet/*`, `lib/wallet.ts` |
 | FR-004, FR-005, FR-008…FR-013, FR-024 | Open | Frontend (backend y contrato ya listos, salvo FR-008 en su UI) |
 | NFR-010 Diseño responsivo (360 px) | Deferred | Frontend |
 | NFR-016 Coherencia front/back | Implemented | `api_contract.md` generado + `test_api_contract_doc` |

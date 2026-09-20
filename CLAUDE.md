@@ -128,7 +128,8 @@ render.yaml · DEPLOYMENT.md · TESTING_STATUS.md
 - Enlazar `cause_id` (BD) con `causeId` (on-chain) mediante `onchain_cause_id` → resuelto con UC-013 (FR-019).
 - `withdrawFunds` pone `collected = 0`: definir cómo conservar el total histórico recaudado.
 - ~~Validar la firma de wallet con web3.py~~ → resuelto (UC-003 BR-001). ~~Conectar la wallet desde el frontend~~ → resuelto
-  (`/wallet`, Rabby/EIP-1193; sin prueba de frontend todavía, GAP-027). Pendiente: mensaje de un solo uso (BR-003).
+  y verificado manualmente en producción (`/wallet`, Rabby/EIP-1193; sin prueba automatizada de frontend, GAP-027).
+  Pendiente: mensaje de un solo uso (BR-003).
 - Umbral de confianza del agente: 0.80 (UC-006 BR-002).
 - Modelo IA: **DeepSeek v4.1 Flash** via OpenRouter (antes Claude 3.5 Sonnet).
 - OpenRouter endpoint: `https://openrouter.ai/api/v1/chat/completions` (formato OpenAI-compatible; `/messages` devuelve formato Anthropic y rompe el parseo).
