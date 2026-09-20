@@ -134,6 +134,109 @@ class TestSupabaseIntegration:
         real_db_session.delete(user)
         real_db_session.commit()
 
+    def test_uc001_a3_google_signup_creates_user(self, real_test_client, real_db_session, monkeypatch):
+        """UC-001 A3, BR-004: registro con Google crea cuenta y deriva username único."""
+        import uuid
+        from app.db.models import User
+
+        tag = uuid.uuid4().hex[:8]
+        external_id = f"google-sub-{tag}"
+        email = f"e2e_google_signup_{tag}@block-by-block.com"
+
+        monkeypatch.setattr(
+            "app.api.v1.endpoints.auth.verify_google_id_token",
+            lambda token, client_id: {
+                "external_id": external_id, "email": email, "name": "Ada Lovelace",
+            },
+        )
+
+        response = real_test_client.post(
+            "/api/v1/auth/google/signup",
+            json={"id_token": "fake-token", "user_type": "donor"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["user"]["auth_provider"] == "google"
+        assert data["user"]["username"].startswith("adalovelace")
+
+        real_db_session.query(User).filter(User.external_id == external_id).delete()
+        real_db_session.commit()
+
+    def test_uc001_a3_google_signup_rejects_duplicate_identity(self, real_test_client, real_db_session, monkeypatch):
+        """UC-001 A3, BR-002: no se puede registrar dos veces la misma identidad externa."""
+        import uuid
+        from app.db.models import User
+
+        tag = uuid.uuid4().hex[:8]
+        external_id = f"google-sub-dup-{tag}"
+        email = f"e2e_google_dup_{tag}@block-by-block.com"
+
+        user = User(
+            username=f"e2e_google_dup_{tag}", email=email, hashed_password=None,
+            auth_provider="google", external_id=external_id, user_type="donor",
+        )
+        real_db_session.add(user)
+        real_db_session.commit()
+
+        monkeypatch.setattr(
+            "app.api.v1.endpoints.auth.verify_google_id_token",
+            lambda token, client_id: {
+                "external_id": external_id, "email": email, "name": "Dup User",
+            },
+        )
+
+        response = real_test_client.post(
+            "/api/v1/auth/google/signup",
+            json={"id_token": "fake-token", "user_type": "donor"},
+        )
+        assert response.status_code == 400
+
+        real_db_session.query(User).filter(User.external_id == external_id).delete()
+        real_db_session.commit()
+
+    def test_uc002_a3_google_login_existing_user(self, real_test_client, real_db_session, monkeypatch):
+        """UC-002 A3: login con Google para una cuenta ya registrada con ese proveedor."""
+        import uuid
+        from app.db.models import User
+
+        tag = uuid.uuid4().hex[:8]
+        external_id = f"google-sub-login-{tag}"
+        email = f"e2e_google_login_{tag}@block-by-block.com"
+
+        user = User(
+            username=f"e2e_google_login_{tag}", email=email, hashed_password=None,
+            auth_provider="google", external_id=external_id, user_type="recipient",
+        )
+        real_db_session.add(user)
+        real_db_session.commit()
+
+        monkeypatch.setattr(
+            "app.api.v1.endpoints.auth.verify_google_id_token",
+            lambda token, client_id: {
+                "external_id": external_id, "email": email, "name": "Login User",
+            },
+        )
+
+        response = real_test_client.post("/api/v1/auth/google/login", json={"id_token": "fake-token"})
+        assert response.status_code == 200
+        assert "access_token" in response.json()
+
+        real_db_session.query(User).filter(User.external_id == external_id).delete()
+        real_db_session.commit()
+
+    def test_uc002_a4_google_login_unregistered_identity(self, real_test_client, monkeypatch):
+        """UC-002 A4: login con Google sin cuenta asociada devuelve 404."""
+        monkeypatch.setattr(
+            "app.api.v1.endpoints.auth.verify_google_id_token",
+            lambda token, client_id: {
+                "external_id": "google-sub-does-not-exist", "email": "nobody@block-by-block.com",
+                "name": "Nobody",
+            },
+        )
+
+        response = real_test_client.post("/api/v1/auth/google/login", json={"id_token": "fake-token"})
+        assert response.status_code == 404
+
     def test_list_causes_from_supabase(self, real_test_client, real_db_session):
         """UC-007: Lista causas verificadas desde Supabase."""
         response = real_test_client.get("/api/v1/causes")

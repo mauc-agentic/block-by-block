@@ -99,3 +99,18 @@ def test_verify_wallet_signature_case_insensitive():
     )
 
     assert result is True
+
+
+def test_uc001_br004_derive_username_normalizes_accents_and_spaces():
+    """UC-001 BR-004: deriva un username en minúsculas, sin espacios ni acentos."""
+    from app.utils.helpers import derive_username
+
+    assert derive_username("Ada Lovelace") == "adalovelace"
+    assert derive_username("José Núñez") == "josenunez"
+
+
+def test_uc001_br004_derive_username_falls_back_when_empty():
+    """UC-001 BR-004: si el nombre no produce caracteres válidos, usa un valor por defecto."""
+    from app.utils.helpers import derive_username
+
+    assert derive_username("!!!") == "usuario"
