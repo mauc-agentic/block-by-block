@@ -15,7 +15,7 @@
 
 ## Preconditions
 
-- Contrato `CauseVault` desplegado en HSK Chain testnet (o red local de Foundry) con el agente autorizado
+- Contrato `CauseVault` desplegado (testnet: `0x591723edf457032ad341366f4654a973fbd0daa9`, token `MockUSDT` `0xD6D6fbbcAe342788DCC18fF2b1cd692c8b8837ec`) en HSK Chain testnet (o red local de Foundry) con el agente autorizado
 - Dos wallets de prueba con gas; la wallet del donante tiene al menos 100 USDT de prueba
 - El proveedor de IA responde (o está simulado con veredicto positivo)
 
@@ -26,6 +26,7 @@
 | 1    | Registrar receptor      | El receptor crea su cuenta con rol receptor                            | username: maria_tienda, email: maria@example.com, contraseña: Pass1234!, rol: recipient | [UC-001](../use_cases/UC-001-register-account.md)     |
 | 2    | Vincular wallet         | El receptor conecta y firma con su wallet                              | wallet receptor de prueba                                                             | [UC-003](../use_cases/UC-003-link-wallet.md)          |
 | 3    | Crear causa             | El receptor publica la necesidad                                       | título: Reconstruir mi tienda, descripción: Sismo destruyó vitrinas, objetivo: 500 USDT | [UC-004](../use_cases/UC-004-create-cause.md)         |
+| 3.1  | Publicar on-chain       | El receptor firma la publicación de la causa y queda enlazada con su identificador on-chain | -                                                                              | [UC-013](../use_cases/UC-013-publish-cause-onchain.md) |
 | 4    | Subir foto              | El receptor sube la foto del daño y la causa queda en revisión         | foto: dano_tienda.jpg (JPEG, 1 MB)                                                    | [UC-005](../use_cases/UC-005-upload-cause-evidence.md) |
 | 5    | Verificar causa         | El agente evalúa y registra el veredicto positivo                      | veredicto: verified=true, confianza: 0.95                                             | [UC-006](../use_cases/UC-006-verify-cause-with-ai.md) |
 | 6    | Verificar estado        | La causa figura como Verified                                          | -                                                                                     | -                                                     |
@@ -34,6 +35,7 @@
 | 9    | Explorar causas         | El donante ve "Reconstruir mi tienda" en el listado                    | -                                                                                     | [UC-007](../use_cases/UC-007-browse-verified-causes.md) |
 | 10   | Ver detalle             | El donante abre la causa y ve avance 0 %                               | -                                                                                     | [UC-008](../use_cases/UC-008-view-cause-detail.md)    |
 | 11   | Donar                   | El donante dona 100 USDT y confirma en su wallet                       | monto: 100 USDT                                                                       | [UC-009](../use_cases/UC-009-donate-to-cause.md)      |
+| 11.1 | Registrar donación      | La plataforma registra la donación confirmada con su transacción      | tx de la donación                                                                     | [UC-014](../use_cases/UC-014-register-donation.md)    |
 | 12   | Ver dashboard receptor  | El receptor ve 100 USDT disponibles en su causa                        | -                                                                                     | [UC-011](../use_cases/UC-011-view-dashboard.md)       |
 | 13   | Retirar fondos          | El receptor retira y firma en su wallet                                | -                                                                                     | [UC-010](../use_cases/UC-010-withdraw-funds.md)       |
 

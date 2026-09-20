@@ -5,6 +5,7 @@ actor "Visitante" as visitor
 actor "Donante" as donor
 actor "Receptor" as recipient
 actor "Agente Verificador" as agent
+actor "Administrador" as admin
 
 rectangle "Block by Block" {
     usecase "UC-001\nRegistrar cuenta" as UC001
@@ -18,6 +19,9 @@ rectangle "Block by Block" {
     usecase "UC-009\nDonar a una causa" as UC009
     usecase "UC-010\nRetirar fondos" as UC010
     usecase "UC-011\nVer dashboard" as UC011
+    usecase "UC-012\nAdministrar contrato" as UC012
+    usecase "UC-013\nPublicar causa on-chain" as UC013
+    usecase "UC-014\nRegistrar donación" as UC014
 }
 
 visitor --> UC001
@@ -28,15 +32,22 @@ donor --> UC003
 recipient --> UC003
 recipient --> UC004
 recipient --> UC005
+recipient --> UC013
 agent --> UC006
+admin --> UC012
 donor --> UC007
 donor --> UC008
 donor --> UC009
+donor --> UC014
 recipient --> UC010
 donor --> UC011
 recipient --> UC011
 
 UC005 ..> UC006 : <<include>>
+UC004 ..> UC013 : <<extend>>
+UC006 ..> UC013 : <<precondition>>
+UC009 ..> UC014 : <<extend>>
+UC011 ..> UC014 : <<precondition>>
 UC009 ..> UC003 : <<precondition>>
 UC010 ..> UC003 : <<precondition>>
 

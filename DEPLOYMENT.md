@@ -46,7 +46,7 @@ SUPABASE_DB_URL = postgresql://postgres.yrsvgcnrtfggcoksginp:[PASSWORD]@aws-0-ca
 
 ### Backend Security
 ```
-SECRET_KEY = REDACTED-SECRET-KEY
+SECRET_KEY = <generar-con-secrets.token_urlsafe(32)>
 ```
 
 ### AI Verification (OpenRouter)

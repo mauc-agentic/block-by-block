@@ -6,7 +6,7 @@
 **Use Case Name:** Register Account  
 **Primary Actor:** Visitante  
 **Goal:** Crear una cuenta como donante o receptor  
-**Status:** Reviewed
+**Status:** Implemented
 
 **Requirements:** [FR-001, NFR-006, NFR-007](../requirements.md)
 

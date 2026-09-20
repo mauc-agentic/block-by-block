@@ -6,7 +6,7 @@
 **Use Case Name:** View Cause Detail  
 **Primary Actor:** Donante  
 **Goal:** Conocer una causa, su avance y sus donaciones antes de donar  
-**Status:** Draft
+**Status:** Approved
 
 **Requirements:** [FR-009, NFR-011](../requirements.md)
 

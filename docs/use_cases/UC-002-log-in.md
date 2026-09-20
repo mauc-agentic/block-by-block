@@ -7,7 +7,7 @@
 **Primary Actor:** Donante  
 **Secondary Actors:** Receptor  
 **Goal:** Iniciar sesión para acceder a las funciones de la plataforma  
-**Status:** Draft
+**Status:** Implemented
 
 **Requirements:** [FR-002, NFR-006, NFR-007](../requirements.md)
 

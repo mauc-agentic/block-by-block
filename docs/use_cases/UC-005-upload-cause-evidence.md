@@ -6,9 +6,9 @@
 **Use Case Name:** Upload Cause Evidence  
 **Primary Actor:** Receptor  
 **Goal:** Adjuntar una foto que respalde la necesidad y disparar su verificación  
-**Status:** Draft
+**Status:** Approved
 
-**Requirements:** [FR-005, FR-006](../requirements.md)
+**Requirements:** [FR-005, FR-006, FR-021](../requirements.md)
 
 ## Preconditions
 
@@ -75,3 +75,11 @@ Solo se aceptan imágenes JPEG o PNG de hasta 5 MB.
 ### BR-003: Sin cambios tras verificar
 
 Una causa que ya fue verificada o rechazada no admite reemplazo de evidencia.
+
+### BR-004: Tamaño máximo
+
+La imagen no puede superar 5 MB; una imagen mayor se rechaza.
+
+### BR-005: Evidencia conservada
+
+La imagen subida se conserva de forma consultable y su huella queda asociada a la causa, de modo que el agente y cualquier auditor evalúen la misma imagen.

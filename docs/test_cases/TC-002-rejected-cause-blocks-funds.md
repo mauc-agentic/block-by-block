@@ -17,7 +17,7 @@
 
 - Contrato `CauseVault` desplegado con el agente autorizado
 - Un donante registrado con wallet vinculada y 50 USDT de prueba (ver TC-001, pasos 7 y 8)
-- Un receptor registrado con wallet vinculada (ver TC-001, pasos 1 y 2)
+- Un receptor registrado con wallet vinculada (ver TC-001, pasos 1, 2 y 3.1)
 - El proveedor de IA está simulado con veredicto negativo
 
 ## Flow

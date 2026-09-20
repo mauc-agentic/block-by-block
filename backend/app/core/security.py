@@ -60,9 +60,14 @@ def verify_token(token: str, db: Session):
 
     return UserResponse.from_orm(user)
 
+def _db_session():
+    # Import diferido: app.db.session importa app.core, que importa este módulo.
+    from app.db import get_db
+    yield from get_db()
+
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(lambda: __import__('app.db', fromlist=['get_db']).get_db),
+    db: Session = Depends(_db_session),
 ):
     """Dependency para extraer el usuario actual del token."""
     return verify_token(credentials.credentials, db)
