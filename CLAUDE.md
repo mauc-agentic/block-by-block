@@ -78,19 +78,19 @@ Prefijo de la API: `/api/v1`. Estado por capa en `docs/traceability.md`; brechas
 | UC-001 | Registrar cuenta              | `POST /auth/signup`, `POST /auth/google/signup` (A3)           | —                                        | `/auth/signup`                           | FR-001, NFR-006, NFR-007          | Implemented |
 | UC-002 | Iniciar sesión                | `POST /auth/login`, `POST /auth/google/login` (A3)             | —                                        | `/auth/login`                            | FR-002, NFR-006, NFR-007          | Implemented |
 | UC-003 | Vincular wallet               | `POST /auth/wallet/link`                                       | —                                        | `/wallet` (conecta Rabby/EIP-1193, cambia a HSK Chain, firma) | FR-003                            | Implemented |
-| UC-004 | Crear causa                   | `POST /causes` (publicación on-chain: UC-013)                  | `createCause`                            | `/cause/create` (pendiente)              | FR-004, FR-019                    | Implemented    |
+| UC-004 | Crear causa                   | `POST /causes` (publicación on-chain: UC-013)                  | `createCause`                            | `/cause/create`                          | FR-004, FR-019                    | Implemented    |
 | UC-005 | Subir evidencia              | `POST /causes/{id}/upload-image`, `GET /causes/{id}/evidence`  | —                                        | `/cause/create`, `/dashboard/recipient`  | FR-005, FR-006, FR-021            | Implemented    |
 | UC-006 | Verificar causa con IA        | `services/agent.py` (`verify_cause_with_ai`, `sign_verification_tx`, `verify_cause_task`), `tasks.py` | `verifyCause` (`onlyAgent`) | —                                        | FR-006, FR-007, FR-019, FR-021, FR-022, NFR-003/004/008 | Implemented |
-| UC-007 | Explorar causas verificadas   | `GET /causes`                                                  | `getCause`, `getCausesCount`             | `/dashboard` (real); landing con datos de muestra | FR-008, NFR-002          | Approved    |
-| UC-008 | Ver detalle de causa          | `GET /causes/{id}`                                             | `getCause`, `getDonationsForCause`       | `/cause/[id]` (pendiente)                | FR-009, NFR-011                   | Approved    |
-| UC-009 | Donar                         | `POST /causes/{id}/donate` (instrucción de firma)              | `donate` (+ `approve` del USDT)          | `/cause/[id]` (pendiente)                | FR-010, FR-020, NFR-005/009/011   | Approved    |
-| UC-010 | Retirar fondos                | `POST /causes/{id}/withdraw` (instrucción de firma)     | `withdrawFunds`                          | `/dashboard/recipient` (pendiente)       | FR-011, NFR-005/009/011           | Approved    |
+| UC-007 | Explorar causas verificadas   | `GET /causes`                                                  | `getCause`, `getCausesCount`             | `/causes`, `/dashboard`, landing (solo datos reales) | FR-008, NFR-002          | Approved    |
+| UC-008 | Ver detalle de causa          | `GET /causes/{id}`                                             | `getCause`, `getDonationsForCause`       | `/cause/[id]` (detalle, donar)           | FR-009, NFR-011                   | Approved    |
+| UC-009 | Donar                         | `POST /causes/{id}/donate` (instrucción de firma)              | `donate` (+ `approve` del USDT)          | `/cause/[id]` (detalle, donar)           | FR-010, FR-020, NFR-005/009/011   | Approved    |
+| UC-010 | Retirar fondos                | `POST /causes/{id}/withdraw` (instrucción de firma)     | `withdrawFunds`                          | `/dashboard` (retirar)                   | FR-011, NFR-005/009/011           | Approved    |
 | UC-011 | Ver dashboard                 | `GET /users/me/dashboard` (causas propias con saldo retirable, donaciones, `wallet_linked`) | `getCause` (saldo retirable)        | `/dashboard` (ruta protegida por JWT en localStorage) | FR-012, FR-013, FR-020      | Approved    |
-| UC-012 | Administrar contrato          | —                                                              | `pause`, `unpause`, `setAgent` (`onlyOwner`) | —                                    | FR-018, NFR-008, NFR-009          | Approved    |
-| UC-013 | Publicar causa on-chain       | `POST /causes/{id}/publish`, `POST /causes/{id}/publish/confirm` (`services/chain.py`) | `createCause`, evento `CauseCreated` | `/cause/create` (firma pendiente)        | FR-004, FR-019, C-009             | Implemented    |
+| UC-012 | Administrar contrato          | —                                                              | `pause`, `unpause`, `setAgent` (`onlyOwner`) | —                                    | FR-018, NFR-008, NFR-009          | Implemented |
+| UC-013 | Publicar causa on-chain       | `POST /causes/{id}/publish`, `POST /causes/{id}/publish/confirm` (`services/chain.py`) | `createCause`, evento `CauseCreated` | `/cause/create` (firma con Rabby)        | FR-004, FR-019, C-009             | Implemented    |
 | UC-014 | Registrar donación            | `POST /causes/{id}/donations/confirm`                          | evento `DonationReceived`                | `/cause/[id]`                            | FR-020, FR-009, FR-012, NFR-011   | Approved    |
 | UC-015 | Cerrar sesión                 | —                                                              | —                                        | `Header`, `/dashboard` (botón)           | FR-026, NFR-007                   | Reviewed    |
-| UC-016 | Reconciliar donaciones        | Por implementar (`services/reconcile.py`)                      | evento `DonationReceived`                | —                                        | FR-027, FR-020, NFR-011           | Reviewed    |
+| UC-016 | Reconciliar donaciones        | `services/reconcile.py`, `tasks.py` (barrido periódico)        | evento `DonationReceived`                | —                                        | FR-027, FR-020, NFR-011           | Reviewed    |
 
 Test cases (journeys end-to-end): **TC-001** flujo feliz receptor→donante→retiro (UC-001,003,004,013,005,006,007,008,009,014,011,010) ·
 **TC-002** causa rechazada bloquea fondos (UC-004,005,006,007,009,010) · **TC-003** fallo del proveedor de IA deja la causa Pending
@@ -101,7 +101,7 @@ Estructura de código real:
 ```text
 contracts/   src/CauseVault.sol · src/MockUSDT.sol · script/Deploy.s.sol · test/CauseVault.t.sol   (Foundry)
 backend/     app/{api/v1/endpoints,core,db,schemas,services,utils}/ · tests/{unit,integration}/ · abi/CauseVault.json · Dockerfile
-frontend/    app/ · components/ · lib/                                (Next.js 16, sin Scaffold-ETH todavía)
+frontend/    app/ · components/ · lib/ · tests/                       (Next.js 16 + Vitest/MSW, sin Scaffold-ETH todavía)
 docs/        artefactos AIUP + IMPLEMENTATION-STATUS.md
 render.yaml · DEPLOYMENT.md · TESTING_STATUS.md
 ```
@@ -147,5 +147,5 @@ render.yaml · DEPLOYMENT.md · TESTING_STATUS.md
 ## Verificación
 
 Tras implementar, ejecutar y reportar: `forge test` + `forge coverage` (contrato), `pytest --cov=app` desde `backend/` (backend),
-lint/build del frontend. Cobertura mínima combinada 85 % (NFR-001); medido 2026-09-20: contrato 88.5 %, backend 71 %. Pruebas reales de punta a punta (gastan HSK testnet): `cd backend && python -m scripts.e2e_verification` y `python -m scripts.e2e_donation`.
+lint/build del frontend. Cobertura mínima combinada 85 % (NFR-001); medido 2026-09-20: contrato 100 % de líneas, backend 92 %, frontend 63 pruebas Vitest. Pruebas reales de punta a punta (gastan HSK testnet): `cd backend && python -m scripts.e2e_verification` y `python -m scripts.e2e_donation`.
 Reportar cualquier verificación que no se pudo completar. Las pruebas de backend corren contra Supabase real (sin SQLite).
