@@ -7,7 +7,7 @@
 **Primary Actor:** Agente Verificador  
 **Secondary Actors:** Receptor  
 **Goal:** Evaluar foto y descripción de una causa y registrar el resultado on-chain  
-**Status:** Draft
+**Status:** Implemented
 
 **Requirements:** [FR-006, FR-007, NFR-003, NFR-004, NFR-008](../requirements.md)
 

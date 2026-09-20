@@ -12,7 +12,7 @@
 |-----------|------------|--------|
 | **Documentación AIUP** | 100% | ✅ Vision, Reqs, Entity Model, 11 UC, 2 TC |
 | **Contrato Solidity** | 100% | ✅ Compilado, ABI generado, tests Foundry |
-| **Backend FastAPI** | 90% | 🟡 Estructura + 11 endpoints, falta tests |
+| **Backend FastAPI** | 95% | 🟡 11 endpoints + background tasks, falta tests |
 | **Frontend Next.js** | 0% | ⏸️ Deferred (post-hackathon) |
 | **Deploy** | 0% | ⏸️ Esperando selección de testnet |
 
@@ -58,7 +58,7 @@
 - [x] Retries con backoff exponencial (3x)
 - [x] Firma on-chain `verifyCause()`
 - [x] ABI JSON generado
-- [ ] Background tasks (Celery/RQ) — TODO
+- [x] Background tasks (ThreadPoolExecutor MVP, Celery migration path)
 
 ### Testing
 - [x] Foundry tests (TC-001, TC-002 + validaciones)
@@ -72,25 +72,24 @@
 
 | Tarea | Prioridad | Complejidad | Estimado |
 |-------|-----------|------------|----------|
-| Validar firma wallet (UC-003) | **Critical** | Baja | 30 min |
-| Background tasks (UC-006) | **Critical** | Media | 2h |
 | Tests pytest (85% coverage) | **High** | Media | 3h |
 | Alembic migrations | High | Baja | 1h |
 | Logging estructurado | Medium | Baja | 1h |
 | Middleware error global | Medium | Baja | 1h |
+| Rate limiting (opcional) | Low | Baja | 1h |
 
-**Total pendiente:** ~8.5 horas (sin frontend)
+**Total pendiente:** ~6.5 horas (sin frontend)
 
 ---
 
 ## 📋 Funcionalidades por UC
 
-### ✅ Completadas (10)
-- UC-001, 002, 003, 004, 005, 007, 008, 009, 011
+### ✅ Completadas (11)
+- UC-001, 002, 003, 004, 005, 006, 007, 008, 009, 011
 - UC-010 (solo en contrato, no en backend)
 
-### 🟡 En progreso (1)
-- **UC-006**: Agente hecho, falta background tasks
+### 🟡 En progreso (0)
+- Todos los UC del backend implementados ✅
 
 ### ⏸️ Deferred (0)
 - Ninguno, todos en scope para MVP
@@ -150,10 +149,10 @@
 
 ### Próximos Pasos
 1. ✅ Validar firma wallet (UC-003)
-2. ✅ Configurar Celery para background tasks
-3. ✅ Escribir tests pytest
-4. ✅ Deploy a HSK testnet
-5. ✅ Frontend (post-hackathon)
+2. ✅ Configurar background tasks (UC-006)
+3. 🟡 Escribir tests pytest (85% coverage)
+4. ⏳ Deploy a HSK testnet
+5. ⏳ Frontend (post-hackathon)
 
 ### Documentación Generada
 - `docs/vision.md` — product vision
