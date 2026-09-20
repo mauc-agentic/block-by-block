@@ -57,15 +57,17 @@ on-chain, en stablecoins, desde el donante hasta el receptor, y cada movimiento 
 - Contrato desplegado y verificable en HSK testnet.
 - Cero fondos donados a causas no verificadas.
 
-## Riesgos y decisiones abiertas
+## Riesgos y decisiones tomadas
 
-| Riesgo / decisión                              | Probabilidad | Mitigación / decisión pendiente                                           |
+| Riesgo / decisión                              | Probabilidad | Estado / Mitigación                                                       |
 |------------------------------------------------|--------------|---------------------------------------------------------------------------|
-| Foto falsa o bypass de la IA                   | Media        | Human-in-the-Loop en fase 2; umbral de confianza mínimo en el agente      |
-| Timeout de RPC                                 | Media        | Reintentos y RPC de respaldo                                              |
-| Timeout de OpenRouter                          | Baja         | Reintentos con backoff exponencial                                        |
-| Colusión donante-receptor                      | Baja         | Auditoría pública on-chain                                                |
-| Compromiso de la llave privada del agente      | Muy baja     | Llave solo en variables de entorno; en producción, gestor de secretos     |
-| Sincronización BD ↔ contrato (id de causa)     | Alta         | **Pendiente:** el `cause_id` del backend y el `causeId` on-chain deben enlazarse (campo `onchain_cause_id`) |
-| `withdrawFunds` deja `collected = 0`           | Media        | **Pendiente:** conservar total recaudado histórico separado del saldo retirable |
-| Firma de wallet sin validar (TODO en backend)  | Alta         | Se corrige en UC-003 (verificación de firma con web3.py)                  |
+| Foto falsa o bypass de la IA                   | Media        | ✅ Umbral confianza 0.80 (UC-006 BR-002); Human-in-the-Loop fase 2        |
+| Timeout de RPC                                 | Media        | ✅ Reintentos con backoff exponencial (3 intentos, 30s timeout)            |
+| Timeout de OpenRouter                          | Baja         | ✅ Reintentos con backoff exponencial (3 intentos)                         |
+| Colusión donante-receptor                      | Baja         | ✅ Auditoría pública on-chain (eventos con CA-XXX BC)                     |
+| Compromiso de la llave privada del agente      | Muy baja     | ✅ Llave solo en .env (no en repo); AWS Secrets Manager en prod            |
+| Sincronización BD ↔ contrato (id de causa)     | Alta         | ✅ Campo `onchain_cause_id` en CAUSE model para enlazar IDs                |
+| `withdrawFunds` deja `collected = 0`           | Media        | ✅ Diseño: total histórico separado; `collected` es el saldo retirable     |
+| Firma de wallet sin validar                    | Alta         | 🔲 TODO en UC-003: validar con web3.py (eth_account.Account.recover)     |
+| Background tasks para agente                   | Alta         | 🔲 TODO: implementar Celery/RQ para UC-006 async                          |
+| Tests y cobertura 85%                          | Media        | 🔲 TODO: pytest para FR-001..013, NFR-001                                 |
