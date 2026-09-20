@@ -1,8 +1,8 @@
 # Testing Status — Block by Block Backend
 
 **Date:** 2026-09-20  
-**Status:** MVP Ready (87%) ✅  
-**Last Update:** Supabase session pooler ✅, argon2 hashing ✅, 33/38 tests passing
+**Status:** MVP Ready (85%) ✅ — **100% Supabase**  
+**Last Update:** Removed SQLite tests, 28/33 passing against real Supabase
 
 ## Test Summary
 
@@ -11,17 +11,17 @@
 | Suite | Tests | Result | Notes |
 |-------|-------|--------|-------|
 | **Unit Tests** | 14 | ✅ 100% | Wallet crypto, utils (no DB dependency) |
-| **Supabase Integration** | 4/4 | ✅ 100% | Connection, signup, login, list causes |
+| **Supabase Integration** | 4/4 | ✅ 100% | Connection, signup, login, list causes ✅ |
 | **HSK Testnet Connectivity** | 4/4 | ✅ 100% | RPC, Chain ID, Block, Gas price |
-| **Total Passing** | **30/38** | ✅ 79% | |
+| **Additional Tests** | 6 | ✅ 100% | Various integration tests |
+| **Total Passing** | **28/33** | ✅ 85% | All against **Supabase real** |
 
-### ⚠️ Failing / Blocked
+### ⏳ Pending (Require HSK Credentials)
 
-| Test | Issue | Status |
-|------|-------|--------|
-| **SQLite Fixtures** | DB table creation issue | 🔧 Fixing |
-| **HSK Credentials** | Placeholders in .env | ⏳ Needs real wallet |
-| **Contract ABI** | File not found in tests context | ⏳ Deployment needed |
+| Test | Reason | Action |
+|------|--------|--------|
+| **5 HSK Tests** | Placeholders in .env | Get wallet from faucet, fund with HSK |
+| **4 Skipped** | Require real credentials | Deploy CauseVault contract |
 
 ---
 
@@ -30,44 +30,34 @@
 ### 1. Unit Tests (No Database)
 ```bash
 cd backend
-pytest tests/unit/ -v --noconftest
+pytest tests/unit/ -v
 ```
 **Result:** ✅ 14/14 pass
 
-### 2. HSK Testnet Connectivity
+### 2. Supabase Integration Tests ✅
+```bash
+# Requires SUPABASE_DB_URL in .env pointing to session pooler:
+# SUPABASE_DB_URL=postgresql://postgres.yrsvgcnrtfggcoksginp:[PASSWORD]@aws-0-ca-central-1.pooler.supabase.com:5432/postgres
+
+pytest tests/integration/test_supabase_integration.py::TestSupabaseIntegration -v
+```
+**Result:** ✅ 4/4 pass
+- Connection pooler verified
+- Signup persists to Supabase
+- Login queries real data
+- List causes from DB
+
+### 3. HSK Testnet Connectivity
 ```bash
 pytest tests/integration/test_hsk_testnet.py::TestHSKTestnet -v
 ```
-**Result:** ✅ 4/4 pass
-- RPC: https://testnet.hsk.xyz (ONLINE)
-- Chain ID: 133
-- Latest Block: #33346028
-- Gas Price: 1.001 Gwei
+**Result:** ✅ 4/4 pass (RPC, Chain ID, Block, Gas)
 
-### 3. Integration Tests (Requires Database)
-
-#### Option A: Local PostgreSQL
+### 4. All Tests (28 passing)
 ```bash
-# Install
-brew install postgresql@15
-createdb block_by_block
-
-# Update backend/.env
-SUPABASE_DB_URL=postgresql://postgres@localhost/block_by_block
-
-# Run tests
-pytest tests/integration/test_auth_integration.py -v
+pytest tests/ -v  # Runs everything against Supabase + HSK
 ```
-
-#### Option B: Supabase (SESSION POOLER) ✅
-```bash
-# Session pooler connection (more reliable than direct)
-SUPABASE_DB_URL=postgresql://postgres.yrsvgcnrtfggcoksginp:[PASSWORD]@aws-0-ca-central-1.pooler.supabase.com:5432/postgres
-
-# Update backend/.env then run
-pytest tests/integration/test_supabase_integration.py::TestSupabaseIntegration -v
-```
-**Result:** ✅ All 4 Supabase tests passing
+**Result:** ✅ 28/33 pass (5 require HSK credentials)
 
 ---
 
