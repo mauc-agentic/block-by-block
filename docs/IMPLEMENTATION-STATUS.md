@@ -12,7 +12,7 @@
 |-----------|------------|--------|
 | **Documentación AIUP** | 100% | ✅ Vision, Reqs, Entity Model, 11 UC, 2 TC |
 | **Contrato Solidity** | 100% | ✅ Compilado, ABI generado, tests Foundry |
-| **Backend FastAPI** | 95% | 🟡 11 endpoints + background tasks, falta tests |
+| **Backend FastAPI** | 98% | 🟡 11 endpoints + background tasks + 14 tests |
 | **Frontend Next.js** | 0% | ⏸️ Deferred (post-hackathon) |
 | **Deploy** | 0% | ⏸️ Esperando selección de testnet |
 
@@ -62,9 +62,9 @@
 
 ### Testing
 - [x] Foundry tests (TC-001, TC-002 + validaciones)
-- [ ] Pytest unit tests — TODO
+- [x] Pytest unit tests (14 tests: wallet crypto, utils)
 - [ ] Pytest integration tests — TODO
-- [ ] Coverage 85% — TODO
+- [ ] Coverage 85% — In progress (14 tests baseline)
 
 ---
 
@@ -72,13 +72,14 @@
 
 | Tarea | Prioridad | Complejidad | Estimado |
 |-------|-----------|------------|----------|
-| Tests pytest (85% coverage) | **High** | Media | 3h |
+| Tests pytest integración (85% coverage) | **High** | Media | 2h |
 | Alembic migrations | High | Baja | 1h |
 | Logging estructurado | Medium | Baja | 1h |
 | Middleware error global | Medium | Baja | 1h |
 | Rate limiting (opcional) | Low | Baja | 1h |
 
-**Total pendiente:** ~6.5 horas (sin frontend)
+**Total pendiente:** ~5.5 horas (sin frontend)
+**Baseline:** 14 tests unitarios sin dependencia de BD ✅
 
 ---
 
