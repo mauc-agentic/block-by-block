@@ -35,7 +35,7 @@ Vocabulario de estado FR: `Open → In Progress → Implemented → Verified`. `
 | FR-024 | Wallet en el navegador      | As a usuario, I want conectar mi wallet en la interfaz y firmar la publicación, el `approve`, la donación y el retiro so that opero sin salir de la plataforma. | High | In Progress |
 | FR-025 | Seguimiento de transacciones | As a usuario, I want ver el avance de mi transacción (aprobando, donando, registrando) y poder recuperarla si cierro la pestaña so that no pierdo una donación que ya firmé. | High | Open |
 | FR-026 | Cerrar sesión | As a usuario, I want cerrar mi sesión so that nadie más use mi cuenta en este dispositivo. | Medium | In Progress |
-| FR-027 | Reconciliar donaciones | As a donante, I want que mis donaciones confirmadas en el contrato aparezcan en la plataforma aunque no las haya registrado yo so that no pierdo el reflejo de mi aporte. | High | Open |
+| FR-027 | Reconciliar donaciones | As a donante, I want que mis donaciones confirmadas en el contrato aparezcan en la plataforma aunque no las haya registrado yo so that no pierdo el reflejo de mi aporte. | High | Implemented |
 
 ## Non-Functional Requirements
 

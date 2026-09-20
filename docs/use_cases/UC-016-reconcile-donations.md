@@ -7,7 +7,7 @@
 **Primary Actor:** Sistema  
 **Secondary Actors:** Donante  
 **Goal:** Registrar en la plataforma las donaciones confirmadas en el contrato que el donante no llegó a registrar  
-**Status:** Reviewed
+**Status:** Implemented
 
 **Requirements:** [FR-027, FR-020, NFR-011](../requirements.md)
 

@@ -26,7 +26,7 @@ Leyenda de estado por capa: **Done** (código + prueba), **Impl** (código, prue
 | UC-009 | Donar | `POST /causes/{id}/donate` | `approve`, `donate` | `components/DonateBlock.tsx`, `lib/pendingDonations.ts`, `PendingDonationsNotice.tsx` | Done | Impl | Impl (`tests/donate.test.tsx`) |
 | UC-014 | Registrar donación | `POST /causes/{id}/donations/confirm` | `DonationReceived` | — (reintento tras firmar) | Done | Done | Open |
 | UC-015 | Cerrar sesión | — | — | `components/Header.tsx`, `app/dashboard/page.tsx` (botón "Cerrar sesión") | n/a | n/a | Impl |
-| UC-016 | Reconciliar donaciones | `services/reconcile.py` (arranque, cada 10 min y `scripts/reconcile_donations.py`) | evento `DonationReceived` | — | Impl (falta correr sus pruebas contra la BD) | Done | n/a |
+| UC-016 | Reconciliar donaciones | `services/reconcile.py` (arranque, cada 10 min y `scripts/reconcile_donations.py`) | evento `DonationReceived` | — | Impl (`TestReconcileDonationsUC016`, `TestReadDonationLogsUC016`; pasan contra Supabase) | Done | n/a |
 | UC-010 | Retirar fondos | `POST /causes/{id}/withdraw` | `withdrawFunds` | `components/dashboard/MyCauseRow.tsx` (retirar) | Done | Impl | Impl (`tests/dashboard.test.tsx`) |
 | UC-011 | Ver dashboard | `GET /users/me/dashboard` | `getCause` (saldo) | `app/dashboard/page.tsx`, `components/dashboard/*` | Done | n/a | Impl (causas propias, mis donaciones, retirar, alerta de wallet; `tests/dashboard.test.tsx`) |
 | UC-012 | Administrar contrato | — | `pause`, `unpause`, `setAgent` | — (sin pantalla) | n/a | Done | n/a |

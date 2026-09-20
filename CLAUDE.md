@@ -91,7 +91,7 @@ Prefijo de la API: `/api/v1`. Estado por capa en `docs/traceability.md`; brechas
 | UC-013 | Publicar causa on-chain       | `POST /causes/{id}/publish`, `POST /causes/{id}/publish/confirm` (`services/chain.py`) | `createCause`, evento `CauseCreated` | `/cause/create` (firma con Rabby)        | FR-004, FR-019, C-009             | Implemented    |
 | UC-014 | Registrar donación            | `POST /causes/{id}/donations/confirm`                          | evento `DonationReceived`                | `/cause/[id]`                            | FR-020, FR-009, FR-012, NFR-011   | Approved    |
 | UC-015 | Cerrar sesión                 | —                                                              | —                                        | `Header`, `/dashboard` (botón)           | FR-026, NFR-007                   | Reviewed    |
-| UC-016 | Reconciliar donaciones        | `services/reconcile.py`, `tasks.py` (barrido periódico)        | evento `DonationReceived`                | —                                        | FR-027, FR-020, NFR-011           | Reviewed    |
+| UC-016 | Reconciliar donaciones        | `services/reconcile.py`, `tasks.py` (barrido periódico)        | evento `DonationReceived`                | —                                        | FR-027, FR-020, NFR-011           | Implemented |
 
 Test cases (journeys end-to-end): **TC-001** flujo feliz receptor→donante→retiro (UC-001,003,004,013,005,006,007,008,009,014,011,010) ·
 **TC-002** causa rechazada bloquea fondos (UC-004,005,006,007,009,010) · **TC-003** fallo del proveedor de IA deja la causa Pending

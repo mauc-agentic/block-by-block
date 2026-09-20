@@ -18,7 +18,7 @@ La sección 2 se **genera** de los propios documentos (`cd backend && python -m 
   impide correr el flujo completo desde la interfaz (TC-005).
 - **Calidad:** 177 pruebas automatizadas de backend (3 omitidas a propósito), cobertura de líneas **92 %** (meta 85 %); contrato **88.5 %** con 2 pruebas Foundry fallando.
 - **Riesgos abiertos principales:** ejecutar TC-005 en vivo con las pantallas nuevas del frontend, wallet del agente = wallet personal (GAP-032),
-  donaciones sin reconciliar si el cliente no confirma (GAP-034) y secreto rotado que sigue en el historial de `main` (GAP-017).
+  secreto rotado que sigue en el historial de `main` (GAP-017).
 
 ---
 
@@ -44,7 +44,7 @@ La sección 2 se **genera** de los propios documentos (`cd backend && python -m 
 | UC-013 | Publish Cause On-Chain | Implemented |
 | UC-014 | Register Donation | Approved |
 | UC-015 | Log Out | Reviewed |
-| UC-016 | Reconcile Donations | Reviewed |
+| UC-016 | Reconcile Donations | Implemented |
 
 ### Casos de prueba (journeys)
 
@@ -60,7 +60,7 @@ La sección 2 se **genera** de los propios documentos (`cd backend && python -m 
 
 | Tipo | Verified | Implemented | In Progress | Open | Deferred | Total |
 |------|----------|-------------|-------------|------|----------|-------|
-| Funcionales (FR) | 9 | 3 | 9 | 2 | 4 | 27 |
+| Funcionales (FR) | 9 | 4 | 9 | 1 | 4 | 27 |
 | No funcionales (NFR) | 0 | 9 | 5 | 3 | 2 | 19 |
 | Restricciones (C) | 0 | 10 | 2 | 0 | 1 | 13 |
 
@@ -76,7 +76,6 @@ Requisitos aún no terminados:
 - **FR-024** Wallet en el navegador — In Progress
 - **FR-025** Seguimiento de transacciones — Open
 - **FR-026** Cerrar sesión — In Progress
-- **FR-027** Reconciliar donaciones — Open
 - **NFR-002** Latencia de listado — In Progress
 - **NFR-003** Tiempo de verificación — In Progress
 - **NFR-008** Secretos fuera del repo — In Progress
@@ -92,7 +91,7 @@ Requisitos aún no terminados:
 
 | Crítica | Alta | Media | Baja | Abiertas | Resueltas | Total |
 |---------|------|-------|------|----------|-----------|-------|
-| 0 | 0 | 13 | 3 | 16 | 25 | 41 |
+| 0 | 0 | 10 | 3 | 13 | 28 | 41 |
 <!-- END SUMMARY -->
 
 ---
@@ -171,9 +170,9 @@ Auditoría de especificación de los 14 UC (qué falta implementar, probar y aju
 | 9a | **Decidir D1..D8 del audit** (re-vincular wallet, causas de muestra en la landing, visibilidad de causas no verificadas, límites del contrato…) y reflejarlas en los UC antes de tocar código | Equipo | GAP-040, GAP-041 |
 | 9 | Corregir las 2 pruebas Foundry y agregar las de pausa y rotación de agente | Contrato | GAP-006, GAP-030 |
 | 10 | Bloquear donaciones a causas `Completed` en el contrato | Contrato | GAP-022 |
-| 11 | Reconciliar donaciones on-chain que el cliente no confirmó (tarea que lea eventos `DonationReceived`) | Backend | GAP-034 |
+| 11 | ~~Reconciliar donaciones on-chain que el cliente no confirmó~~ **Hecho** (UC-016; 109 pruebas de integración pasan) | Backend | GAP-034 |
 | 12 | Separar la wallet del agente de la personal y de la dueña del contrato | Miguel | GAP-032 |
-| 13 | Mensaje de un solo uso para vincular wallet (UC-003 BR-003) | Backend | GAP-009 |
+| 13 | ~~Mensaje de un solo uso para vincular wallet (UC-003 BR-003)~~ **Hecho** | Backend | GAP-009 |
 | 14 | Decidir si se reescribe otra vez el historial de `main` (secreto rotado reintroducido por un merge) | Equipo | GAP-017 |
 
 ### P2 — Endurecimiento
@@ -193,7 +192,7 @@ Severidad: **Crítica** bloquea el MVP, **Alta** bloquea el flujo demostrable, *
 |----|-----------|--------|-----------|
 | GAP-024 | Resuelta | El frontend firma `approve`, `donate` y `withdrawFunds` (`sendContractTx`, `waitForReceipt`, `DonateBlock`, `MyCauseRow`); pruebas Vitest con wallet simulada. Falta ejecutar TC-005 en vivo | FR-024 |
 | GAP-026 | Resuelta | Pantallas `/causes`, `/cause/[id]` (con donar y sondeo), dashboard con retirar y donaciones (S1–S5 de `frontend_spec.md`); falta ejecutar TC-005 en vivo | FR-008..011 |
-| GAP-009 | Media | UC-003 BR-003 (mensaje de un solo uso) no se aplica: la misma firma puede reutilizarse | FR-003 |
+| GAP-009 | Resuelta | UC-003 BR-003: cada mensaje firmado sirve una sola vez (`wallet_messages`, hash único; el mensaje se consume aunque el vínculo se rechace); pruebas contra Supabase | FR-003 |
 | GAP-013 | Media | `Base.metadata.create_all` no altera columnas existentes y `migrations/alembic` está vacío; el esquema cambia con scripts manuales | NFR-013 |
 | GAP-014 | Media | Sin logging estructurado ni middleware global de errores; `GET /health` no comprueba base de datos ni RPC | NFR-012 |
 | GAP-017 | Media | El `SECRET_KEY` real subido a `main` fue rotado, pero el merge de una rama con historial previo reintrodujo esos commits en `main` | NFR-008 |
@@ -204,10 +203,10 @@ Severidad: **Crítica** bloquea el MVP, **Alta** bloquea el flujo demostrable, *
 | GAP-031 | Media | NFR-002 (listado < 2 s con 500 causas) no se ha medido; NFR-003 (verificación < 60 s p95) solo tiene muestras sueltas en vivo: 12 s, 16 s, 37 s y 61 s desde la subida de la foto, la última por encima de la meta | NFR-002, NFR-003 |
 | GAP-032 | Media | La wallet del agente es la wallet personal de Miguel y la dueña del contrato; su llave privada vive en las variables de Render | NFR-008 |
 | GAP-033 | Media | Si la IA rechaza una foto legítima no hay revisión humana ni forma de forzar el veredicto (FR-014 diferido); mitigación: ensayar con `try_ai_verdict` | FR-014 |
-| GAP-034 | Media | Si el cliente no llama a `donations/confirm`, la donación existe on-chain pero no en la plataforma ni en el dashboard; falta una reconciliación por eventos | FR-020 |
+| GAP-034 | Resuelta | UC-016: `services/reconcile.py` lee los eventos `DonationReceived` al arrancar, cada 10 min y con `scripts/reconcile_donations.py`, idempotente por hash; además el frontend recupera pendientes (FR-025) | FR-020 |
 | GAP-038 | Media | El veredicto de la IA varía entre ejecuciones con la misma foto y descripción (0.90 y 0.70 el 2026-09-20) y las causas aprobadas quedan cerca del umbral 0.80 (0.85); una causa Rechazada no se puede reintentar. Mitigación: ensayar 3 veces con `try_ai_verdict` y describir lugar, fecha y daño | FR-006, FR-014 |
 | GAP-039 | Media | Una verificación en Render no produjo veredicto (causa #353): la tarea se perdió o falló sin dejar rastro y el barrido de arranque no la recuperó; sin logs accesibles ni métricas de la cola | FR-006, NFR-012 |
-| GAP-040 | Media | Decisión D1 del audit: el backend permite re-vincular otra wallet a una cuenta; si ya publicó causas, los fondos siguen en la wallet anterior y `withdrawFunds` fallaría desde la nueva | FR-003, FR-011 |
+| GAP-040 | Resuelta | Decisión D1 aplicada: con causas publicadas la wallet no cambia (UC-003 A5/BR-004, `POST /auth/wallet/link`); sin causas sí; probado contra Supabase | FR-003, FR-011 |
 | GAP-041 | Resuelta | La landing ya no muestra causas de muestra: solo causas reales o el mensaje de vacío (D2) | FR-008 |
 | GAP-035 | Baja | El plan gratuito de Render duerme y tarda ~50 s en despertar | NFR-015 |
 | GAP-036 | Baja | iCloud Drive sincroniza el Escritorio y crea copias de archivos con sufijo ` 2`, ` 3` que pueden pisar código | — |

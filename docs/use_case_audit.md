@@ -37,7 +37,7 @@ Se regenera con `cd backend && python -m scripts.uc_coverage --write-doc`; una p
 | UC-013 | Implemented | 8/10 | A1, BR-003 |
 | UC-014 | Approved | 9/10 | A5 |
 | UC-015 | Reviewed | 0/3 | A1, BR-001, BR-002 |
-| UC-016 | Reviewed | 4/6 | BR-002, BR-003 |
+| UC-016 | Implemented | 4/6 | BR-002, BR-003 |
 | **Total** | | **98/125 (78 %)** | |
 <!-- END COVERAGE -->
 
