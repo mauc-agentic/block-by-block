@@ -19,6 +19,7 @@ from app.schemas import (
     TokenResponse,
     WalletLinkRequest,
 )
+from app.utils.helpers import verify_wallet_signature
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -63,19 +64,22 @@ def link_wallet(
     current_user: UserResponse = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """UC-003: Vincular wallet."""
-    
-    # TODO: Validar firma con web3.py
-    
+    """UC-003: Vincular wallet con validación de firma (BR-001)."""
+
+    # BR-001: Validar firma contra la dirección declarada
+    if not verify_wallet_signature(req.message, req.signature, req.wallet_address):
+        raise HTTPException(status_code=400, detail="Invalid wallet signature")
+
+    # BR-002: Validar que la wallet no esté vinculada a otra cuenta
     if db.query(User).filter(
         User.wallet_address == req.wallet_address.lower(),
         User.id != current_user.id
     ).first():
-        raise HTTPException(status_code=400, detail="Wallet already linked")
-    
+        raise HTTPException(status_code=400, detail="Wallet already linked to another account")
+
     user = db.query(User).filter(User.id == current_user.id).first()
     user.wallet_address = req.wallet_address.lower()
     db.commit()
     db.refresh(user)
-    
+
     return UserResponse.from_orm(user)
