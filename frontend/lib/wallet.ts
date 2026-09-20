@@ -3,9 +3,9 @@
 // firma al proveedor inyectado por la extensión; la verificación vive en el
 // backend (verify_wallet_signature, BR-001).
 
-import { encodeFunctionData } from "viem";
+import { decodeFunctionResult, encodeFunctionData } from "viem";
 import { getStoredToken, getStoredUser, type AuthUser } from "@/lib/auth";
-import type { PublishInstruction } from "@/lib/causes";
+import type { DonateInstruction, PublishInstruction } from "@/lib/causes";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
@@ -338,4 +338,199 @@ export async function publishCauseOnChain(
     }
     throw toWalletError(err, "No se pudo enviar la transacción de publicación.");
   }
+}
+
+// UC-009 — token MockUSDT en HSK Chain testnet (docs/frontend_spec.md §2). No
+// es secreto, es la dirección pública del contrato; solo la de CauseVault
+// llega siempre en la instrucción de firma (nunca se configura aquí).
+export const TOKEN_ADDRESS =
+  process.env.NEXT_PUBLIC_TOKEN_ADDRESS ?? "0xD6D6fbbcAe342788DCC18fF2b1cd692c8b8837ec";
+
+const ERC20_ABI = [
+  {
+    type: "function",
+    name: "approve",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [{ name: "", type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "allowance",
+    stateMutability: "view",
+    inputs: [
+      { name: "owner", type: "address" },
+      { name: "spender", type: "address" },
+    ],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "balanceOf",
+    stateMutability: "view",
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+] as const;
+
+const VAULT_DONATE_ABI = [
+  {
+    type: "function",
+    name: "donate",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "_causeId", type: "uint256" },
+      { name: "_amount", type: "uint256" },
+    ],
+    outputs: [],
+  },
+] as const;
+
+async function ethCall(provider: EthereumProvider, to: string, data: `0x${string}`): Promise<`0x${string}`> {
+  return (await withTimeout(
+    provider.request({ method: "eth_call", params: [{ to, data }, "latest"] }),
+    WALLET_PROMPT_TIMEOUT_MS,
+    "No se pudo leer el contrato. Verifica tu conexión e intenta de nuevo."
+  )) as `0x${string}`;
+}
+
+/** UC-009: saldo de MockUSDT de `owner`, para validar el monto antes de firmar. */
+export async function readUsdtBalance(owner: string): Promise<bigint> {
+  const provider = getInjectedProvider();
+  if (!provider) {
+    throw new WalletError("No detectamos una wallet compatible. Instala Rabby (rabby.io) y recarga la página.");
+  }
+  const data = encodeFunctionData({
+    abi: ERC20_ABI,
+    functionName: "balanceOf",
+    args: [owner as `0x${string}`],
+  });
+  const result = await ethCall(provider, TOKEN_ADDRESS, data);
+  return decodeFunctionResult({ abi: ERC20_ABI, functionName: "balanceOf", data: result });
+}
+
+/** UC-009 S3-2: si el `allowance` ya cubre el monto, se omite el `approve`. */
+export async function readUsdtAllowance(owner: string, spender: string): Promise<bigint> {
+  const provider = getInjectedProvider();
+  if (!provider) {
+    throw new WalletError("No detectamos una wallet compatible. Instala Rabby (rabby.io) y recarga la página.");
+  }
+  const data = encodeFunctionData({
+    abi: ERC20_ABI,
+    functionName: "allowance",
+    args: [owner as `0x${string}`, spender as `0x${string}`],
+  });
+  const result = await ethCall(provider, TOKEN_ADDRESS, data);
+  return decodeFunctionResult({ abi: ERC20_ABI, functionName: "allowance", data: result });
+}
+
+/** Cuenta activa en la wallet ahora mismo (sin pedir aprobación), para detectar S3-6. */
+export async function getConnectedAccount(): Promise<string | null> {
+  const provider = getInjectedProvider();
+  if (!provider) return null;
+  try {
+    const accounts = (await provider.request({ method: "eth_accounts" })) as string[];
+    return accounts[0] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** UC-009 paso 5: firma `approve(vault, amount)` del token con la wallet del donante. */
+export async function approveUsdt(
+  approve: { contract: string; params: (string | number)[] },
+  fromAddress: string
+): Promise<string> {
+  const provider = getInjectedProvider();
+  if (!provider) {
+    throw new WalletError("No detectamos una wallet compatible. Instala Rabby (rabby.io) y recarga la página.");
+  }
+  try {
+    await ensureHskNetwork(provider);
+    const [spender, amount] = approve.params;
+    const data = encodeFunctionData({
+      abi: ERC20_ABI,
+      functionName: "approve",
+      args: [String(spender) as `0x${string}`, BigInt(amount)],
+    });
+    return (await withTimeout(
+      provider.request({
+        method: "eth_sendTransaction",
+        params: [{ from: fromAddress, to: approve.contract, data }],
+      }),
+      WALLET_PROMPT_TIMEOUT_MS,
+      WALLET_TIMEOUT_MESSAGE
+    )) as string;
+  } catch (err) {
+    // A3: el donante cancela la autorización -> no se cobra nada.
+    if (isRpcError(err, 4001)) {
+      throw new WalletRejectedError("Cancelaste la autorización del token. No se cobró ningún monto.");
+    }
+    throw toWalletError(err, "No se pudo enviar la autorización del token.");
+  }
+}
+
+/** UC-009 paso 6: firma `donate(onchainCauseId, amount)` en CauseVault. */
+export async function donateOnChain(instruction: DonateInstruction, fromAddress: string): Promise<string> {
+  const provider = getInjectedProvider();
+  if (!provider) {
+    throw new WalletError("No detectamos una wallet compatible. Instala Rabby (rabby.io) y recarga la página.");
+  }
+  try {
+    await ensureHskNetwork(provider);
+    const [onchainCauseId, amount] = instruction.params;
+    const data = encodeFunctionData({
+      abi: VAULT_DONATE_ABI,
+      functionName: "donate",
+      args: [BigInt(onchainCauseId), BigInt(amount)],
+    });
+    return (await withTimeout(
+      provider.request({
+        method: "eth_sendTransaction",
+        params: [{ from: fromAddress, to: instruction.contract, data }],
+      }),
+      WALLET_PROMPT_TIMEOUT_MS,
+      WALLET_TIMEOUT_MESSAGE
+    )) as string;
+  } catch (err) {
+    // A3: el donante cancela la donación -> no se cobra nada.
+    if (isRpcError(err, 4001)) {
+      throw new WalletRejectedError("Cancelaste la firma. No se cobró ningún monto.");
+    }
+    throw toWalletError(err, "No se pudo enviar la donación.");
+  }
+}
+
+/** Espera el recibo de una transacción ya enviada (el RPC de HSK tarda; api_contract.md 2.2). */
+export async function waitForReceipt(
+  txHash: string,
+  opts?: { timeoutMs?: number; intervalMs?: number }
+): Promise<void> {
+  const provider = getInjectedProvider();
+  if (!provider) {
+    throw new WalletError("No detectamos una wallet compatible. Instala Rabby (rabby.io) y recarga la página.");
+  }
+  const timeoutMs = opts?.timeoutMs ?? 90_000;
+  const intervalMs = opts?.intervalMs ?? 2_000;
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    const receipt = (await provider.request({
+      method: "eth_getTransactionReceipt",
+      params: [txHash],
+    })) as { status?: string } | null;
+
+    if (receipt) {
+      if (receipt.status === "0x0") {
+        throw new WalletError("La transacción se revirtió en la cadena.");
+      }
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+
+  throw new WalletError("La transacción tardó demasiado en confirmarse. Revisa el explorador e intenta de nuevo.");
 }
