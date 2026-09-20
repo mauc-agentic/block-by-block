@@ -6,11 +6,15 @@ Contrato de API: [api_contract.md](api_contract.md). Trazabilidad: [traceability
 
 ## Actores
 
+Una **cuenta no tiene rol fijo** (decisión de producto 2026-09-20): la misma cuenta puede donar y publicar causas. "Donante" y "Receptor"
+describen lo que la persona **hace en cada caso de uso**, no un tipo de cuenta. No existe `user_type` en ninguna capa.
+
 | En la interfaz | Código | Definición |
 |----------------|--------|------------|
 | Visitante | — | Persona sin sesión; puede explorar causas verificadas (UC-007). |
-| Donante | `donor` (`user_type`) | Usuario que aporta USDT a causas verificadas. |
-| Receptor | `recipient` (`user_type`) | Usuario que publica una causa y retira lo recaudado. |
+| Usuario | `user` (`User`) | Cuenta autenticada (correo o Google); puede vincular wallet, donar y publicar causas. |
+| Donante | — (contexto, no campo) | Usuario en el momento de donar (UC-009, UC-014). Su historial es `donor` en el dashboard. |
+| Receptor | `recipient` (`Cause.recipient_id`) | Usuario titular de una causa: publica, sube evidencia y retira (UC-004, UC-005, UC-010, UC-013). Sus causas son `recipient` en el dashboard. |
 | Agente verificador | `agent` | Servicio automatizado con llave propia que registra veredictos en el contrato. Actor de sistema, sin pantalla. |
 | Administrador | `owner` | Propietario del contrato; pausa, reanuda y rota el agente (UC-012). Sin pantalla en el MVP. |
 

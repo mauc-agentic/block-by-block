@@ -61,7 +61,7 @@ Requisitos externos:
 | GET | `/health` | — | Health check |
 | POST | `/auth/signup`, `/auth/login` | UC-001, UC-002 | Registro e inicio de sesión |
 | POST | `/auth/wallet/link` | UC-003 | Vincula wallet con firma de propiedad |
-| POST | `/causes` | UC-004 | Crea causa (receptor con wallet) |
+| POST | `/causes` | UC-004 | Crea causa (cualquier usuario con wallet vinculada) |
 | POST | `/causes/{id}/publish` | UC-013 | Instrucción de firma de `createCause` |
 | POST | `/causes/{id}/publish/confirm` | UC-013 | Enlaza el id on-chain leyendo `CauseCreated` |
 | POST | `/causes/{id}/upload-image` | UC-005 | Guarda la evidencia; encola la verificación si ya está publicada |
@@ -70,7 +70,7 @@ Requisitos externos:
 | GET | `/causes/{id}` | UC-008 | Detalle, avance y donaciones |
 | POST | `/causes/{id}/donate` | UC-009 | Instrucciones `approve` + `donate` (el donante firma) |
 | POST | `/causes/{id}/donations/confirm` | UC-014 | Registra la donación leyendo `DonationReceived` |
-| GET | `/users/{id}` | UC-011 | Dashboard del propio usuario (donante o receptor) |
+| GET | `/users/{id}` | UC-011 | Dashboard del propio usuario: sus donaciones y sus causas |
 
 `withdrawFunds` (UC-010) es solo on-chain: el receptor firma directo en el contrato.
 

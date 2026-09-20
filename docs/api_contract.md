@@ -91,7 +91,7 @@ confirma el veredicto on-chain (decenas de segundos). El frontend consulta `GET 
 | `description`, `recipientName` | `description`, `recipient_name` | Backend los entrega; UC-007 los incluye en la tarjeta. |
 | `status: "Verified"` | `status` | El listado solo devuelve `Verified`. |
 
-Datos que la API **nunca** expone: correo, hash de contraseña, `external_id`, `user_type` de terceros. Del donante solo se muestra
+Datos que la API **nunca** expone de terceros: correo, hash de contraseña y `external_id`. Del donante solo se muestra
 `donor_wallet`; del receptor, `recipient_name` (nombre de usuario).
 
 ## 5. Endpoints y esquemas (generado desde el código)
@@ -170,8 +170,8 @@ Datos que la API **nunca** expone: correo, hash de contraseña, `external_id`, `
 |---|---|---|
 | `user` | UserResponse | sí |
 | `wallet_linked` | boolean | sí |
-| `donor` | DonorDashboard | null | no |
-| `recipient` | RecipientDashboard | null | no |
+| `donor` | DonorDashboard | sí |
+| `recipient` | RecipientDashboard | sí |
 
 **DonateRequest**
 
@@ -244,7 +244,6 @@ Datos que la API **nunca** expone: correo, hash de contraseña, `external_id`, `
 | Campo | Tipo | Requerido |
 |---|---|---|
 | `id_token` | string | sí |
-| `user_type` | string | sí |
 
 **PublishConfirmRequest**
 
@@ -293,7 +292,6 @@ Datos que la API **nunca** expone: correo, hash de contraseña, `external_id`, `
 |---|---|---|
 | `username` | string | sí |
 | `email` | string | sí |
-| `user_type` | string | sí |
 | `password` | string | sí |
 
 **UserLogin**
@@ -310,7 +308,6 @@ Datos que la API **nunca** expone: correo, hash de contraseña, `external_id`, `
 | `id` | integer | sí |
 | `username` | string | sí |
 | `email` | string | sí |
-| `user_type` | string | sí |
 | `auth_provider` | string | no |
 | `wallet_address` | string | null | no |
 | `created_at` | datetime (ISO 8601, UTC) | sí |

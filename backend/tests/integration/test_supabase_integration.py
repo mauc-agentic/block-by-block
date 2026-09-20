@@ -83,7 +83,6 @@ class TestSupabaseIntegration:
             "username": "e2e_testuser_signup",
             "email": test_email,
             "password": "Pass123!",  # ≤72 bytes
-            "user_type": "donor"
         }
 
         response = real_test_client.post("/api/v1/auth/signup", json=payload)
@@ -93,7 +92,6 @@ class TestSupabaseIntegration:
         user = real_db_session.query(User).filter(User.email == test_email).first()
         assert user is not None
         assert user.username == "e2e_testuser_signup"
-        assert user.user_type == "donor"
 
         # Cleanup
         real_db_session.delete(user)
@@ -114,7 +112,6 @@ class TestSupabaseIntegration:
             username="e2e_testuser_login",
             email=test_email,
             hashed_password=hash_password("Pass123!"),
-            user_type="donor"
         )
         real_db_session.add(user)
         real_db_session.commit()
@@ -152,7 +149,7 @@ class TestSupabaseIntegration:
 
         response = real_test_client.post(
             "/api/v1/auth/google/signup",
-            json={"id_token": "fake-token", "user_type": "donor"},
+            json={"id_token": "fake-token"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -173,7 +170,7 @@ class TestSupabaseIntegration:
 
         user = User(
             username=f"e2e_google_dup_{tag}", email=email, hashed_password=None,
-            auth_provider="google", external_id=external_id, user_type="donor",
+            auth_provider="google", external_id=external_id,
         )
         real_db_session.add(user)
         real_db_session.commit()
@@ -187,7 +184,7 @@ class TestSupabaseIntegration:
 
         response = real_test_client.post(
             "/api/v1/auth/google/signup",
-            json={"id_token": "fake-token", "user_type": "donor"},
+            json={"id_token": "fake-token"},
         )
         assert response.status_code == 400
 
@@ -205,7 +202,7 @@ class TestSupabaseIntegration:
 
         user = User(
             username=f"e2e_google_login_{tag}", email=email, hashed_password=None,
-            auth_provider="google", external_id=external_id, user_type="recipient",
+            auth_provider="google", external_id=external_id,
         )
         real_db_session.add(user)
         real_db_session.commit()
@@ -247,14 +244,14 @@ class TestSupabaseIntegration:
         # Puede haber 0 o más causas verificadas
 
     def test_uc004_uc009_authenticated_flow(self, real_test_client, real_db_session):
-        """UC-004 BR-001, UC-008, UC-009 BR-001: endpoints autenticados con sesión real."""
+        """UC-004, UC-008, UC-009 BR-001: endpoints autenticados con sesión real."""
         import uuid
         from app.db.models import User, Cause
 
         tag = uuid.uuid4().hex[:8]
         signup = real_test_client.post("/api/v1/auth/signup", json={
             "username": f"e2e_rec_{tag}", "email": f"e2e_rec_{tag}@block-by-block.com",
-            "password": "Pass123!", "user_type": "recipient",
+            "password": "Pass123!",
         })
         assert signup.status_code == 200
         headers = {"Authorization": f"Bearer {signup.json()['access_token']}"}

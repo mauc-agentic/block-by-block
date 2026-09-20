@@ -63,7 +63,7 @@ def onchain(onchain_id):
 tag = uuid.uuid4().hex[:8]
 client = TestClient(app)
 signup = client.post("/api/v1/auth/signup", json={"username": f"e2e_real_{tag}", "email": f"e2e_real_{tag}@block-by-block.com",
-                                                   "password": "Pass123!", "user_type": "recipient"}).json()
+                                                   "password": "Pass123!"}).json()
 headers, user_id = {"Authorization": f"Bearer {signup['access_token']}"}, signup["user"]["id"]
 db = SessionLocal()
 try:

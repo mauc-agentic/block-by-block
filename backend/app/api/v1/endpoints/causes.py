@@ -37,14 +37,11 @@ def create_cause(
     current_user: UserResponse = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """UC-004: Crear causa."""
-    
-    if current_user.user_type != "recipient":
-        raise HTTPException(status_code=403, detail="Only recipients can create causes")
+    """UC-004: Crear causa. Cualquier usuario autenticado con wallet vinculada puede publicar una causa."""
 
     if not current_user.wallet_address:
         raise HTTPException(status_code=400, detail="Link a wallet first")  # A2
-    
+
     db_cause = Cause(
         recipient_id=current_user.id,
         title=cause_data.title,

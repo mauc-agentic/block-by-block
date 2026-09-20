@@ -62,7 +62,7 @@ def call(acct, contract, function, params):
 
 def signup(client, role, tag):
     r = client.post("/api/v1/auth/signup", json={"username": f"e2e_don_{role}_{tag}", "email": f"e2e_don_{role}_{tag}@block-by-block.com",
-                                                  "password": "Pass123!", "user_type": role}).json()
+                                                  "password": "Pass123!"}).json()
     return {"Authorization": f"Bearer {r['access_token']}"}, r["user"]["id"]
 
 

@@ -1,28 +1,17 @@
 "use client";
 
 // UC-001: Registrar cuenta (formulario y A3: registro con Google)
+// Cualquier cuenta puede donar y publicar causas; no se elige un rol al registrarse.
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { GoogleButton } from "@/components/auth/GoogleButton";
-import {
-  AuthError,
-  googleSignup,
-  signup,
-  storeSession,
-  type UserType,
-} from "@/lib/auth";
-
-const roles: { value: UserType; label: string; description: string }[] = [
-  { value: "donor", label: "Donante", description: "Quiero apoyar causas verificadas." },
-  { value: "recipient", label: "Receptor", description: "Quiero publicar una causa." },
-];
+import { AuthError, googleSignup, signup, storeSession } from "@/lib/auth";
 
 export default function SignupPage() {
   const router = useRouter();
-  const [userType, setUserType] = useState<UserType | null>(null);
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,15 +20,10 @@ export default function SignupPage() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!userType) {
-      setError("Elige si te registras como donante o receptor.");
-      return;
-    }
-
     setError(null);
     setLoading(true);
     try {
-      const token = await signup({ username, email, password, user_type: userType });
+      const token = await signup({ username, email, password });
       storeSession(token);
       router.push("/");
     } catch (err) {
@@ -50,15 +34,10 @@ export default function SignupPage() {
   }
 
   async function handleGoogleCredential(idToken: string) {
-    if (!userType) {
-      setError("Elige si te registras como donante o receptor antes de continuar con Google.");
-      return;
-    }
-
     setError(null);
     setLoading(true);
     try {
-      const token = await googleSignup({ id_token: idToken, user_type: userType });
+      const token = await googleSignup({ id_token: idToken });
       storeSession(token);
       router.push("/");
     } catch (err) {
@@ -71,34 +50,9 @@ export default function SignupPage() {
   return (
     <AuthCard
       title="Crea tu cuenta"
-      subtitle="Elige tu rol y regístrate para empezar a donar o publicar una causa."
+      subtitle="Regístrate para donar a causas verificadas o publicar la tuya."
     >
-      <fieldset className="grid grid-cols-2 gap-3">
-        <legend className="sr-only">Rol</legend>
-        {roles.map((role) => (
-          <label
-            key={role.value}
-            className={`cursor-pointer border px-3 py-3 text-sm transition-colors ${
-              userType === role.value
-                ? "border-blueprint bg-blueprint/10"
-                : "border-line hover:border-ink"
-            }`}
-          >
-            <input
-              type="radio"
-              name="user_type"
-              value={role.value}
-              checked={userType === role.value}
-              onChange={() => setUserType(role.value)}
-              className="sr-only"
-            />
-            <span className="block font-medium text-ink">{role.label}</span>
-            <span className="mt-1 block text-xs text-ink-soft">{role.description}</span>
-          </label>
-        ))}
-      </fieldset>
-
-      <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div>
           <label htmlFor="username" className="mb-1 block text-xs font-medium tracking-wide text-ink-soft uppercase">
             Nombre de usuario

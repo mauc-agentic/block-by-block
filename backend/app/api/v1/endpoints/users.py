@@ -33,47 +33,44 @@ def dashboard(
     current_user: UserResponse = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """UC-011: Resumen según el rol; cada usuario solo ve el suyo (BR-001, BR-002)."""
+    """UC-011: Resumen de la actividad del usuario como donante y como receptor; cada usuario solo ve el suyo (BR-001, BR-002)."""
 
     if user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Cannot view another user's dashboard")
 
     user = db.query(User).filter(User.id == user_id).first()
+    donations = (
+        db.query(Donation, Cause.title)
+        .join(Cause, Cause.id == Donation.cause_id)
+        .filter(Donation.donor_id == user.id)
+        .order_by(Donation.created_at.desc())
+        .all()
+    )
+    causes = db.query(Cause).filter(Cause.recipient_id == user.id).order_by(Cause.created_at.desc()).all()
+    collected = collected_by_cause(db, [c.id for c in causes])
+    items = []
+    for c in causes:
+        available = None
+        if c.onchain_cause_id is not None and c.status in WITHDRAWABLE:
+            state = read_cause_state(c.onchain_cause_id)
+            if state is not None:
+                available = convert_wei_to_usdt(state["collected"])
+        items.append(RecipientCauseItem(
+            id=c.id, title=c.title, status=c.status, target_amount=c.target_amount,
+            collected=collected.get(c.id, Decimal("0")), available_to_withdraw=available,
+        ))
+
     response = DashboardResponse(
         user=UserResponse.from_orm(user),
         wallet_linked=bool(user.wallet_address),
-    )
-
-    if user.user_type == "donor":
-        rows = (
-            db.query(Donation, Cause.title)
-            .join(Cause, Cause.id == Donation.cause_id)
-            .filter(Donation.donor_id == user.id)
-            .order_by(Donation.created_at.desc())
-            .all()
-        )
-        response.donor = DonorDashboard(
-            total_donated=sum((d.amount for d, _ in rows), Decimal("0")),
+        donor=DonorDashboard(
+            total_donated=sum((d.amount for d, _ in donations), Decimal("0")),
             donations=[
                 DonorDonationItem(cause_id=d.cause_id, cause_title=title, amount=d.amount,
                                   tx_hash=d.tx_hash, created_at=d.created_at)
-                for d, title in rows
+                for d, title in donations
             ],
-        )
-    else:
-        causes = db.query(Cause).filter(Cause.recipient_id == user.id).order_by(Cause.created_at.desc()).all()
-        collected = collected_by_cause(db, [c.id for c in causes])
-        items = []
-        for c in causes:
-            available = None
-            if c.onchain_cause_id is not None and c.status in WITHDRAWABLE:
-                state = read_cause_state(c.onchain_cause_id)
-                if state is not None:
-                    available = convert_wei_to_usdt(state["collected"])
-            items.append(RecipientCauseItem(
-                id=c.id, title=c.title, status=c.status, target_amount=c.target_amount,
-                collected=collected.get(c.id, Decimal("0")), available_to_withdraw=available,
-            ))
-        response.recipient = RecipientDashboard(causes=items)
-
+        ),
+        recipient=RecipientDashboard(causes=items),
+    )
     return response

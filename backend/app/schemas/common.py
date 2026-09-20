@@ -15,10 +15,9 @@ class UserBase(BaseModel):
     """Base para datos de usuario."""
     username: str = Field(..., min_length=3, max_length=100)
     email: EmailStr
-    user_type: str = Field(..., pattern="^(donor|recipient)$")
 
 class UserCreate(UserBase):
-    """UC-001: Registro de usuario."""
+    """UC-001: Registro de usuario. Cualquier cuenta puede donar y publicar causas."""
     password: str = Field(..., min_length=8, max_length=128)
 
 class UserLogin(BaseModel):
@@ -29,7 +28,6 @@ class UserLogin(BaseModel):
 class GoogleSignupRequest(BaseModel):
     """UC-001 A3: Registro con proveedor externo (Google)."""
     id_token: str
-    user_type: str = Field(..., pattern="^(donor|recipient)$")
 
 class GoogleLoginRequest(BaseModel):
     """UC-002 A3: Inicio de sesión con proveedor externo (Google)."""
@@ -40,7 +38,6 @@ class UserResponse(BaseModel):
     id: int
     username: str
     email: str
-    user_type: str
     auth_provider: str = "local"
     wallet_address: Optional[str] = None
     created_at: datetime
@@ -181,8 +178,8 @@ class RecipientDashboard(BaseModel):
     causes: list[RecipientCauseItem]
 
 class DashboardResponse(BaseModel):
-    """UC-011: Resumen personal según el rol."""
+    """UC-011: Resumen personal: actividad como donante y como receptor (una cuenta puede hacer ambas)."""
     user: UserResponse
     wallet_linked: bool
-    donor: Optional[DonorDashboard] = None
-    recipient: Optional[RecipientDashboard] = None
+    donor: DonorDashboard
+    recipient: RecipientDashboard

@@ -13,7 +13,8 @@ erDiagram
 
 ### USER
 
-Cuenta de la plataforma, con rol de donante o receptor y wallet opcional. Puede autenticarse con contraseña propia o con un proveedor externo (OAuth).
+Cuenta de la plataforma, con wallet opcional. Puede donar a causas y publicar las suyas indistintamente, sin
+un rol fijo por cuenta. Puede autenticarse con contraseña propia o con un proveedor externo (OAuth).
 
 | Attribute       | Description                           | Data Type | Length/Precision | Validation Rules                                           |
 |-----------------|---------------------------------------|-----------|------------------|-------------------------------------------------------------|
@@ -24,7 +25,6 @@ Cuenta de la plataforma, con rol de donante o receptor y wallet opcional. Puede 
 | auth_provider   | Proveedor de autenticación            | String    | 20               | Not Null, Values: local, google, Default: local              |
 | external_id     | Identificador en el proveedor externo | String    | 255              | Optional, Unique (requerido si auth_provider ≠ local)        |
 | wallet_address  | Dirección de wallet vinculada         | String    | 42               | Optional, Unique                                             |
-| user_type       | Rol del usuario                       | String    | 20               | Not Null, Values: donor, recipient                           |
 | created_at      | Fecha de creación                     | DateTime  | -                | Not Null                                                     |
 
 ### CAUSE
@@ -103,4 +103,4 @@ Diferencias entre este modelo y `backend/app/db/models/base.py`. El modelo lógi
 | CAUSE        | collected (derivado)                 | Monto recaudado visible en listado y detalle    | Suma de `DONATION.amount` de la causa; no es el saldo del contrato (que `withdrawFunds` pone en 0) | Definido (UC-014 BR-005); no se persiste |
 | DONATION     | donor_wallet (derivado)              | Wallet pública del donante en el detalle        | `USER.wallet_address` del donante; nunca se expone email ni username           | Definido (UC-008 BR-001)                                               |
 | Esquema      | Creación de tablas                   | Migraciones versionadas (NFR-013)               | `Base.metadata.create_all` al arrancar; la tabla `evidences` se creó así       | Pendiente Alembic (GAP-013)                                            |
-| USER         | user_type (esquema en Supabase)      | Not Null, `donor` \| `recipient`                | La tabla `users` de la BD compartida **no tiene la columna** (2026-09-20), aunque modelo, API y frontend la usan | Incidente: restaurar la columna (GAP-028)                          |
+| USER         | user_type                            | (retirado) Cualquier cuenta puede donar y publicar | Columna eliminada por `migrations/manual/2026-09-20_google_auth.sql` (decisión de producto) | Resuelto; ver GAP-028 |

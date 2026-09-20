@@ -42,7 +42,6 @@ def signup(user_data: UserCreate, db: Session = Depends(get_db)):
         username=user_data.username,
         email=user_data.email,
         hashed_password=hashed_pw,
-        user_type=user_data.user_type
     )
     db.add(db_user)
     db.commit()
@@ -91,7 +90,6 @@ def google_signup(req: GoogleSignupRequest, db: Session = Depends(get_db)):
         hashed_password=None,
         auth_provider="google",
         external_id=profile["external_id"],
-        user_type=req.user_type,
     )
     db.add(db_user)
     db.commit()

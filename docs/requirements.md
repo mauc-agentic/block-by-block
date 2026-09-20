@@ -9,7 +9,7 @@ Vocabulario de estado FR: `Open → In Progress → Implemented → Verified`. `
 
 | ID     | Title                      | User Story                                                                                                                                      | Priority | Status       |
 |--------|----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|----------|--------------|
-| FR-001 | Registro de cuenta         | As a visitante, I want registrarme como donante o receptor so that puedo usar la plataforma según mi rol.                                       | High     | Implemented  |
+| FR-001 | Registro de cuenta         | As a visitante, I want registrarme so that puedo donar a causas o publicar la mía, sin elegir un rol fijo.                                      | High     | Implemented  |
 | FR-002 | Inicio de sesión           | As a usuario registrado, I want iniciar sesión so that accedo a mi dashboard y acciones.                                                        | High     | Implemented  |
 | FR-003 | Vincular wallet            | As a usuario, I want vincular mi wallet demostrando que la controlo so that puedo donar o recibir fondos con mi dirección.                      | High     | Implemented  |
 | FR-004 | Crear causa                | As a receptor, I want describir mi necesidad con título, descripción y monto objetivo so that los donantes puedan conocerla.                    | High     | Implemented  |
@@ -38,7 +38,7 @@ Vocabulario de estado FR: `Open → In Progress → Implemented → Verified`. `
 
 | ID      | Title                        | Requirement                                                                                                           | Category        | Priority | Status       |
 |---------|------------------------------|-----------------------------------------------------------------------------------------------------------------------|-----------------|----------|--------------|
-| NFR-001 | Cobertura de pruebas         | La cobertura de líneas combinada de contrato y backend debe ser de al menos 85 %. Medido 2026-09-20: contrato 88.5 %, backend 71 %. | Maintainability | High     | In Progress  |
+| NFR-001 | Cobertura de pruebas         | La cobertura de líneas combinada de contrato y backend debe ser de al menos 85 %. Medido 2026-09-20: contrato 88.5 %, backend 91 %. | Maintainability | High     | Implemented  |
 | NFR-002 | Latencia de listado          | `GET /causes` debe responder en menos de 2 s con hasta 500 causas. Sin medición todavía.                              | Performance     | Medium   | In Progress  |
 | NFR-003 | Tiempo de verificación       | El agente debe completar la verificación y publicar la tx en menos de 60 s (p95), sin contar la confirmación de bloque. Sin medición todavía. | Performance | High | In Progress  |
 | NFR-004 | Reintentos de OpenRouter     | Las llamadas a OpenRouter deben reintentarse hasta 3 veces con backoff exponencial y timeout de 30 s por intento.     | Reliability     | Medium   | Implemented  |
@@ -84,3 +84,4 @@ Vocabulario de estado FR: `Open → In Progress → Implemented → Verified`. `
 | 2026-09-20 | FR-004..007, FR-019, FR-021, FR-022: Implemented/Verified tras prueba real (Supabase + HSK testnet + OpenRouter) con `scripts/e2e_verification.py`. |
 | 2026-09-20 | FR-010, FR-011, FR-020: Verified con `scripts/e2e_donation.py` (donante con wallet propia: approve + donate, registro, dashboards y retiro en HSK testnet). FR-008/009/012/013: Implemented (endpoints y pruebas). |
 | 2026-09-20 | Nuevos: FR-023 (acceso con Google, ya implementado por el equipo), FR-024 (wallet en el navegador), NFR-016/017 (coherencia y pruebas de frontend), C-013 (Vercel). Backend y frontend se especifican como una sola pieza: ver `api_contract.md`, `glossary.md`, `traceability.md`. |
+| 2026-09-20 | Decisión de producto (equipo): se retira el rol fijo donante/receptor por cuenta; una cuenta puede donar y publicar causas. UC-011 pasa a mostrar ambas actividades; "Donante" y "Receptor" son roles por caso de uso (ver `glossary.md`). |

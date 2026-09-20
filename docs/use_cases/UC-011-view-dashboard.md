@@ -4,9 +4,9 @@
 
 **Use Case ID:** UC-011  
 **Use Case Name:** View Dashboard  
-**Primary Actor:** Donante  
-**Secondary Actors:** Receptor  
-**Goal:** Ver un resumen personal según el rol del usuario  
+**Primary Actor:** Usuario  
+**Secondary Actors:** —  
+**Goal:** Ver un resumen de su actividad como donante y como receptor  
 **Status:** Implemented
 
 **Requirements:** [FR-012, FR-013, FR-020](../requirements.md)
@@ -18,8 +18,8 @@
 ## Main Success Scenario
 
 1. Usuario abre su dashboard.
-2. Sistema identifica el rol del usuario.
-3. Sistema muestra el resumen correspondiente al rol.
+2. Sistema reúne la actividad del usuario como donante (sus donaciones) y como receptor (sus causas).
+3. Sistema muestra ambos resúmenes.
 4. Usuario recorre la información.
 5. Usuario elige una acción disponible (explorar causas, crear causa o retirar fondos).
 
@@ -27,7 +27,7 @@
 
 ### A1: Donante sin donaciones
 
-**Trigger:** El donante no ha donado aún (step 3)  
+**Trigger:** El usuario no ha donado aún (step 3)  
 **Flow:**
 
 1. Sistema muestra un mensaje invitando a explorar causas.
@@ -35,7 +35,7 @@
 
 ### A2: Receptor sin causas
 
-**Trigger:** El receptor no ha creado causas (step 3)  
+**Trigger:** El usuario no ha creado causas (step 3)  
 **Flow:**
 
 1. Sistema muestra un mensaje invitando a crear su primera causa.
@@ -53,8 +53,8 @@
 
 ### Success Postconditions
 
-- El donante ve sus donaciones, montos y causas apoyadas
-- El receptor ve sus causas con estado, monto recaudado y fondos disponibles para retirar
+- El usuario ve sus donaciones, montos y causas apoyadas
+- El usuario ve sus causas con estado, monto recaudado y fondos disponibles para retirar
 
 ### Failure Postconditions
 
@@ -62,9 +62,9 @@
 
 ## Business Rules
 
-### BR-001: Contenido por rol
+### BR-001: Contenido propio
 
-El donante solo ve datos de sus donaciones; el receptor solo ve datos de sus causas.
+Cada resumen contiene solo datos del propio usuario: sus donaciones y sus causas.
 
 ### BR-002: Datos privados
 
