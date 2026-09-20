@@ -1,5 +1,7 @@
 # Test Case: Live End-to-End With Real Users
 
+> El guion detallado, con pantalla por paso y la evidencia a guardar, está en [../frontend_spec.md](../frontend_spec.md) §10; las pantallas que lo hacen posible, en su §4.
+
 ## Overview
 
 **ID:** TC-005  

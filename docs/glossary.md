@@ -35,6 +35,8 @@ describen lo que la persona **hace en cada caso de uso**, no un tipo de cuenta. 
 | Instrucción de firma | `sign_required`, `SignInstruction` | — | Respuesta del backend con lo que el usuario debe firmar en su wallet. El backend nunca firma por él. |
 | Hash de transacción | `tx_hash` | — | Identificador de una transacción en HSK; se envía al backend para confirmar. |
 | Proveedor de acceso | `auth_provider` (`local` \| `google`) | — | Cómo inicia sesión el usuario. |
+| Donación pendiente de registrar | `pending donation` (`bbb_pending_donations`) | — | Donación ya firmada en la cadena cuyo hash aún no se confirmó a la plataforma; la interfaz la guarda y la reintenta (FR-025). |
+| Reintentar verificación | `POST /causes/{id}/verify` | — | Acción del titular cuando la causa lleva más de 2 minutos En revisión (UC-006 A6). |
 | Panel | `dashboard` | — | Resumen personal según el rol (UC-011). |
 | USDT | `USDT` | `token` | Stablecoin con **6 decimales**. En testnet: `MockUSDT`. |
 

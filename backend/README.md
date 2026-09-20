@@ -65,6 +65,7 @@ Requisitos externos:
 | POST | `/causes/{id}/publish` | UC-013 | Instrucción de firma de `createCause` |
 | POST | `/causes/{id}/publish/confirm` | UC-013 | Enlaza el id on-chain leyendo `CauseCreated` |
 | POST | `/causes/{id}/upload-image` | UC-005 | Guarda la evidencia; encola la verificación si ya está publicada |
+| POST | `/causes/{id}/withdraw` | UC-010 | Instrucción de firma de `withdrawFunds` (solo el titular; 400 si no hay fondos) |
 | POST | `/causes/{id}/verify` | UC-006 | El titular reintenta la verificación de una causa Pending (202; 409 si ya hay una en curso) |
 | GET | `/causes/{id}/evidence` | FR-021 | Imagen de la causa (oculta mientras está Pending) |
 | GET | `/causes` | UC-007 | Causas Verified con monto recaudado |

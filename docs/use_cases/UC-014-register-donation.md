@@ -9,7 +9,7 @@
 **Goal:** Reflejar en la plataforma una donación confirmada en el contrato  
 **Status:** Approved
 
-**Requirements:** [FR-020, FR-009, FR-012, NFR-011](../requirements.md)
+**Requirements:** [FR-020, FR-009, FR-012, NFR-011, FR-025](../requirements.md)
 
 ## Preconditions
 

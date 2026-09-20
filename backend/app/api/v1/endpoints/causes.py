@@ -22,11 +22,12 @@ from app.schemas import (
     DonationItem,
     PublishInstruction,
     PublishConfirmRequest,
+    WithdrawInstruction,
 )
-from app.services.chain import read_cause_created, vault_address
+from app.services.chain import read_cause_created, read_cause_state, vault_address
 from app.tasks import enqueue_verification, is_verifying
 from app.core.constants import MAX_IMAGE_SIZE_BYTES
-from app.utils.helpers import convert_usdt_to_wei
+from app.utils.helpers import convert_usdt_to_wei, convert_wei_to_usdt
 
 router = APIRouter(prefix="/causes", tags=["causes"])
 settings = get_settings()
@@ -265,6 +266,37 @@ async def upload_image(
 
     enqueue_verification(cause_id)
     return {"cause_id": cause_id, "image_hash": digest, "status": "queued for verification"}
+
+
+@router.post("/{cause_id}/withdraw", response_model=WithdrawInstruction)
+def withdraw_instruction(
+    cause_id: int,
+    current_user: UserResponse = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """UC-010: Instrucción de firma de `withdrawFunds`; el titular firma con su wallet (BR-005, C-009)."""
+
+    cause = _owned_cause(db, cause_id, current_user)
+
+    if cause.status not in (CauseStatus.Verified.value, CauseStatus.Completed.value):
+        raise HTTPException(status_code=400, detail="Only verified causes")  # A3
+    if cause.onchain_cause_id is None:
+        raise HTTPException(status_code=400, detail="Cause is not published on-chain")
+    if not current_user.wallet_address:
+        raise HTTPException(status_code=400, detail="Link a wallet first")
+
+    state = read_cause_state(cause.onchain_cause_id)
+    if state is not None and state["collected"] == 0:
+        raise HTTPException(status_code=400, detail="No funds to withdraw")  # A1
+
+    amount = convert_wei_to_usdt(state["collected"]) if state is not None else None
+    return WithdrawInstruction(
+        contract=vault_address(),
+        params=[cause.onchain_cause_id],
+        message=f"Sign to withdraw the funds of '{cause.title}'",
+        amount=amount,
+        to_wallet=current_user.wallet_address,
+    )
 
 
 @router.post("/{cause_id}/verify", status_code=202)

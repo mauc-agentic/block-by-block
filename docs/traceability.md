@@ -1,7 +1,7 @@
 # Traceability Matrix: una sola pieza (frontend + backend + contrato)
 
 Cada caso de uso se realiza en **tres capas** y no se considera terminado hasta que las tres coinciden con su especificación.
-Estado auditado el 2026-09-20 contra `main` + rama `backend`. Vocabulario: [glossary.md](glossary.md). Contrato: [api_contract.md](api_contract.md).
+Estado auditado el 2026-09-20 contra `main` + rama `backend`. Vocabulario: [glossary.md](glossary.md). Trabajo pendiente del frontend, con criterios de aceptación: [frontend_spec.md](frontend_spec.md). Contrato: [api_contract.md](api_contract.md).
 Detalle de brechas: [IMPLEMENTATION-STATUS.md](IMPLEMENTATION-STATUS.md).
 
 **Estado del UC:** `Implemented` solo cuando existen todas las capas que necesita (contrato, backend y pantalla) con pruebas; mientras falte alguna, el UC queda `Approved`
@@ -25,7 +25,7 @@ Leyenda de estado por capa: **Done** (código + prueba), **Impl** (código, prue
 | UC-008 | Ver detalle de causa | `GET /causes/{id}` | — | — (`/cause/[id]`) | Done | n/a | Open |
 | UC-009 | Donar | `POST /causes/{id}/donate` | `approve`, `donate` | — (`/cause/[id]`) | Done | Impl | Open |
 | UC-014 | Registrar donación | `POST /causes/{id}/donations/confirm` | `DonationReceived` | — (reintento tras firmar) | Done | Done | Open |
-| UC-010 | Retirar fondos | — | `withdrawFunds` | — (`/dashboard/recipient`) | n/a | Impl | Open |
+| UC-010 | Retirar fondos | `POST /causes/{id}/withdraw` | `withdrawFunds` | — (`/dashboard/recipient`) | Done | Impl | Open |
 | UC-011 | Ver dashboard | `GET /users/me/dashboard` | `getCause` (saldo) | `app/dashboard/page.tsx`, `components/dashboard/*` | Done | n/a | Impl (muestra causas propias y alerta de wallet; falta sección de donaciones y retiro) |
 | UC-012 | Administrar contrato | — | `pause`, `unpause`, `setAgent` | — (sin pantalla) | n/a | Impl (sin pruebas, GAP-030) | n/a |
 

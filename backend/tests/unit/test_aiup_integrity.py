@@ -100,3 +100,39 @@ def test_plantuml_diagram_lists_every_use_case():
 def test_claude_md_map_covers_every_use_case():
     mapped = set(re.findall(r"^\| (UC-\d{3}) \|", (ROOT / "CLAUDE.md").read_text(), re.M))
     assert {uc_id(p) for p in UC_FILES} <= mapped
+
+
+# ---- frontend_spec.md: la especificación del frontend habla el mismo idioma que el resto de la documentación
+
+FRONT = (DOCS / "frontend_spec.md").read_text()
+CONTRACT = (DOCS / "api_contract.md").read_text()
+
+
+def _normalize(path: str) -> str:
+    return re.sub(r"\{[^}]+\}", "{}", path.replace("/api/v1", ""))
+
+
+def test_frontend_spec_only_cites_endpoints_that_exist_in_the_api_contract():
+    real = {(m, _normalize(p)) for m, p in re.findall(r"^\| (GET|POST|PUT|PATCH|DELETE) \| `([^`]+)` \|", CONTRACT, re.M)}
+    cited = {(m, _normalize(p)) for m, p in re.findall(r"`(GET|POST|PUT|PATCH|DELETE) (/[^`\s]+)`", FRONT)}
+    assert cited, "la spec no cita ningún endpoint"
+    assert cited <= real, f"endpoints citados que no existen: {sorted(cited - real)}"
+
+
+def test_frontend_spec_references_existing_use_cases_requirements_and_gaps():
+    assert set(re.findall(r"UC-\d{3}", FRONT)) <= {uc_id(p) for p in UC_FILES}
+    assert set(re.findall(r"\b(?:FR|NFR)-\d{3}", FRONT)) <= requirement_ids()
+    assert set(re.findall(r"GAP-\d{3}", FRONT)) <= {g for g, _ in gap_rows()}
+
+
+def test_every_acceptance_criterion_of_the_frontend_spec_is_in_its_test_plan():
+    defined = set(re.findall(r"^\| (S\d-\d) \|", FRONT, re.M))
+    plan = FRONT.split("## 8. Pruebas de frontend")[1].split("## 9.")[0]
+    assert defined and defined == set(re.findall(r"S\d-\d", plan)), (defined ^ set(re.findall(r"S\d-\d", plan)))
+
+
+def test_frontend_spec_screens_map_to_use_cases_that_list_the_new_requirement():
+    """FR-025 debe estar realizado por los UC de donar, registrar y retirar."""
+    for path in UC_FILES:
+        if uc_id(path) in {"UC-009", "UC-010", "UC-014"}:
+            assert "FR-025" in path.read_text(), path.name

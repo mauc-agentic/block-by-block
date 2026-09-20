@@ -23,7 +23,7 @@ Vocabulario y estados: [glossary.md](glossary.md). Trazabilidad por capa: [trace
 
 ### 2.1 Instrucción de firma (`sign_required`)
 
-Respuestas de `publish` y `donate`. El frontend las ejecuta con la wallet del usuario, en el orden indicado:
+Respuestas de `publish`, `donate` y `withdraw`. El frontend las ejecuta con la wallet del usuario, en el orden indicado:
 
 ```json
 { "status": "sign_required", "contract": "0x<CauseVault checksum>", "function": "donate",
@@ -71,7 +71,7 @@ El backend además retoma solo las verificaciones interrumpidas por un reinicio.
 | `verifyCause(id, verified, hash)` | Agente (backend) | Automática tras `upload-image` | UC-006 |
 | `approve(spender, amount)` (token) | Donante | Incluida en la respuesta de `donate` | UC-009 |
 | `donate(id, amount)` | Donante | `donate` → `donations/confirm` | UC-009, UC-014 |
-| `withdrawFunds(id)` | Receptor | Ninguno: solo on-chain; el saldo se ve en `GET /users/me/dashboard` (`available_to_withdraw`; el `id` para firmar es `onchain_cause_id`) | UC-010 |
+| `withdrawFunds(id)` | Receptor | `POST /causes/{id}/withdraw` entrega la instrucción (contrato, `params: [onchain_cause_id]`, `amount`, `to_wallet`); el saldo también se ve en `GET /users/me/dashboard` (`available_to_withdraw`) | UC-010 |
 | `pause`, `unpause`, `setAgent` | Administrador | Ninguno | UC-012 |
 
 ## 4. Correspondencia de tipos (frontend ⇄ backend)
@@ -121,6 +121,7 @@ Datos que la API **nunca** expone de terceros: correo, hash de contraseña y `ex
 | POST | `/api/v1/causes/{cause_id}/publish/confirm` | Bearer | UC-013 | PublishConfirmRequest | CauseResponse |
 | POST | `/api/v1/causes/{cause_id}/upload-image` | Bearer | UC-005, UC-006 | multipart (image) | object |
 | POST | `/api/v1/causes/{cause_id}/verify` | Bearer | UC-006 | — | — |
+| POST | `/api/v1/causes/{cause_id}/withdraw` | Bearer | UC-010 | — | WithdrawInstruction |
 | GET | `/api/v1/health` | — | — | — | object |
 | GET | `/api/v1/users/me/dashboard` | Bearer | UC-011 | — | DashboardResponse |
 
@@ -323,4 +324,16 @@ Datos que la API **nunca** expone de terceros: correo, hash de contraseña y `ex
 | `wallet_address` | string | sí |
 | `signature` | string | sí |
 | `message` | string | sí |
+
+**WithdrawInstruction**
+
+| Campo | Tipo | Requerido |
+|---|---|---|
+| `status` | string | no |
+| `contract` | string | sí |
+| `function` | string | no |
+| `params` | list[object] | sí |
+| `message` | string | sí |
+| `amount` | decimal (string) | null | no |
+| `to_wallet` | string | sí |
 <!-- END GENERATED -->

@@ -33,6 +33,7 @@ Vocabulario de estado FR: `Open → In Progress → Implemented → Verified`. `
 | FR-022 | Sincronizar estado de causa | As a donante, I want que el estado de la causa en la plataforma refleje el veredicto registrado on-chain so that el listado solo muestre causas realmente verificadas. | High | Verified |
 | FR-023 | Acceso con Google           | As a visitante, I want registrarme e iniciar sesión con mi cuenta de Google so that accedo sin crear otra contraseña. | Medium | Verified |
 | FR-024 | Wallet en el navegador      | As a usuario, I want conectar mi wallet en la interfaz y firmar la publicación, el `approve`, la donación y el retiro so that opero sin salir de la plataforma. | High | In Progress |
+| FR-025 | Seguimiento de transacciones | As a usuario, I want ver el avance de mi transacción (aprobando, donando, registrando) y poder recuperarla si cierro la pestaña so that no pierdo una donación que ya firmé. | High | Open |
 
 ## Non-Functional Requirements
 
@@ -88,3 +89,4 @@ Vocabulario de estado FR: `Open → In Progress → Implemented → Verified`. `
 | 2026-09-20 | Regla "una sola pieza": un FR/UC solo pasa a Implemented cuando existen todas sus capas. Se rebajan a In Progress FR-004, 005, 008..013, 018 (sin pruebas del contrato), 019, 020 y 024 (falta la interfaz o su firma); FR-023 (Google) pasa a Verified tras probarse en producción. |
 | 2026-09-20 | Con la pantalla `/cause/create` (firma de `createCause`, PR #8) pasan a Implemented UC-004, UC-005, UC-013 y FR-004, FR-005, FR-019: ya existen todas sus capas. |
 | 2026-09-20 | FR-004, FR-005 y FR-019 pasan a Verified: Carlos creó y publicó una causa desde la interfaz con su wallet real (causa #348, id on-chain 7) y la IA real la evaluó con veredicto on-chain. |
+| 2026-09-20 | Nuevo FR-025 (seguimiento y recuperación de transacciones en la interfaz). Nuevo endpoint `POST /causes/{id}/withdraw` (instrucción de firma de retiro, UC-010 BR-005). Especificación de frontend del flujo completo: `frontend_spec.md`. |

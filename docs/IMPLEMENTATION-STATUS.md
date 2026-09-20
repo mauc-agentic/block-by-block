@@ -2,6 +2,7 @@
 
 **Auditado:** 2026-09-20 contra `main` (contrato, backend, frontend, despliegue) ejecutando `pytest --cov`, `forge test`/`forge coverage` y las pruebas reales de punta a punta.
 **Stack:** Solidity ^0.8.24 + Foundry · FastAPI + Supabase (session pooler) · DeepSeek v4.1 Flash vía OpenRouter · Next.js 16 · HSK testnet (133).
+**Equipo:** Miguel Uribe (backend, contrato y AIUP) y Carlos Andres Uribe (frontend). En git Carlos Andres aparece como «Carlos Andres Uribe» y «Andres uribe»: es la misma persona; "Carlos" en las pruebas es su cuenta de usuario (`carlos andres uribe castaneda`).
 **Cómo leer este documento:** frontend, backend y contrato son **una sola pieza** (ver [vision.md](vision.md)). El estado por capa de cada UC está en
 [traceability.md](traceability.md), el vocabulario en [glossary.md](glossary.md) y el contrato de API en [api_contract.md](api_contract.md).
 La sección 2 se **genera** de los propios documentos (`cd backend && python -m scripts.aiup_summary`); una prueba falla si se desactualiza.
@@ -57,7 +58,7 @@ La sección 2 se **genera** de los propios documentos (`cd backend && python -m 
 
 | Tipo | Verified | Implemented | In Progress | Open | Deferred | Total |
 |------|----------|-------------|-------------|------|----------|-------|
-| Funcionales (FR) | 9 | 2 | 9 | 0 | 4 | 24 |
+| Funcionales (FR) | 9 | 2 | 9 | 1 | 4 | 25 |
 | No funcionales (NFR) | 0 | 8 | 4 | 3 | 2 | 17 |
 | Restricciones (C) | 0 | 10 | 2 | 0 | 1 | 13 |
 
@@ -72,6 +73,7 @@ Requisitos aún no terminados:
 - **FR-018** Administración del contrato — In Progress
 - **FR-020** Registrar donación — In Progress
 - **FR-024** Wallet en el navegador — In Progress
+- **FR-025** Seguimiento de transacciones — Open
 - **NFR-002** Latencia de listado — In Progress
 - **NFR-003** Tiempo de verificación — In Progress
 - **NFR-008** Secretos fuera del repo — In Progress
@@ -127,7 +129,7 @@ Requisitos aún no terminados:
 
 **Frontend**
 - Landing con causas verificadas reales, FAQ, términos, autenticación (correo y Google), vinculación de wallet con Rabby verificada en vivo, dashboard protegido con alerta de wallet.
-- **Crear causa** (`/cause/create`): formulario, subida de foto y publicación on-chain firmando `createCause` con la wallet, con confirmación por reintentos (UC-004, UC-005, UC-013; Andres, PR #8).
+- **Crear causa** (`/cause/create`): formulario, subida de foto y publicación on-chain firmando `createCause` con la wallet, con confirmación por reintentos (UC-004, UC-005, UC-013; Carlos Andres, PR #8).
 - **Motivo del veredicto de IA** (UC-006): `CauseResponse`/`DashboardCause` ahora exponen `verification_reason` y `verification_confidence` (tabla `verifications`, antes solo en Postgres); el dashboard (`MyCauseRow`) muestra un botón "Ver por qué se rechazó"/"Ver motivo de la IA" que abre un modal (`components/Modal.tsx`) con el motivo y la confianza del modelo.
 
 **Verificado en real (HSK testnet)**
@@ -141,6 +143,8 @@ Requisitos aún no terminados:
 
 ### P0 — Para correr TC-005 (flujo real Miguel → Carlos)
 
+Especificación detallada de cada pantalla, con criterios de aceptación y orden de PR: [frontend_spec.md](frontend_spec.md) (S1..S6).
+
 | # | Tarea | Responsable | Brecha |
 |---|-------|-------------|--------|
 | 1 | ~~Pantalla **crear causa** con subida de foto~~ **Hecho y verificado en vivo** (`/cause/create`, causa #348 de Carlos) | Frontend | GAP-026 |
@@ -149,10 +153,10 @@ Requisitos aún no terminados:
 | 4 | **Donar**: `approve` + `donate` con Rabby, `confirm` con reintentos y hash guardado en `localStorage` | Frontend | GAP-024, GAP-023 |
 | 5 | **Retirar** (`withdrawFunds(onchain_cause_id)`) y añadir MockUSDT a Rabby (`wallet_watchAsset`) | Frontend | GAP-024 |
 | 6 | **Crear la causa de la demo con una necesidad genuina y ensayar su foto** con `try_ai_verdict` (3 de 3 aprobadas): la IA ya rechazó una petición sin necesidad real (#348), y una causa Rechazada no se puede reintentar | Miguel | GAP-033 |
-| 7 | ~~**Redesplegar Render** con el último `main`~~ **Hecho** (`/verify`, `/donate`, `/donations/confirm` y `/users/me/dashboard` desplegados); falta despertar el servicio antes de la demo | Miguel / Andres | GAP-035 |
+| 7 | ~~**Redesplegar Render** con el último `main`~~ **Hecho** (`/verify`, `/donate`, `/donations/confirm` y `/users/me/dashboard` desplegados); falta despertar el servicio antes de la demo | Miguel / Carlos Andres | GAP-035 |
 | 8a | **Donación de demostración hecha** (10 USDT de Miguel a la causa #352 con `scripts/donate.py`, on-chain confirmada); falta registrarla con la sesión de Miguel (`donations/confirm`) hasta que exista la pantalla de donar | Miguel | GAP-024 |
 | 8 | **Ejecutar TC-005 en vivo** y guardar la evidencia (hashes y capturas); depende de 3, 4 y 5 y de una causa Verified | Todos | — |
-| 8b | ~~**Exponer el veredicto** en la API y mostrarlo en el dashboard~~ **Hecho** (Andres, `de02450`: `verification_reason` y `verification_confidence` + modal "Ver por qué se rechazó"; prueba `test_uc006_br009_*`). No se expone el hash de la tx del veredicto | Backend / Frontend | GAP-037 |
+| 8b | ~~**Exponer el veredicto** en la API y mostrarlo en el dashboard~~ **Hecho** (Carlos Andres, `de02450`: `verification_reason` y `verification_confidence` + modal "Ver por qué se rechazó"; prueba `test_uc006_br009_*`). No se expone el hash de la tx del veredicto | Backend / Frontend | GAP-037 |
 
 ### P1 — Antes de dar el MVP por cerrado
 

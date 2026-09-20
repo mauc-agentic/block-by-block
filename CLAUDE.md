@@ -6,6 +6,11 @@ on-chain en USDT). Hackathon Ethereum Builders Tour Cali, 19–20 sep 2026. Red:
 **Stack:** Solidity ^0.8.24 + Foundry (`CauseVault.sol`) · Python/FastAPI + SQLAlchemy · Agente Python (OpenRouter +
 web3.py) · Next.js sobre Scaffold-ETH.
 
+## Equipo
+
+Dos personas: **Miguel Uribe** (backend, contrato inteligente y AIUP) y **Carlos Andres Uribe** (frontend). En el historial de git Carlos Andres aparece con dos
+nombres de autor, «Carlos Andres Uribe» y «Andres uribe»: es **la misma persona**. Cuentas de prueba: `miguelangeluribe` y `carlos andres uribe castaneda`.
+
 ## Metodología: AI Unified Process (AIUP) — SIEMPRE
 
 Todo el trabajo de este proyecto sigue AIUP (plugin `aiup-core`). Antes de tomar decisiones de producto, dominio o
@@ -15,6 +20,7 @@ arquitectura, lee:
 - `docs/glossary.md` (lenguaje común: usar SIEMPRE estos términos, en interfaz y en código)
 - `docs/api_contract.md` (contrato único front/back/contrato; el bloque de endpoints y esquemas se genera desde el código)
 - `docs/traceability.md` (estado por capa de cada UC y definición de terminado)
+- `docs/frontend_spec.md` (qué debe construir el frontend para el flujo completo, con criterios de aceptación y guion de la prueba de punta a punta)
 - `docs/requirements.md` (FR-*, NFR-*, C-*)
 - `docs/entity_model.md`
 - `docs/use_cases.puml` y los `docs/use_cases/UC-*.md` relevantes
@@ -77,7 +83,7 @@ Prefijo de la API: `/api/v1`. Estado por capa en `docs/traceability.md`; brechas
 | UC-007 | Explorar causas verificadas   | `GET /causes`                                                  | `getCause`, `getCausesCount`             | `/dashboard` (real); landing con datos de muestra | FR-008, NFR-002          | Approved    |
 | UC-008 | Ver detalle de causa          | `GET /causes/{id}`                                             | `getCause`, `getDonationsForCause`       | `/cause/[id]` (pendiente)                | FR-009, NFR-011                   | Approved    |
 | UC-009 | Donar                         | `POST /causes/{id}/donate` (instrucción de firma)              | `donate` (+ `approve` del USDT)          | `/cause/[id]` (pendiente)                | FR-010, FR-020, NFR-005/009/011   | Approved    |
-| UC-010 | Retirar fondos                | — (solo on-chain)                                              | `withdrawFunds`                          | `/dashboard/recipient` (pendiente)       | FR-011, NFR-005/009/011           | Approved    |
+| UC-010 | Retirar fondos                | `POST /causes/{id}/withdraw` (instrucción de firma)     | `withdrawFunds`                          | `/dashboard/recipient` (pendiente)       | FR-011, NFR-005/009/011           | Approved    |
 | UC-011 | Ver dashboard                 | `GET /users/me/dashboard` (causas propias con saldo retirable, donaciones, `wallet_linked`) | `getCause` (saldo retirable)        | `/dashboard` (ruta protegida por JWT en localStorage) | FR-012, FR-013, FR-020      | Approved    |
 | UC-012 | Administrar contrato          | —                                                              | `pause`, `unpause`, `setAgent` (`onlyOwner`) | —                                    | FR-018, NFR-008, NFR-009          | Approved    |
 | UC-013 | Publicar causa on-chain       | `POST /causes/{id}/publish`, `POST /causes/{id}/publish/confirm` (`services/chain.py`) | `createCause`, evento `CauseCreated` | `/cause/create` (firma pendiente)        | FR-004, FR-019, C-009             | Implemented    |

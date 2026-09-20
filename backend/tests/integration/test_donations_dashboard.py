@@ -7,6 +7,7 @@ import pytest
 from eth_account import Account
 from eth_account.messages import encode_defunct
 
+import app.api.v1.endpoints.causes as causes_ep
 import app.api.v1.endpoints.donations as donations_ep
 import app.api.v1.endpoints.users as users_ep
 from app.db import Base
@@ -248,3 +249,56 @@ class TestDashboardUC011:
         verified_cause(real_test_client, real_db_session, b)
         assert self._get(real_test_client, a).json()["causes"] == []        # a no ve las causas de b
         assert real_test_client.get("/api/v1/users/me/dashboard").status_code in (401, 403)
+
+
+class TestWithdrawInstructionUC010:
+    def _post(self, client, cause_id, person=None):
+        return client.post(f"/api/v1/causes/{cause_id}/withdraw", headers=person.headers if person else {})
+
+    def test_uc010_br005_owner_gets_the_signing_instruction(self, real_test_client, real_db_session, monkeypatch, make_user):
+        owner = make_user()
+        cause_id, onchain = verified_cause(real_test_client, real_db_session, owner)
+        monkeypatch.setattr(causes_ep, "read_cause_state", lambda i: {"status": 1, "collected": 10_000_000})
+        r = self._post(real_test_client, cause_id, owner)
+        assert r.status_code == 200
+        body = r.json()
+        assert body["status"] == "sign_required" and body["function"] == "withdrawFunds"
+        assert body["params"] == [onchain] and Decimal(body["amount"]) == Decimal("10")
+        assert body["to_wallet"].lower() == owner.wallet.address.lower() and body["contract"].startswith("0x")
+
+    def test_uc010_a1_no_funds_is_rejected(self, real_test_client, real_db_session, monkeypatch, make_user):
+        owner = make_user()
+        cause_id, _ = verified_cause(real_test_client, real_db_session, owner)
+        monkeypatch.setattr(causes_ep, "read_cause_state", lambda i: {"status": 1, "collected": 0})
+        r = self._post(real_test_client, cause_id, owner)
+        assert r.status_code == 400 and r.json()["detail"] == "No funds to withdraw"
+
+    def test_uc010_chain_unreachable_still_returns_the_instruction_without_amount(self, real_test_client, real_db_session, monkeypatch, make_user):
+        owner = make_user()
+        cause_id, _ = verified_cause(real_test_client, real_db_session, owner)
+        monkeypatch.setattr(causes_ep, "read_cause_state", lambda i: None)
+        r = self._post(real_test_client, cause_id, owner)
+        assert r.status_code == 200 and r.json()["amount"] is None
+
+    @pytest.mark.parametrize("status", ["Pending", "Rejected"])
+    def test_uc010_a3_only_verified_or_completed_causes(self, real_test_client, real_db_session, monkeypatch, make_user, status):
+        owner = make_user()
+        cause_id, _ = verified_cause(real_test_client, real_db_session, owner, status=status)
+        monkeypatch.setattr(causes_ep, "read_cause_state", lambda i: {"status": 1, "collected": 5_000_000})
+        assert self._post(real_test_client, cause_id, owner).status_code == 400
+
+    def test_uc010_completed_cause_can_still_be_withdrawn(self, real_test_client, real_db_session, monkeypatch, make_user):
+        owner = make_user()
+        cause_id, _ = verified_cause(real_test_client, real_db_session, owner, status="Completed")
+        monkeypatch.setattr(causes_ep, "read_cause_state", lambda i: {"status": 3, "collected": 50_000_000})
+        assert self._post(real_test_client, cause_id, owner).status_code == 200
+
+    def test_uc010_br005_only_the_owner_and_only_when_published(self, real_test_client, real_db_session, monkeypatch, make_user):
+        owner, other = make_user(), make_user()
+        cause_id, _ = verified_cause(real_test_client, real_db_session, owner)
+        monkeypatch.setattr(causes_ep, "read_cause_state", lambda i: {"status": 1, "collected": 1_000_000})
+        assert self._post(real_test_client, cause_id, other).status_code == 403
+        assert self._post(real_test_client, cause_id).status_code in (401, 403)
+        real_db_session.query(Cause).filter(Cause.id == cause_id).update({"onchain_cause_id": None})
+        real_db_session.commit()
+        assert self._post(real_test_client, cause_id, owner).status_code == 400

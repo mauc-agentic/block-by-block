@@ -8,7 +8,7 @@
 **Goal:** Retirar a su wallet los fondos recaudados por una causa verificada  
 **Status:** Approved
 
-**Requirements:** [FR-011, NFR-005, NFR-009, NFR-011, FR-024](../requirements.md)
+**Requirements:** [FR-011, NFR-005, NFR-009, NFR-011, FR-024, FR-025](../requirements.md)
 
 ## Preconditions
 
@@ -22,7 +22,7 @@
 1. Receptor abre su dashboard (UC-011).
 2. Sistema muestra los fondos disponibles de cada causa.
 3. Receptor elige retirar los fondos de una causa.
-4. Sistema muestra el monto a retirar y la wallet de destino.
+4. Sistema muestra el monto a retirar y la wallet de destino, y entrega la instrucción de firma del retiro.
 5. Receptor firma en su wallet el retiro.
 6. Contrato transfiere todo el monto disponible a la wallet del receptor y emite el evento de retiro.
 7. Sistema actualiza los fondos disponibles de la causa a cero.
@@ -92,3 +92,7 @@ Cada retiro transfiere la totalidad de los fondos disponibles de la causa.
 ### BR-004: Sin reentrada
 
 Los fondos disponibles se ponen en cero antes de transferir para evitar doble retiro.
+
+### BR-005: Instrucción solo para el titular
+
+La instrucción de firma del retiro solo se entrega al titular de una causa verificada, publicada en el contrato y con fondos disponibles; el sistema nunca firma el retiro por él.

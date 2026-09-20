@@ -8,7 +8,7 @@
 **Goal:** Enviar una donación en stablecoin directamente al contrato de la causa  
 **Status:** Approved
 
-**Requirements:** [FR-010, NFR-005, NFR-009, NFR-011, FR-020, FR-024](../requirements.md)
+**Requirements:** [FR-010, NFR-005, NFR-009, NFR-011, FR-020, FR-024, FR-025](../requirements.md)
 
 ## Preconditions
 

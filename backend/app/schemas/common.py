@@ -119,6 +119,16 @@ class PublishInstruction(BaseModel):
     params: list
     message: str
 
+class WithdrawInstruction(BaseModel):
+    """UC-010: Instrucción de firma para retirar los fondos de una causa (C-009)."""
+    status: str = "sign_required"
+    contract: str
+    function: str = "withdrawFunds"
+    params: list
+    message: str
+    amount: Optional[Decimal] = None  # Saldo a retirar; None si la red no respondió
+    to_wallet: str  # Wallet de destino: la vinculada del titular
+
 class PublishConfirmRequest(BaseModel):
     """UC-013: Referencia de la transacción `createCause` firmada por el receptor."""
     tx_hash: str = Field(..., pattern="^0x[a-fA-F0-9]{64}$")
