@@ -23,6 +23,15 @@ export type VerifiedCause = {
   status: "Verified";
 };
 
+// UC-008: una donación recibida por la causa, tal como viene en `donations[]`
+// dentro de CauseResponse (DonationItem en api_contract.md).
+export type DonationItem = {
+  amount: string | number;
+  tx_hash: string;
+  donor_wallet: string | null;
+  created_at: string;
+};
+
 // UC-004, UC-013 — causa tal como la devuelve POST /causes, GET /causes/{id}
 // y las confirmaciones de publicación (CauseResponse en api_contract.md).
 export type CauseResponse = {
@@ -41,6 +50,7 @@ export type CauseResponse = {
   recipient_name: string | null;
   image_url: string | null;
   collected: string | number;
+  donations: DonationItem[]; // UC-008 paso 5: donaciones con enlace a la tx
 };
 
 // Instrucción de firma (2.1 en api_contract.md) que entrega POST /causes/{id}/publish.
@@ -61,6 +71,14 @@ export function resolveCauseImageUrl(imageUrl: string | null): string | null {
   return `${API_URL}${imageUrl}`;
 }
 
+// UC-008 BR-001: cada donación enlaza a su transacción en el explorador de HSK
+// Chain testnet (mismo explorador que lib/wallet.ts usa al agregar la red).
+const HSK_EXPLORER_URL = "https://testnet-explorer.hskchain.net/";
+
+export function explorerTxUrl(txHash: string): string {
+  return `${HSK_EXPLORER_URL}tx/${txHash}`;
+}
+
 // UC-007: lista pública de causas verificadas disponibles para donar.
 export async function fetchVerifiedCauses(): Promise<VerifiedCause[]> {
   const res = await fetch(`${API_URL}/causes`);
@@ -68,6 +86,40 @@ export async function fetchVerifiedCauses(): Promise<VerifiedCause[]> {
     throw new Error("No se pudieron cargar las causas verificadas.");
   }
   return res.json();
+}
+
+// UC-008: detalle público de una causa (cualquier estado, sin auth). A1: 404
+// si el id no existe.
+export async function fetchCauseById(causeId: number | string): Promise<CauseResponse> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/causes/${causeId}`);
+  } catch {
+    throw new CauseError("No se pudo conectar con el servidor. Intenta de nuevo.");
+  }
+  if (res.status === 404) {
+    throw new CauseError("Esta causa no existe.");
+  }
+  return parseCauseResponse<CauseResponse>(res, "No se pudo cargar la causa.");
+}
+
+// UC-006 (S2-4): el titular pide reintentar la verificación cuando pasan más
+// de 2 minutos en "En revisión" (202 encolada, 409 ya en curso).
+export async function retryVerification(token: string, causeId: number): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/causes/${causeId}/verify`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch {
+    throw new CauseError("No se pudo conectar con el servidor. Intenta de nuevo.");
+  }
+  if (res.status === 202) return;
+  if (res.status === 409) {
+    throw new CauseError("Ya estamos verificando tu causa.");
+  }
+  await parseCauseResponse(res, "No se pudo reintentar la verificación.");
 }
 
 // UC-007: adapta una causa real de la API a la forma que consume CauseCard,
