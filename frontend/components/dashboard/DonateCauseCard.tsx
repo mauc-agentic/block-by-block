@@ -1,12 +1,15 @@
+import Link from "next/link";
 import type { VerifiedCause } from "@/lib/causes";
 import { BlockMeter } from "@/components/BlockMeter";
 
-// UC-007: causa verificada disponible para donar. El detalle/flujo de
-// donación (UC-008, UC-009) todavía no tiene ruta en el frontend, así que
-// por ahora solo se muestra la información, sin enlace a un 404.
+// UC-007: causa verificada disponible para donar; enlaza al detalle (UC-008)
+// donde vive el bloque de donar (UC-009).
 export function DonateCauseCard({ cause }: { cause: VerifiedCause }) {
   return (
-    <article className="flex flex-col gap-3 rounded-xl border border-line bg-paper-raised p-5">
+    <Link
+      href={`/cause/${cause.id}`}
+      className="flex flex-col gap-3 rounded-xl border border-line bg-paper-raised p-5 transition-shadow hover:shadow-md"
+    >
       <div>
         <span className="rounded-full bg-moss px-2.5 py-1 text-xs font-medium text-paper">
           Verificada
@@ -22,6 +25,6 @@ export function DonateCauseCard({ cause }: { cause: VerifiedCause }) {
           target={Number(cause.target_amount)}
         />
       </div>
-    </article>
+    </Link>
   );
 }
