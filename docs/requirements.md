@@ -11,7 +11,7 @@ Vocabulario de estado FR: `Open → In Progress → Implemented → Verified`. `
 |--------|----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|----------|--------------|
 | FR-001 | Registro de cuenta         | As a visitante, I want registrarme so that puedo donar a causas o publicar la mía, sin elegir un rol fijo.                                      | High     | Implemented  |
 | FR-002 | Inicio de sesión           | As a usuario registrado, I want iniciar sesión so that accedo a mi dashboard y acciones.                                                        | High     | Implemented  |
-| FR-003 | Vincular wallet            | As a usuario, I want vincular mi wallet demostrando que la controlo so that puedo donar o recibir fondos con mi dirección.                      | High     | Implemented  |
+| FR-003 | Vincular wallet            | As a usuario, I want vincular mi wallet demostrando que la controlo so that puedo donar o recibir fondos con mi dirección.                      | High     | Verified  |
 | FR-004 | Crear causa                | As a receptor, I want describir mi necesidad con título, descripción y monto objetivo so that los donantes puedan conocerla.                    | High     | Implemented  |
 | FR-005 | Subir evidencia            | As a receptor, I want subir una foto de mi necesidad so that el agente pueda verificarla.                                                       | High     | Verified  |
 | FR-006 | Verificación por IA        | As a receptor, I want que mi causa sea evaluada automáticamente por IA so that pueda recibir donaciones sin esperar a un revisor humano.        | High     | Verified  |
@@ -38,7 +38,7 @@ Vocabulario de estado FR: `Open → In Progress → Implemented → Verified`. `
 
 | ID      | Title                        | Requirement                                                                                                           | Category        | Priority | Status       |
 |---------|------------------------------|-----------------------------------------------------------------------------------------------------------------------|-----------------|----------|--------------|
-| NFR-001 | Cobertura de pruebas         | La cobertura de líneas combinada de contrato y backend debe ser de al menos 85 %. Medido 2026-09-20: contrato 88.5 %, backend 91 %. | Maintainability | High     | Implemented  |
+| NFR-001 | Cobertura de pruebas         | La cobertura de líneas combinada de contrato y backend debe ser de al menos 85 %. Medido 2026-09-20: contrato 88.5 %, backend 92 %. | Maintainability | High     | Implemented  |
 | NFR-002 | Latencia de listado          | `GET /causes` debe responder en menos de 2 s con hasta 500 causas. Sin medición todavía.                              | Performance     | Medium   | In Progress  |
 | NFR-003 | Tiempo de verificación       | El agente debe completar la verificación y publicar la tx en menos de 60 s (p95), sin contar la confirmación de bloque. Sin medición todavía. | Performance | High | In Progress  |
 | NFR-004 | Reintentos de OpenRouter     | Las llamadas a OpenRouter deben reintentarse hasta 3 veces con backoff exponencial y timeout de 30 s por intento.     | Reliability     | Medium   | Implemented  |
@@ -65,7 +65,7 @@ Vocabulario de estado FR: `Open → In Progress → Implemented → Verified`. `
 | C-003 | Token                 | Las donaciones deben usar una stablecoin ERC-20 de 6 decimales (USDT). En testnet se usa `MockUSDT` (ver C-012). | Technical | High | Implemented  |
 | C-004 | Backend               | El backend debe usar Python con FastAPI y SQLAlchemy.                                   | Technical | High     | Implemented  |
 | C-005 | Proveedor de IA       | La verificación debe usar modelos con visión a través de OpenRouter (DeepSeek v4.1 Flash). | Technical | High   | Implemented  |
-| C-006 | Frontend              | El frontend debe usar Next.js sobre Scaffold-ETH. Estado real: Next.js 16 sin Scaffold-ETH ni librería de wallet; tiene landing, FAQ, términos y autenticación (correo y Google); el listado usa datos de muestra. | Technical | High | Deferred     |
+| C-006 | Frontend              | El frontend debe usar Next.js sobre Scaffold-ETH. Estado real: Next.js 16 sin Scaffold-ETH ni librería de wallet (wagmi/RainbowKit); tiene landing, FAQ, términos, autenticación (correo y Google), dashboard con causas reales y vinculación de wallet (Rabby vía EIP-1193 directo); la landing sigue usando datos de muestra. | Technical | High | Deferred     |
 | C-007 | Plazo                 | El MVP debe estar entregado al cierre del hackathon (20 de septiembre de 2026).         | Schedule  | High     | In Progress  |
 | C-008 | Repositorio público   | El código debe estar en un repositorio público de GitHub con README y documentación.    | Business  | High     | Implemented  |
 | C-009 | Sin custodia          | El backend no debe custodiar fondos ni firmar transacciones de donantes o receptores.   | Business  | High     | Implemented  |

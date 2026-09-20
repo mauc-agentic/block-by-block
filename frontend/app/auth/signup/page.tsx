@@ -25,7 +25,7 @@ export default function SignupPage() {
     try {
       const token = await signup({ username, email, password });
       storeSession(token);
-      router.push("/");
+      router.push("/dashboard");
     } catch (err) {
       setError(err instanceof AuthError ? err.message : "No se pudo completar el registro.");
     } finally {
@@ -39,7 +39,7 @@ export default function SignupPage() {
     try {
       const token = await googleSignup({ id_token: idToken });
       storeSession(token);
-      router.push("/");
+      router.push("/dashboard");
     } catch (err) {
       setError(err instanceof AuthError ? err.message : "No se pudo completar el registro con Google.");
     } finally {

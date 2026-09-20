@@ -13,17 +13,17 @@ Leyenda de estado por capa: **Done** (código + prueba), **Impl** (código, prue
 |----|-------------|---------------|----------------------|---------------------------|------|--------|-------|
 | UC-001 | Registrar cuenta | `POST /auth/signup`, `/auth/google/signup` | — | `app/auth/signup/page.tsx`, `components/auth/GoogleButton.tsx`, `lib/auth.ts` | Impl | n/a | Impl |
 | UC-002 | Iniciar sesión | `POST /auth/login`, `/auth/google/login` | — | `app/auth/login/page.tsx`, `lib/auth.ts` | Impl | n/a | Impl |
-| UC-003 | Vincular wallet | `POST /auth/wallet/link` | — | — (falta conectar wallet y firmar mensaje) | Impl | n/a | Open |
+| UC-003 | Vincular wallet | `POST /auth/wallet/link` | — | `app/wallet/page.tsx`, `components/wallet/WalletLinkCard.tsx`, `lib/wallet.ts` | Impl | n/a | Impl |
 | UC-004 | Crear causa | `POST /causes` | — | — (`/cause/create`) | Done | n/a | Open |
 | UC-013 | Publicar causa on-chain | `POST /causes/{id}/publish`, `…/publish/confirm` | `createCause`, `CauseCreated` | — (firma con wallet + reintento de confirmación) | Done | Done | Open |
 | UC-005 | Subir evidencia | `POST /causes/{id}/upload-image`, `GET …/evidence` | — | — (`/cause/create`) | Done | n/a | Open |
-| UC-006 | Verificar causa con IA | `services/agent.py` (automático) | `verifyCause` | — (mostrar estado y esperar el veredicto) | Done | Done | Open |
+| UC-006 | Verificar causa con IA | `services/agent.py` (automático), `POST /causes/{id}/verify` (reintento) | `verifyCause` | — (mostrar estado, esperar el veredicto y ofrecer "Reintentar" si sigue en revisión) | Done | Done | Open |
 | UC-007 | Explorar causas verificadas | `GET /causes` | — | `components/CausesSection.tsx`, `CauseCard.tsx`, `lib/causes.ts` | Done | n/a | Mock |
 | UC-008 | Ver detalle de causa | `GET /causes/{id}` | — | — (`/cause/[id]`) | Done | n/a | Open |
 | UC-009 | Donar | `POST /causes/{id}/donate` | `approve`, `donate` | — (`/cause/[id]`) | Done | Impl | Open |
 | UC-014 | Registrar donación | `POST /causes/{id}/donations/confirm` | `DonationReceived` | — (reintento tras firmar) | Done | Done | Open |
 | UC-010 | Retirar fondos | — | `withdrawFunds` | — (`/dashboard/recipient`) | n/a | Impl | Open |
-| UC-011 | Ver dashboard | `GET /users/{id}` | `getCause` (saldo) | — (`/dashboard/donor`, `/dashboard/recipient`) | Done | n/a | Open |
+| UC-011 | Ver dashboard | `GET /users/me/dashboard` | `getCause` (saldo) | `app/dashboard/page.tsx`, `components/dashboard/*` | Done | n/a | Impl (muestra causas propias y alerta de wallet; falta sección de donaciones y retiro) |
 | UC-012 | Administrar contrato | — | `pause`, `unpause`, `setAgent` | — (sin pantalla) | n/a | Impl | n/a |
 
 ## 2. Pruebas por capa
@@ -46,11 +46,12 @@ Leyenda de estado por capa: **Done** (código + prueba), **Impl** (código, prue
 | Requisito | Estado | Capa que lo realiza |
 |-----------|--------|---------------------|
 | FR-001, FR-002, FR-023 | Implemented | `app/auth/*`, `lib/auth.ts` |
-| FR-003, FR-004, FR-005, FR-008…FR-013, FR-024 | Open | Frontend (backend y contrato ya listos, salvo FR-008 en su UI) |
+| FR-003 | Verified (verificado manualmente en producción con Rabby; sin prueba automatizada de frontend, GAP-027) | `app/wallet/*`, `lib/wallet.ts` |
+| FR-004, FR-005, FR-008…FR-013, FR-024 | Open | Frontend (backend y contrato ya listos, salvo FR-008 en su UI) |
 | NFR-010 Diseño responsivo (360 px) | Deferred | Frontend |
 | NFR-016 Coherencia front/back | Implemented | `api_contract.md` generado + `test_api_contract_doc` |
 | NFR-017 Pruebas de frontend | Open | Frontend |
-| C-006 Next.js sobre Scaffold-ETH | Deferred | Next.js 16 sin librería de wallet |
+| C-006 Next.js sobre Scaffold-ETH | Deferred | Next.js 16 sin Scaffold-ETH; wallet conectada directo vía EIP-1193 (Rabby), no con wagmi/RainbowKit |
 
 ## 4. Definición de terminado (por caso de uso)
 

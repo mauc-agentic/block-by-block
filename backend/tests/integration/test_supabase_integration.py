@@ -58,6 +58,20 @@ def real_test_client(real_db_session):
     app.dependency_overrides.clear()
 
 
+def link_test_wallet(client, headers, tag):
+    """UC-004 A2: crear una causa exige wallet vinculada; la vincula con una firma real (UC-003 BR-001)."""
+    from eth_account import Account
+    from eth_account.messages import encode_defunct
+
+    wallet = Account.create()
+    message = f"Link {tag}"
+    sig = wallet.sign_message(encode_defunct(text=message)).signature.hex()
+    response = client.post("/api/v1/auth/wallet/link", headers=headers, json={
+        "wallet_address": wallet.address, "signature": "0x" + sig.removeprefix("0x"), "message": message})
+    assert response.status_code == 200, response.text
+    return wallet
+
+
 class TestSupabaseIntegration:
     """Tests contra Supabase PostgreSQL real."""
 
@@ -286,6 +300,96 @@ class TestSupabaseIntegration:
             real_db_session.rollback()
             real_db_session.query(Cause).filter(Cause.recipient_id == user_id).delete()
             real_db_session.query(User).filter(User.id == user_id).delete()
+            real_db_session.commit()
+
+    def test_uc011_br002_dashboard_requires_auth(self, real_test_client):
+        """UC-011 BR-002: sin sesión no se puede consultar el dashboard."""
+        response = real_test_client.get("/api/v1/users/me/dashboard")
+        assert response.status_code in (401, 403)
+
+    def test_uc011_a2_a3_dashboard_empty_state_and_wallet_alert(self, real_test_client, real_db_session):
+        """UC-011 A2, A3: sin causas invita a crear una; sin wallet avisa vincularla."""
+        import uuid
+        from app.db.models import User, Cause
+
+        tag = uuid.uuid4().hex[:8]
+        signup = real_test_client.post("/api/v1/auth/signup", json={
+            "username": f"e2e_dash_{tag}", "email": f"e2e_dash_{tag}@block-by-block.com",
+            "password": "Pass123!",
+        })
+        assert signup.status_code == 200
+        headers = {"Authorization": f"Bearer {signup.json()['access_token']}"}
+        user_id = signup.json()["user"]["id"]
+
+        try:
+            empty = real_test_client.get("/api/v1/users/me/dashboard", headers=headers)
+            assert empty.status_code == 200
+            data = empty.json()
+            assert data["causes"] == []  # A2
+            assert data["user"]["wallet_address"] is None  # A3
+            assert data["wallet_linked"] is False
+
+            wallet = link_test_wallet(real_test_client, headers, tag)  # UC-004 A2: sin wallet no se crea la causa
+            linked = real_test_client.get("/api/v1/users/me/dashboard", headers=headers).json()
+            assert linked["wallet_linked"] is True and linked["user"]["wallet_address"].lower() == wallet.address.lower()
+
+            created = real_test_client.post("/api/v1/causes", headers=headers, json={
+                "title": "Causa del dashboard e2e",
+                "description": "descripción de prueba para el dashboard del receptor",
+                "target_amount": 50,
+            })
+            assert created.status_code == 200
+
+            with_cause = real_test_client.get("/api/v1/users/me/dashboard", headers=headers)
+            assert with_cause.status_code == 200
+            causes = with_cause.json()["causes"]
+            assert len(causes) == 1
+            assert causes[0]["title"] == "Causa del dashboard e2e"
+        finally:
+            real_db_session.rollback()
+            real_db_session.query(Cause).filter(Cause.recipient_id == user_id).delete()
+            real_db_session.query(User).filter(User.id == user_id).delete()
+            real_db_session.commit()
+
+    def test_uc011_br002_dashboard_only_shows_own_causes(self, real_test_client, real_db_session):
+        """UC-011 BR-002: un usuario no ve las causas de otro en su dashboard."""
+        import uuid
+        from app.db.models import User, Cause
+
+        tag = uuid.uuid4().hex[:8]
+        owner = real_test_client.post("/api/v1/auth/signup", json={
+            "username": f"e2e_dash_owner_{tag}", "email": f"e2e_dash_owner_{tag}@block-by-block.com",
+            "password": "Pass123!",
+        })
+        other = real_test_client.post("/api/v1/auth/signup", json={
+            "username": f"e2e_dash_other_{tag}", "email": f"e2e_dash_other_{tag}@block-by-block.com",
+            "password": "Pass123!",
+        })
+        assert owner.status_code == 200 and other.status_code == 200
+        owner_headers = {"Authorization": f"Bearer {owner.json()['access_token']}"}
+        other_headers = {"Authorization": f"Bearer {other.json()['access_token']}"}
+        owner_id = owner.json()["user"]["id"]
+        other_id = other.json()["user"]["id"]
+
+        try:
+            link_test_wallet(real_test_client, owner_headers, f"own{tag}")  # UC-004 A2
+            created = real_test_client.post("/api/v1/causes", headers=owner_headers, json={
+                "title": "Causa privada del propietario",
+                "description": "descripción de prueba de aislamiento del dashboard",
+                "target_amount": 20,
+            })
+            assert created.status_code == 200
+
+            other_dashboard = real_test_client.get("/api/v1/users/me/dashboard", headers=other_headers)
+            assert other_dashboard.status_code == 200
+            assert other_dashboard.json()["causes"] == []
+
+            owner_dashboard = real_test_client.get("/api/v1/users/me/dashboard", headers=owner_headers)
+            assert len(owner_dashboard.json()["causes"]) == 1
+        finally:
+            real_db_session.rollback()
+            real_db_session.query(Cause).filter(Cause.recipient_id.in_([owner_id, other_id])).delete(synchronize_session=False)
+            real_db_session.query(User).filter(User.id.in_([owner_id, other_id])).delete(synchronize_session=False)
             real_db_session.commit()
 
 

@@ -120,11 +120,11 @@ try:
     print("5. detalle: recaudado", detail["collected"], "donaciones", len(detail["donations"]), "estado", detail["status"])
     assert Decimal(detail["collected"]) == 3 and len(detail["donations"]) == 1
 
-    d_dash = client.get(f"/api/v1/users/{d_id}", headers=d_headers).json()
-    r_dash = client.get(f"/api/v1/users/{r_id}", headers=r_headers).json()
-    print("6. dashboard donante: total donado", d_dash["donor"]["total_donated"])
-    print("   dashboard receptor:", r_dash["recipient"]["causes"])
-    assert Decimal(r_dash["recipient"]["causes"][0]["available_to_withdraw"]) == 3
+    d_dash = client.get("/api/v1/users/me/dashboard", headers=d_headers).json()
+    r_dash = client.get("/api/v1/users/me/dashboard", headers=r_headers).json()
+    print("6. dashboard donante: total donado", d_dash["total_donated"])
+    print("   dashboard receptor:", r_dash["causes"])
+    assert Decimal(r_dash["causes"][0]["available_to_withdraw"]) == 3
 
     before = token.functions.balanceOf(agent_acct.address).call()
     wtx = call(agent_acct, vault, "withdrawFunds", [onchain])
@@ -133,9 +133,9 @@ try:
         if after - before == 3_000_000:
             break
         time.sleep(2)
-    r_dash = client.get(f"/api/v1/users/{r_id}", headers=r_headers).json()
-    print(f"7. retiro tx {wtx}: saldo del receptor +{(after - before) / 1e6} USDT; disponible ahora", r_dash["recipient"]["causes"][0]["available_to_withdraw"])
-    assert after - before == 3_000_000 and Decimal(r_dash["recipient"]["causes"][0]["available_to_withdraw"]) == 0
+    r_dash = client.get("/api/v1/users/me/dashboard", headers=r_headers).json()
+    print(f"7. retiro tx {wtx}: saldo del receptor +{(after - before) / 1e6} USDT; disponible ahora", r_dash["causes"][0]["available_to_withdraw"])
+    assert after - before == 3_000_000 and Decimal(r_dash["causes"][0]["available_to_withdraw"]) == 0
     print("\nE2E DONACIÓN REAL OK")
 finally:
     db.rollback()

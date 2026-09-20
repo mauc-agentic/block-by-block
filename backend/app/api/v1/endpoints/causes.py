@@ -24,7 +24,7 @@ from app.schemas import (
     PublishConfirmRequest,
 )
 from app.services.chain import read_cause_created, vault_address
-from app.tasks import enqueue_verification
+from app.tasks import enqueue_verification, is_verifying
 from app.core.constants import MAX_IMAGE_SIZE_BYTES
 from app.utils.helpers import convert_usdt_to_wei
 
@@ -70,6 +70,28 @@ def cause_response(cause: Cause, collected: Decimal = Decimal("0"), donations: l
                          image_url=image_url(cause), collected=collected, donations=donations or [])
 
 
+def donation_items(donations: list) -> list[DonationItem]:
+    return [
+        DonationItem(amount=d.amount, tx_hash=d.tx_hash,
+                     donor_wallet=d.donor.wallet_address if d.donor else None, created_at=d.created_at)
+        for d in donations
+    ]
+
+
+def donations_by_cause(db: Session, cause_ids: list[int]) -> dict[int, list[DonationItem]]:
+    """Donaciones confirmadas por causa, de la más reciente a la más antigua."""
+    if not cause_ids:
+        return {}
+    rows = (
+        db.query(Donation).options(joinedload(Donation.donor))
+        .filter(Donation.cause_id.in_(cause_ids)).order_by(Donation.created_at.desc()).all()
+    )
+    grouped: dict[int, list] = {}
+    for d in rows:
+        grouped.setdefault(d.cause_id, []).append(d)
+    return {cid: donation_items(ds) for cid, ds in grouped.items()}
+
+
 def collected_by_cause(db: Session, cause_ids: list[int]) -> dict[int, Decimal]:
     """Suma de donaciones confirmadas por causa (UC-014 BR-005)."""
     if not cause_ids:
@@ -110,18 +132,8 @@ def get_cause(cause_id: int, db: Session = Depends(get_db)):
     if not cause:
         raise HTTPException(status_code=404, detail="Cause not found")
 
-    donations = (
-        db.query(Donation).filter(Donation.cause_id == cause_id).order_by(Donation.created_at.desc()).all()
-    )
-    return cause_response(
-        cause,
-        collected=sum((d.amount for d in donations), Decimal("0")),
-        donations=[
-            DonationItem(amount=d.amount, tx_hash=d.tx_hash,
-                         donor_wallet=d.donor.wallet_address if d.donor else None, created_at=d.created_at)
-            for d in donations
-        ],
-    )
+    donations = donations_by_cause(db, [cause_id]).get(cause_id, [])
+    return cause_response(cause, collected=sum((d.amount for d in donations), Decimal("0")), donations=donations)
 
 IMAGE_SIGNATURES = {
     "image/png": b"\x89PNG\r\n\x1a\n",
@@ -247,6 +259,28 @@ async def upload_image(
 
     enqueue_verification(cause_id)
     return {"cause_id": cause_id, "image_hash": digest, "status": "queued for verification"}
+
+
+@router.post("/{cause_id}/verify", status_code=202)
+def retry_verification(
+    cause_id: int,
+    current_user: UserResponse = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """UC-006 A6: el titular reintenta la verificación de una causa que sigue Pending (BR-007, BR-008)."""
+
+    cause = _owned_cause(db, cause_id, current_user)
+
+    if cause.status != CauseStatus.Pending.value:
+        raise HTTPException(status_code=400, detail="Can only verify Pending causes")
+    if cause.onchain_cause_id is None:
+        raise HTTPException(status_code=400, detail="Publish the cause on-chain first")
+    if not db.query(Evidence).filter(Evidence.cause_id == cause_id).first():
+        raise HTTPException(status_code=400, detail="Upload evidence first")
+    if is_verifying(cause_id) or not enqueue_verification(cause_id):
+        raise HTTPException(status_code=409, detail="Verification already in progress")  # A8
+
+    return {"cause_id": cause_id, "status": "queued for verification"}
 
 
 @router.get("/{cause_id}/evidence")

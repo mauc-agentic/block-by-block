@@ -156,31 +156,25 @@ class DonationRecordResponse(BaseModel):
 # ============================================================================
 
 class DonorDonationItem(BaseModel):
+    """UC-011: Donación del propio usuario (historial como donante)."""
     cause_id: int
     cause_title: str
     amount: Decimal
     tx_hash: str
     created_at: datetime
 
-class DonorDashboard(BaseModel):
-    total_donated: Decimal
-    donations: list[DonorDonationItem]
-
-class RecipientCauseItem(BaseModel):
-    id: int
-    onchain_cause_id: Optional[int] = None  # Id que el receptor pasa a `withdrawFunds`; None si aún no se publicó
-    title: str
-    status: str
-    target_amount: Decimal
-    collected: Decimal
-    available_to_withdraw: Optional[Decimal] = None  # Saldo retirable en el contrato; None si no aplica o la red no responde
-
-class RecipientDashboard(BaseModel):
-    causes: list[RecipientCauseItem]
+class DashboardCause(CauseResponse):
+    """UC-011: Causa propia; añade el saldo que el receptor aún puede retirar del contrato (UC-010)."""
+    available_to_withdraw: Optional[Decimal] = None  # None si la causa no está publicada/verificada o la red no responde
 
 class DashboardResponse(BaseModel):
-    """UC-011: Resumen personal: actividad como donante y como receptor (una cuenta puede hacer ambas)."""
+    """UC-011: Resumen del usuario autenticado.
+
+    Cualquier cuenta puede donar y publicar causas (sin rol fijo), así que una sola respuesta combina
+    sus causas propias y su historial de donaciones.
+    """
     user: UserResponse
     wallet_linked: bool
-    donor: DonorDashboard
-    recipient: RecipientDashboard
+    causes: list[DashboardCause]  # UC-011 A2: causas propias (recipient_id == user.id)
+    total_donated: Decimal = Decimal("0")
+    donations: list[DonorDonationItem] = []

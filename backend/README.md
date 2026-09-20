@@ -65,12 +65,13 @@ Requisitos externos:
 | POST | `/causes/{id}/publish` | UC-013 | Instrucción de firma de `createCause` |
 | POST | `/causes/{id}/publish/confirm` | UC-013 | Enlaza el id on-chain leyendo `CauseCreated` |
 | POST | `/causes/{id}/upload-image` | UC-005 | Guarda la evidencia; encola la verificación si ya está publicada |
+| POST | `/causes/{id}/verify` | UC-006 | El titular reintenta la verificación de una causa Pending (202; 409 si ya hay una en curso) |
 | GET | `/causes/{id}/evidence` | FR-021 | Imagen de la causa (oculta mientras está Pending) |
 | GET | `/causes` | UC-007 | Causas Verified con monto recaudado |
 | GET | `/causes/{id}` | UC-008 | Detalle, avance y donaciones |
 | POST | `/causes/{id}/donate` | UC-009 | Instrucciones `approve` + `donate` (el donante firma) |
 | POST | `/causes/{id}/donations/confirm` | UC-014 | Registra la donación leyendo `DonationReceived` |
-| GET | `/users/{id}` | UC-011 | Dashboard del propio usuario: sus donaciones y sus causas |
+| GET | `/users/me/dashboard` | UC-011 | Dashboard del usuario autenticado: sus causas (con saldo retirable) y sus donaciones |
 
 `withdrawFunds` (UC-010) es solo on-chain: el receptor firma directo en el contrato.
 
@@ -79,7 +80,7 @@ Requisitos externos:
 ```
 signup → wallet/link → POST /causes → publish (firma createCause) → publish/confirm
       → upload-image → [agente: IA + verifyCause on-chain → causa Verified/Rejected]
-      → GET /causes → donate (firma approve + donate) → donations/confirm → GET /users/{id}
+      → GET /causes → donate (firma approve + donate) → donations/confirm → GET /users/me/dashboard
       → withdrawFunds (on-chain)
 ```
 
@@ -95,6 +96,13 @@ pytest tests/unit -q                                   # sin red, ~1 s
 # Pruebas reales de punta a punta (Supabase + HSK testnet + OpenRouter); limpian la BD al terminar
 python -m scripts.e2e_verification   # publicar → IA → veredicto on-chain (Rejected y Verified)
 python -m scripts.e2e_donation       # donar (approve+donate), registrar, dashboards, retirar
+
+# Ensayar una foto real contra la IA antes de la demostración (no toca BD ni cadena; cuesta centavos)
+python -m scripts.try_ai_verdict foto.jpg --description "Descripción exacta de la causa" --runs 3
+
+# Faucet de pruebas: envía MockUSDT (y HSK) desde la wallet del agente; solo testnet, con topes (1000 USDT / 0.05 HSK)
+python -m scripts.fund_wallet --user carlos --usdt 100 [--hsk 0.01] [--dry-run]
+python -m scripts.fund_wallet 0xDirección --usdt 50
 ```
 
 Las pruebas de integración crean usuarios `e2e_*` en Supabase y los eliminan. Ver `../TESTING_STATUS.md`.

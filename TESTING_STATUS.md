@@ -8,9 +8,9 @@ Requiere que tu IP esté en *Supabase → Settings → Database → Network Rest
 
 | Suite                         | Resultado                       | Notas                                                                    |
 |-------------------------------|---------------------------------|--------------------------------------------------------------------------|
-| `backend/tests/unit`          | 53 pasan                        | Firma de wallet, conversiones, agente, lectura de la cadena, contrato de API |
-| `backend/tests/integration`   | 67 pasan, 3 skip                | Supabase, verificación, donaciones y dashboards (UC-005..014), HSK RPC/ABI |
-| **pytest total**              | **120 pasan, 3 skip, 0 fallan** | Cobertura de líneas **91 %** (meta 85 %); `agent.py` 94 %, `causes.py` 96 %, `chain.py` 100 % |
+| `backend/tests/unit`          | 71 pasan                        | Firma de wallet, agente, cola de verificación, cadena, contrato de API, scripts (fondos y foto) |
+| `backend/tests/integration`   | 81 pasan, 3 skip                | Supabase, verificación y reintento, donaciones, dashboard, Google, HSK RPC/ABI |
+| **pytest total**              | **152 pasan, 3 skip, 0 fallan** | Cobertura de líneas **92 %** (meta 85 %); `chain.py` y `tasks.py` 100 %, `agent.py` 94 %, `causes.py` 93 % |
 | `contracts/test` (Foundry)    | 7 pasan, **2 fallan**           | `test_TC002_RejectedCauseBlocksFunds`, `test_GetRecipientCauses`         |
 | Cobertura del contrato        | 88.5 % líneas, 69.7 % ramas     | `forge coverage`                                                         |
 | **E2E real** (`scripts/e2e_verification.py`) | OK                | Supabase + `createCause`/`verifyCause` en HSK testnet + OpenRouter real  |

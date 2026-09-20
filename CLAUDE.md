@@ -70,15 +70,15 @@ Prefijo de la API: `/api/v1`. Estado por capa en `docs/traceability.md`; brechas
 |--------|-------------------------------|----------------------------------------------------------------|------------------------------------------|------------------------------------------|-----------------------------------|-------------|
 | UC-001 | Registrar cuenta              | `POST /auth/signup`, `POST /auth/google/signup` (A3)           | —                                        | `/auth/signup`                           | FR-001, NFR-006, NFR-007          | Implemented |
 | UC-002 | Iniciar sesión                | `POST /auth/login`, `POST /auth/google/login` (A3)             | —                                        | `/auth/login`                            | FR-002, NFR-006, NFR-007          | Implemented |
-| UC-003 | Vincular wallet               | `POST /auth/wallet/link`                                       | —                                        | `WalletConnect` (pendiente)              | FR-003                            | Implemented |
+| UC-003 | Vincular wallet               | `POST /auth/wallet/link`                                       | —                                        | `/wallet` (conecta Rabby/EIP-1193, cambia a HSK Chain, firma) | FR-003                            | Implemented |
 | UC-004 | Crear causa                   | `POST /causes` (publicación on-chain: UC-013)                  | `createCause`                            | `/cause/create` (pendiente)              | FR-004, FR-019                    | Approved    |
 | UC-005 | Subir evidencia              | `POST /causes/{id}/upload-image`, `GET /causes/{id}/evidence`  | —                                        | `/cause/create`, `/dashboard/recipient`  | FR-005, FR-006, FR-021            | Implemented |
 | UC-006 | Verificar causa con IA        | `services/agent.py` (`verify_cause_with_ai`, `sign_verification_tx`, `verify_cause_task`), `tasks.py` | `verifyCause` (`onlyAgent`) | —                                        | FR-006, FR-007, FR-019, FR-021, FR-022, NFR-003/004/008 | Implemented |
-| UC-007 | Explorar causas verificadas   | `GET /causes` (con `collected`)                                | `getCause`, `getCausesCount`             | `/dashboard/donor`; landing con datos de muestra | FR-008, NFR-002          | Implemented |
-| UC-008 | Ver detalle de causa          | `GET /causes/{id}` (avance y donaciones)                       | `getCause`, `getDonationsForCause`       | `/cause/[id]` (pendiente)                | FR-009, NFR-011                   | Implemented |
-| UC-009 | Donar                         | `POST /causes/{id}/donate` (instrucción `approve` + `donate`)  | `donate` (+ `approve` del USDT)          | `/cause/[id]` (pendiente)                | FR-010, FR-020, NFR-005/009/011   | Implemented |
+| UC-007 | Explorar causas verificadas   | `GET /causes`                                                  | `getCause`, `getCausesCount`             | `/dashboard` (real); landing con datos de muestra | FR-008, NFR-002          | Approved    |
+| UC-008 | Ver detalle de causa          | `GET /causes/{id}`                                             | `getCause`, `getDonationsForCause`       | `/cause/[id]` (pendiente)                | FR-009, NFR-011                   | Approved    |
+| UC-009 | Donar                         | `POST /causes/{id}/donate` (instrucción de firma)              | `donate` (+ `approve` del USDT)          | `/cause/[id]` (pendiente)                | FR-010, FR-020, NFR-005/009/011   | Approved    |
 | UC-010 | Retirar fondos                | — (solo on-chain)                                              | `withdrawFunds`                          | `/dashboard/recipient` (pendiente)       | FR-011, NFR-005/009/011           | Implemented |
-| UC-011 | Ver dashboard                 | `GET /users/{id}`                                              | `getCause` (saldo retirable)             | `/dashboard/donor`, `/dashboard/recipient` | FR-012, FR-013, FR-020      | Implemented |
+| UC-011 | Ver dashboard                 | `GET /users/me/dashboard` (causas propias con saldo retirable, donaciones, `wallet_linked`) | `getCause` (saldo retirable)        | `/dashboard` (ruta protegida por JWT en localStorage) | FR-012, FR-013, FR-020      | Implemented |
 | UC-012 | Administrar contrato          | —                                                              | `pause`, `unpause`, `setAgent` (`onlyOwner`) | —                                    | FR-018, NFR-008, NFR-009          | Implemented |
 | UC-013 | Publicar causa on-chain       | `POST /causes/{id}/publish`, `POST /causes/{id}/publish/confirm` (`services/chain.py`) | `createCause`, evento `CauseCreated` | `/cause/create` (firma pendiente)        | FR-004, FR-019, C-009             | Implemented |
 | UC-014 | Registrar donación            | `POST /causes/{id}/donations/confirm`                          | evento `DonationReceived`                | `/cause/[id]`                            | FR-020, FR-009, FR-012, NFR-011   | Implemented |
@@ -127,7 +127,9 @@ render.yaml · DEPLOYMENT.md · TESTING_STATUS.md
 
 - Enlazar `cause_id` (BD) con `causeId` (on-chain) mediante `onchain_cause_id` → resuelto con UC-013 (FR-019).
 - `withdrawFunds` pone `collected = 0`: definir cómo conservar el total histórico recaudado.
-- ~~Validar la firma de wallet con web3.py~~ → resuelto (UC-003 BR-001). Pendiente: mensaje de un solo uso (BR-003).
+- ~~Validar la firma de wallet con web3.py~~ → resuelto (UC-003 BR-001). ~~Conectar la wallet desde el frontend~~ → resuelto
+  y verificado manualmente en producción (`/wallet`, Rabby/EIP-1193; sin prueba automatizada de frontend, GAP-027).
+  Pendiente: mensaje de un solo uso (BR-003).
 - Umbral de confianza del agente: 0.80 (UC-006 BR-002).
 - Modelo IA: **DeepSeek v4.1 Flash** via OpenRouter (antes Claude 3.5 Sonnet).
 - OpenRouter endpoint: `https://openrouter.ai/api/v1/chat/completions` (formato OpenAI-compatible; `/messages` devuelve formato Anthropic y rompe el parseo).

@@ -9,6 +9,7 @@ from eth_account import Account
 from eth_account.messages import encode_defunct
 
 import app.api.v1.endpoints.causes as causes_ep
+from app import tasks as tasks_mod
 from app.db import Base
 from app.db.models import Cause, Evidence, User, Verification
 from app.services import agent
@@ -291,3 +292,74 @@ class TestAgentCycleUC006:
         self._run(self.cause_id, monkeypatch, {"verified": True, "confidence": 0.9, "reason": "nuevo"})
         rows = real_db_session.query(Verification).filter(Verification.cause_id == self.cause_id).all()
         assert len(rows) == 1 and rows[0].reason == "nuevo"
+
+
+class TestRetryVerificationUC006:
+    """UC-006 A6, A7, A8, BR-007, BR-008."""
+
+    def _ready_cause(self, client, session, recipient, published=True, evidence=True):
+        cause = _new_cause(client, recipient)
+        if published:
+            session.query(Cause).filter(Cause.id == cause["id"]).update(
+                {"onchain_cause_id": 300_000 + uuid.uuid4().int % 90_000})
+        if evidence:
+            session.add(Evidence(cause_id=cause["id"], content_type="image/png", sha256="0" * 64, data=PNG))
+        session.commit()
+        return cause["id"]
+
+    def _capture(self, monkeypatch):
+        queued = []
+        monkeypatch.setattr(causes_ep, "is_verifying", lambda cid: False)
+        monkeypatch.setattr(causes_ep, "enqueue_verification", lambda cid: queued.append(cid) or True)
+        return queued
+
+    def test_uc006_a6_owner_can_retry_a_pending_published_cause_with_evidence(self, real_test_client, real_db_session, monkeypatch, recipient):
+        queued = self._capture(monkeypatch)
+        cause_id = self._ready_cause(real_test_client, real_db_session, recipient)
+        r = real_test_client.post(f"/api/v1/causes/{cause_id}/verify", headers=recipient.headers)
+        assert r.status_code == 202 and r.json()["status"] == "queued for verification"
+        assert queued == [cause_id]
+
+    def test_uc006_br008_only_the_owner_can_retry(self, real_test_client, real_db_session, monkeypatch, recipient):
+        queued = self._capture(monkeypatch)
+        cause_id = self._ready_cause(real_test_client, real_db_session, recipient)
+        assert real_test_client.post(f"/api/v1/causes/{cause_id}/verify").status_code in (401, 403)
+        assert queued == []
+
+    @pytest.mark.parametrize("state,expected", [
+        ({"status": "Verified"}, "Can only verify Pending causes"),
+        ({"status": "Rejected"}, "Can only verify Pending causes"),
+        ({"published": False}, "Publish the cause on-chain first"),
+        ({"evidence": False}, "Upload evidence first"),
+    ])
+    def test_uc006_a6_retry_requires_pending_published_and_with_evidence(self, real_test_client, real_db_session, monkeypatch, recipient, state, expected):
+        queued = self._capture(monkeypatch)
+        cause_id = self._ready_cause(real_test_client, real_db_session, recipient,
+                                     published=state.get("published", True), evidence=state.get("evidence", True))
+        if "status" in state:
+            real_db_session.query(Cause).filter(Cause.id == cause_id).update({"status": state["status"]})
+            real_db_session.commit()
+        r = real_test_client.post(f"/api/v1/causes/{cause_id}/verify", headers=recipient.headers)
+        assert r.status_code == 400 and r.json()["detail"] == expected
+        assert queued == []
+
+    def test_uc006_a8_second_request_while_running_is_rejected(self, real_test_client, real_db_session, monkeypatch, recipient):
+        queued = self._capture(monkeypatch)
+        monkeypatch.setattr(causes_ep, "is_verifying", lambda cid: True)
+        cause_id = self._ready_cause(real_test_client, real_db_session, recipient)
+        r = real_test_client.post(f"/api/v1/causes/{cause_id}/verify", headers=recipient.headers)
+        assert r.status_code == 409 and queued == []
+
+    def test_uc006_a7_startup_sweep_requeues_only_pending_published_with_evidence(self, real_test_client, real_db_session, monkeypatch, recipient):
+        ready = self._ready_cause(real_test_client, real_db_session, recipient)
+        no_evidence = self._ready_cause(real_test_client, real_db_session, recipient, evidence=False)
+        unpublished = self._ready_cause(real_test_client, real_db_session, recipient, published=False)
+        done = self._ready_cause(real_test_client, real_db_session, recipient)
+        real_db_session.query(Cause).filter(Cause.id == done).update({"status": "Verified"})
+        real_db_session.commit()
+
+        queued = []
+        monkeypatch.setattr(tasks_mod, "enqueue_verification", lambda cid: queued.append(cid) or True)
+        result = tasks_mod.resume_pending_verifications()
+        mine = {ready, no_evidence, unpublished, done}
+        assert set(result) & mine == {ready} and set(queued) & mine == {ready}
