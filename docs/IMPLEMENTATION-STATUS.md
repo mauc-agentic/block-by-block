@@ -57,7 +57,7 @@ La sección 2 se **genera** de los propios documentos (`cd backend && python -m 
 
 | Tipo | Verified | Implemented | In Progress | Open | Deferred | Total |
 |------|----------|-------------|-------------|------|----------|-------|
-| Funcionales (FR) | 6 | 5 | 9 | 0 | 4 | 24 |
+| Funcionales (FR) | 9 | 2 | 9 | 0 | 4 | 24 |
 | No funcionales (NFR) | 0 | 8 | 4 | 3 | 2 | 17 |
 | Restricciones (C) | 0 | 10 | 2 | 0 | 1 | 13 |
 
@@ -86,7 +86,7 @@ Requisitos aún no terminados:
 
 | Crítica | Alta | Media | Baja | Abiertas | Resueltas | Total |
 |---------|------|-------|------|----------|-----------|-------|
-| 0 | 3 | 13 | 3 | 19 | 17 | 36 |
+| 0 | 3 | 14 | 3 | 20 | 17 | 37 |
 <!-- END SUMMARY -->
 
 ---
@@ -130,6 +130,7 @@ Requisitos aún no terminados:
 - **Crear causa** (`/cause/create`): formulario, subida de foto y publicación on-chain firmando `createCause` con la wallet, con confirmación por reintentos (UC-004, UC-005, UC-013; Andres, PR #8).
 
 **Verificado en real (HSK testnet)**
+- **Con usuarios reales desde la interfaz (2026-09-20):** Carlos creó la causa #348 "MacStudio para mi" en `/cause/create`: firmó `createCause` con su wallet (id on-chain 7), subió la foto y la IA real la **rechazó** (confianza 0.90; motivo: no evidencia una necesidad real) con el veredicto confirmado en la cadena (tx `0xae57df55…d20c`). Valida UC-004, UC-005, UC-013 y UC-006 con cuentas reales y el caso TC-002 (causa rechazada fuera del listado).
 - Causa rechazada por la IA real (motivo coherente) y verificada con veredicto simulado; donación de 3 USDT con `approve` + `donate` desde una wallet distinta, registro,
   dashboards y retiro del receptor (+3.0 USDT). Carlos ya tiene 100 MockUSDT para la prueba con usuarios reales.
 
@@ -141,14 +142,15 @@ Requisitos aún no terminados:
 
 | # | Tarea | Responsable | Brecha |
 |---|-------|-------------|--------|
-| 1 | ~~Pantalla **crear causa** con subida de foto~~ **Hecho** (`/cause/create`, PR #8) | Frontend | GAP-026 |
-| 2 | ~~**Publicar** en el contrato: firmar `createCause`~~ **Hecho** (falta la prueba en vivo del flujo completo, TC-005) | Frontend | GAP-024 |
-| 3 | Pantalla de **detalle** con estado (esperar el veredicto), barra de avance y donaciones, y botón "Reintentar verificación" | Frontend | GAP-026 |
+| 1 | ~~Pantalla **crear causa** con subida de foto~~ **Hecho y verificado en vivo** (`/cause/create`, causa #348 de Carlos) | Frontend | GAP-026 |
+| 2 | ~~**Publicar** en el contrato: firmar `createCause`~~ **Hecho y verificado en vivo** (id on-chain 7) | Frontend | GAP-024 |
+| 3 | Pantalla de **detalle** (`/cause/[id]`; hoy 404 en Vercel) con estado (esperar el veredicto), barra de avance y donaciones, y botón "Reintentar verificación" | Frontend | GAP-026 |
 | 4 | **Donar**: `approve` + `donate` con Rabby, `confirm` con reintentos y hash guardado en `localStorage` | Frontend | GAP-024, GAP-023 |
 | 5 | **Retirar** (`withdrawFunds(onchain_cause_id)`) y añadir MockUSDT a Rabby (`wallet_watchAsset`) | Frontend | GAP-024 |
-| 6 | **Ensayar la foto real** con `try_ai_verdict` (3 de 3 aprobadas) | Miguel | GAP-033 |
-| 7 | **Redesplegar Render** con el último `main` y comprobar `/verify`, `OPENROUTER_URL`, `ALLOWED_ORIGINS`; despertar el servicio antes de la demo | Miguel / Andres | GAP-035 |
-| 8 | **Ejecutar TC-005 en vivo** y guardar la evidencia (hashes y capturas) | Todos | — |
+| 6 | **Crear la causa de la demo con una necesidad genuina y ensayar su foto** con `try_ai_verdict` (3 de 3 aprobadas): la IA ya rechazó una petición sin necesidad real (#348), y una causa Rechazada no se puede reintentar | Miguel | GAP-033 |
+| 7 | ~~**Redesplegar Render** con el último `main`~~ **Hecho** (`/verify`, `/donate`, `/donations/confirm` y `/users/me/dashboard` desplegados); falta despertar el servicio antes de la demo | Miguel / Andres | GAP-035 |
+| 8 | **Ejecutar TC-005 en vivo** y guardar la evidencia (hashes y capturas); depende de 3, 4 y 5 y de una causa Verified | Todos | — |
+| 8b | **Exponer el veredicto** (`verification`: `verified`, `confidence`, `reason`, `tx_hash`) en `GET /causes/{id}` y en el dashboard, para que la interfaz explique un rechazo | Backend | GAP-037 |
 
 ### P1 — Antes de dar el MVP por cerrado
 
@@ -192,6 +194,7 @@ Severidad: **Crítica** bloquea el MVP, **Alta** bloquea el flujo demostrable, *
 | GAP-032 | Media | La wallet del agente es la wallet personal de Miguel y la dueña del contrato; su llave privada vive en las variables de Render | NFR-008 |
 | GAP-033 | Media | Si la IA rechaza una foto legítima no hay revisión humana ni forma de forzar el veredicto (FR-014 diferido); mitigación: ensayar con `try_ai_verdict` | FR-014 |
 | GAP-034 | Media | Si el cliente no llama a `donations/confirm`, la donación existe on-chain pero no en la plataforma ni en el dashboard; falta una reconciliación por eventos | FR-020 |
+| GAP-037 | Media | La API no expone el veredicto (motivo, confianza, hash de la tx) en el detalle ni en el dashboard: una causa Rechazada aparece sin explicación para su titular | FR-009, FR-013 |
 | GAP-035 | Baja | El plan gratuito de Render duerme y tarda ~50 s en despertar | NFR-015 |
 | GAP-036 | Baja | iCloud Drive sincroniza el Escritorio y crea copias de archivos con sufijo ` 2`, ` 3` que pueden pisar código | — |
 | GAP-019 | Baja | `on_event`, `from_orm` y `datetime.utcnow` están deprecados | — |

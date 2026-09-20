@@ -45,3 +45,4 @@
 
 - Backend: `test_uc006_a1_rejected_verdict_updates_status` (estado Rejected, fuera del listado), `test_uc009_br001_a4_a5_only_verified_causes` (donar rechazado) y el escenario A de `scripts/e2e_verification.py` (IA real, veredicto negativo confirmado on-chain).
 - Contrato: `test_TC002_RejectedCauseBlocksFunds` (Foundry) **falla** porque espera "no funds to withdraw" y el contrato revierte con "cause not verified" (correcto según UC-010 A3); pendiente corregir la expectativa (GAP-006).
+- **Evidencia en vivo (2026-09-20):** la causa #348 "MacStudio para mi" de Carlos, creada desde la interfaz con su wallet, fue rechazada por la IA real (confianza 0.90, veredicto on-chain tx `0xae57df55b39aef82c748eaeb09afcf7d008adfbda738af6e5f8b64859f95d20c`); no aparece en `GET /causes` y no recibió fondos.
