@@ -22,11 +22,15 @@ on-chain, en stablecoins, desde el donante hasta el receptor, y cada movimiento 
 - Entregar un MVP funcional en HSK Chain testnet durante el hackathon Ethereum Builders Tour Cali (19–20 de
   septiembre de 2026, ~22 horas).
 
+## Principio de una sola pieza
+
+Frontend, backend y contrato inteligente son **un único producto**: comparten el mismo vocabulario ([glossary.md](glossary.md)), el mismo contrato de API ([api_contract.md](api_contract.md)) y la misma trazabilidad por caso de uso ([traceability.md](traceability.md)). Un cambio de comportamiento empieza en el UC y se propaga a las tres capas antes de darse por terminado.
+
 ## Scope
 
 ### In scope
 
-- Registro e inicio de sesión de donantes y receptores.
+- Registro e inicio de sesión de donantes y receptores (correo y contraseña, o cuenta de Google).
 - Publicación de la causa en el contrato y registro de donaciones confirmadas en la plataforma (UC-013, UC-014).
 - Administración de emergencia del contrato: pausa y rotación del agente (UC-012).
 - Vinculación de wallet con prueba de propiedad.

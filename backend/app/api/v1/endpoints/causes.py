@@ -11,6 +11,7 @@ from app.core.security import get_current_user
 from app.db import get_db
 from decimal import Decimal
 from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 
 from app.db.models import Cause, CauseStatus, Donation, Evidence
 from app.schemas import (
@@ -55,7 +56,22 @@ def create_cause(
     db.commit()
     db.refresh(db_cause)
     
-    return CauseResponse.from_orm(db_cause)
+    return cause_response(db_cause)
+
+def image_url(cause: Cause) -> str | None:
+    """Ruta de la evidencia, relativa a la Base URL; las causas Pending no la exponen."""
+    if cause.image_hash and cause.status != CauseStatus.Pending.value:
+        return f"/causes/{cause.id}/evidence"
+    return None
+
+
+def cause_response(cause: Cause, collected: Decimal = Decimal("0"), donations: list | None = None) -> CauseResponse:
+    """CauseResponse explícito: no se usa from_orm porque la relación `Cause.donations` chocaría con el campo del esquema."""
+    skip = {"collected", "donations", "recipient_name", "image_url"}
+    base = {name: getattr(cause, name) for name in CauseResponse.model_fields if name not in skip}
+    return CauseResponse(**base, recipient_name=cause.recipient.username if cause.recipient else None,
+                         image_url=image_url(cause), collected=collected, donations=donations or [])
+
 
 def collected_by_cause(db: Session, cause_ids: list[int]) -> dict[int, Decimal]:
     """Suma de donaciones confirmadas por causa (UC-014 BR-005)."""
@@ -74,14 +90,19 @@ def collected_by_cause(db: Session, cause_ids: list[int]) -> dict[int, Decimal]:
 def list_causes(db: Session = Depends(get_db)):
     """UC-007: Listar causas verificadas con su monto recaudado real."""
 
-    causes = db.query(Cause).filter(Cause.status == CauseStatus.Verified.value).all()
+    causes = (
+        db.query(Cause).options(joinedload(Cause.recipient))
+        .filter(Cause.status == CauseStatus.Verified.value).all()
+    )
     collected = collected_by_cause(db, [c.id for c in causes])
-    result = []
-    for c in causes:
-        item = CauseListResponse.from_orm(c)
-        item.collected = collected.get(c.id, Decimal("0"))
-        result.append(item)
-    return result
+    return [
+        CauseListResponse(
+            id=c.id, title=c.title, description=c.description, recipient_name=c.recipient.username,
+            image_hash=c.image_hash, image_url=image_url(c), target_amount=c.target_amount,
+            collected=collected.get(c.id, Decimal("0")), status=c.status,
+        )
+        for c in causes
+    ]
 
 @router.get("/{cause_id}", response_model=CauseResponse)
 def get_cause(cause_id: int, db: Session = Depends(get_db)):
@@ -95,10 +116,8 @@ def get_cause(cause_id: int, db: Session = Depends(get_db)):
     donations = (
         db.query(Donation).filter(Donation.cause_id == cause_id).order_by(Donation.created_at.desc()).all()
     )
-    # No se usa from_orm: la relación ORM `Cause.donations` chocaría con el campo `donations` del esquema
-    base = {name: getattr(cause, name) for name in CauseResponse.model_fields if name not in ("collected", "donations")}
-    return CauseResponse(
-        **base,
+    return cause_response(
+        cause,
         collected=sum((d.amount for d in donations), Decimal("0")),
         donations=[
             DonationItem(amount=d.amount, tx_hash=d.tx_hash,
@@ -183,7 +202,7 @@ def confirm_publication(
     if db.query(Evidence).filter(Evidence.cause_id == cause_id).first():
         enqueue_verification(cause_id)
 
-    return CauseResponse.from_orm(cause)
+    return cause_response(cause)
 
 
 @router.post("/{cause_id}/upload-image")

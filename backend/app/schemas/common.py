@@ -89,6 +89,8 @@ class CauseResponse(BaseModel):
     status: str
     verification_hash: Optional[str] = None
     created_at: datetime
+    recipient_name: Optional[str] = None  # Nombre de usuario del receptor (público)
+    image_url: Optional[str] = None  # Ruta relativa a la Base URL de la API; None mientras la causa está Pending
     collected: Decimal = Decimal("0")  # Suma de donaciones confirmadas (UC-014 BR-005)
     donations: list[DonationItem] = []
 
@@ -99,7 +101,10 @@ class CauseListResponse(BaseModel):
     """UC-007: Listado de causas (resumen)."""
     id: int
     title: str
+    description: str
+    recipient_name: str  # Nombre de usuario del receptor (público)
     image_hash: Optional[str] = None
+    image_url: Optional[str] = None  # Ruta relativa a la Base URL de la API (GET /causes/{id}/evidence)
     target_amount: Decimal
     collected: Decimal = Decimal("0")  # Suma de donaciones confirmadas (UC-014 BR-005)
     status: str

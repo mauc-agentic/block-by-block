@@ -12,10 +12,30 @@ Todo el trabajo de este proyecto sigue AIUP (plugin `aiup-core`). Antes de tomar
 arquitectura, lee:
 
 - `docs/vision.md`
+- `docs/glossary.md` (lenguaje común: usar SIEMPRE estos términos, en interfaz y en código)
+- `docs/api_contract.md` (contrato único front/back/contrato; el bloque de endpoints y esquemas se genera desde el código)
+- `docs/traceability.md` (estado por capa de cada UC y definición de terminado)
 - `docs/requirements.md` (FR-*, NFR-*, C-*)
 - `docs/entity_model.md`
 - `docs/use_cases.puml` y los `docs/use_cases/UC-*.md` relevantes
 - los `docs/test_cases/TC-*.md` relevantes
+
+## Una sola pieza: frontend + backend + contrato
+
+Las tres capas son **un único producto** que habla el mismo idioma y avanza junto:
+
+1. **Un cambio empieza en el UC** (o en `requirements.md`), luego se refleja en `api_contract.md` y `glossary.md`, y después en las capas.
+2. **Cambio de API:** se edita el código y se regenera el contrato con `cd backend && python -m scripts.generate_api_contract`.
+   La prueba `test_api_contract_doc` falla si `docs/api_contract.md` no coincide con la API real. Avisar al frontend del cambio.
+3. **Vocabulario:** solo términos de `glossary.md`. Estados de causa idénticos en API, BD, contrato y TypeScript
+   (`Pending`, `Verified`, `Rejected`, `Completed`); la traducción ocurre solo al mostrarlos.
+4. **Montos** viajan como string decimal de 6 decimales; **JSON en snake_case**; el frontend adapta a camelCase en su cliente.
+5. **Un UC está terminado** solo si cumple la definición de `traceability.md` §4 (spec, contrato, back con pruebas,
+   contrato inteligente, front con `// UC-###` y `describe('UC-###')`, verificación real en HSK testnet).
+6. **El frontend no firma con el backend ni el backend por el usuario** (C-009): el backend entrega instrucciones de firma y
+   confirma leyendo la cadena; el frontend firma con la wallet y reintenta la confirmación (RPC con nodos desfasados).
+7. **Base de datos compartida (Supabase):** todo cambio de esquema es un script versionado en `backend/migrations/manual/`
+   avisado al equipo; nadie altera tablas a mano. Las IP de cada desarrollador y de Render deben estar en *Network Restrictions*.
 
 ### Flujo y skills
 
@@ -44,7 +64,7 @@ Inception          Elaboration                             Construction
 
 ## Mapa de rutas: UC → implementación
 
-Prefijo de la API: `/api/v1`. Estado real y brechas en `docs/IMPLEMENTATION-STATUS.md`.
+Prefijo de la API: `/api/v1`. Estado por capa en `docs/traceability.md`; brechas en `docs/IMPLEMENTATION-STATUS.md`.
 
 | UC     | Caso de uso                   | Backend (FastAPI)                                              | Contrato `CauseVault`                    | Frontend (ruta)                          | Requisitos                        | Status      |
 |--------|-------------------------------|----------------------------------------------------------------|------------------------------------------|------------------------------------------|-----------------------------------|-------------|

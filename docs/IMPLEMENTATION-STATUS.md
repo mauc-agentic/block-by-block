@@ -12,7 +12,8 @@
 
 | Componente            | Estado real                                                                                       |
 |-----------------------|---------------------------------------------------------------------------------------------------|
-| Documentación AIUP    | Vision, 22 FR, 15 NFR, 12 C, 14 UC, 4 TC, diagrama de casos de uso actualizado                   |
+| Documentación AIUP    | Un solo conjunto para todo el proyecto: `api_contract.md` (generado y probado), `glossary.md`, `traceability.md` (matriz por capa). |
+| Especificación        | Vision, 24 FR, 17 NFR, 13 C, 14 UC, 4 TC, diagrama de casos de uso actualizado                   |
 | Contrato `CauseVault` | Desplegado en HSK testnet. Foundry: **7/9 pruebas pasan, 2 fallan**. Cobertura de líneas 88.5 %   |
 | Backend FastAPI       | 11 endpoints (+`POST /auth/google/signup`, `POST /auth/google/login`). Unit: **23/23 pasan** (verificado 2026-09-20); suite de integración no se corrió esta sesión (bloqueada por allowlist de IP de Supabase desde esta máquina) |
 | Agente IA (UC-006)    | Flujo IA + firma on-chain escrito; **no cierra el ciclo** (ver GAP-001..003)                      |
@@ -87,6 +88,11 @@ Leyenda de prueba: **A** = automatizada, **P** = parcial, **—** = ninguna.
 | GAP-018 | Baja      | `venv/` había sido versionado por un `git add -A`; se retira del índice y se agrega a `.gitignore`                                                | C-008       |
 | GAP-022 | Media     | El contrato acepta donaciones a causas `Completed` (solo exige `verified`), contradiciendo UC-009 A4; el backend ya no emite la instrucción, pero un cliente puede llamar al contrato directamente | UC-009 A4 |
 | GAP-023 | Media     | El RPC de HSK es un balanceador con nodos desfasados: `confirm` puede responder 400 "not confirmed" justo tras firmar; el cliente debe reintentar | UC-014 A4 |
+| GAP-024 | Alta      | El frontend no tiene wallet: no puede vincularla (UC-003) ni firmar `createCause`, `approve`, `donate` ni `withdrawFunds` | FR-024      |
+| GAP-025 | Media     | `frontend/lib/causes.ts` usa datos de muestra con otra forma (camelCase, números); la API entrega snake_case y strings decimales (ver `api_contract.md` §4) | C-006       |
+| GAP-026 | Alta      | Faltan las rutas del frontend de UC-004, 005, 008, 009, 011, 013 y 014 (`/cause/create`, `/cause/[id]`, `/dashboard/*`)       | FR-004..013 |
+| GAP-027 | Media     | El frontend no tiene pruebas ni una convención `describe('UC-###')`                                                            | NFR-017     |
+| GAP-028 | Crítica   | La tabla `users` de Supabase no tiene la columna `user_type` (detectada 2026-09-20): registro, login y `pytest` de integración fallan | FR-001      |
 | GAP-019 | Baja      | `on_event("shutdown")`, `from_orm` y `datetime.utcnow` están deprecados                                                                            | —           |
 
 ---

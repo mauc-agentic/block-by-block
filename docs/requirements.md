@@ -31,6 +31,8 @@ Vocabulario de estado FR: `Open → In Progress → Implemented → Verified`. `
 | FR-020 | Registrar donación         | As a donante, I want que mi donación confirmada quede reflejada en la plataforma so that aparezca en mi dashboard y en el avance de la causa. | High | Verified |
 | FR-021 | Almacenar evidencia        | As a receptor, I want que mi foto se conserve de forma consultable so that el agente la evalúe con la imagen real y la evidencia sea auditable. | High | Verified |
 | FR-022 | Sincronizar estado de causa | As a donante, I want que el estado de la causa en la plataforma refleje el veredicto registrado on-chain so that el listado solo muestre causas realmente verificadas. | High | Verified |
+| FR-023 | Acceso con Google           | As a visitante, I want registrarme e iniciar sesión con mi cuenta de Google so that accedo sin crear otra contraseña. | Medium | Implemented |
+| FR-024 | Wallet en el navegador      | As a usuario, I want conectar mi wallet en la interfaz y firmar la publicación, el `approve`, la donación y el retiro so that opero sin salir de la plataforma. | High | Open |
 
 ## Non-Functional Requirements
 
@@ -51,6 +53,8 @@ Vocabulario de estado FR: `Open → In Progress → Implemented → Verified`. `
 | NFR-013 | Migraciones versionadas      | Todo cambio del esquema de base de datos debe aplicarse mediante migraciones versionadas (Alembic), no con creación automática de tablas al iniciar. | Maintainability | Medium | Open |
 | NFR-014 | Límite de tasa               | Los endpoints de autenticación y de subida de evidencia deben limitar peticiones por IP para mitigar abuso.          | Security        | Low      | Deferred     |
 | NFR-015 | Disponibilidad del servicio  | El backend debe exponer un health check (`GET /api/v1/health`) y desplegarse en contenedor con reinicio automático.   | Reliability     | Medium   | In Progress  |
+| NFR-016 | Coherencia frontend-backend  | El contrato de API es único (`docs/api_contract.md`), su bloque de endpoints y esquemas se genera desde el código y una prueba falla si se desalinea; el vocabulario sale de `docs/glossary.md`. | Maintainability | High | Implemented |
+| NFR-017 | Pruebas de frontend          | Cada pantalla ligada a un UC debe tener al menos una prueba (`describe('UC-### …')`), y `npm run lint` y `npm run build` deben pasar. | Maintainability | Medium | Open |
 
 ## Constraints
 
@@ -61,13 +65,14 @@ Vocabulario de estado FR: `Open → In Progress → Implemented → Verified`. `
 | C-003 | Token                 | Las donaciones deben usar una stablecoin ERC-20 de 6 decimales (USDT). En testnet se usa `MockUSDT` (ver C-012). | Technical | High | Implemented  |
 | C-004 | Backend               | El backend debe usar Python con FastAPI y SQLAlchemy.                                   | Technical | High     | Implemented  |
 | C-005 | Proveedor de IA       | La verificación debe usar modelos con visión a través de OpenRouter (DeepSeek v4.1 Flash). | Technical | High   | Implemented  |
-| C-006 | Frontend              | El frontend debe usar Next.js sobre Scaffold-ETH. Estado real: Next.js 16 sin Scaffold-ETH ni wagmi; solo landing con datos de muestra. | Technical | High | Deferred     |
+| C-006 | Frontend              | El frontend debe usar Next.js sobre Scaffold-ETH. Estado real: Next.js 16 sin Scaffold-ETH ni librería de wallet; tiene landing, FAQ, términos y autenticación (correo y Google); el listado usa datos de muestra. | Technical | High | Deferred     |
 | C-007 | Plazo                 | El MVP debe estar entregado al cierre del hackathon (20 de septiembre de 2026).         | Schedule  | High     | In Progress  |
 | C-008 | Repositorio público   | El código debe estar en un repositorio público de GitHub con README y documentación.    | Business  | High     | Implemented  |
 | C-009 | Sin custodia          | El backend no debe custodiar fondos ni firmar transacciones de donantes o receptores.   | Business  | High     | Implemented  |
 | C-010 | Base de datos         | La persistencia debe ser Supabase PostgreSQL, accedida mediante el session pooler (`aws-0-ca-central-1.pooler.supabase.com:5432`); la conexión directa `db.<ref>.supabase.co` no resuelve en todas las redes. | Technical | High | Implemented |
 | C-011 | Despliegue backend    | El backend debe desplegarse en Render como contenedor Docker, con dependencias sin compilación Rust (`psycopg2-binary`, `argon2-cffi`). | Technical | Medium | In Progress |
 | C-012 | Token de pruebas      | En HSK testnet se despliega `MockUSDT` (ERC-20, 6 decimales) como token de la bóveda; el token real se configura por constructor de `CauseVault` en mainnet. | Technical | Medium | Implemented |
+| C-013 | Despliegue del frontend      | El frontend se despliega en Vercel con Root Directory `frontend`, Build Command `npm run build` y `NEXT_PUBLIC_API_URL` apuntando al backend; su origen debe estar en `ALLOWED_ORIGINS`. | Technical | Medium | Implemented |
 
 ## Change Log
 
@@ -78,3 +83,4 @@ Vocabulario de estado FR: `Open → In Progress → Implemented → Verified`. `
 | 2026-09-20 | Nuevos: FR-018..FR-022, NFR-012..NFR-015, C-010..C-012 (derivados del código y despliegue existentes).                                                       |
 | 2026-09-20 | FR-004..007, FR-019, FR-021, FR-022: Implemented/Verified tras prueba real (Supabase + HSK testnet + OpenRouter) con `scripts/e2e_verification.py`. |
 | 2026-09-20 | FR-010, FR-011, FR-020: Verified con `scripts/e2e_donation.py` (donante con wallet propia: approve + donate, registro, dashboards y retiro en HSK testnet). FR-008/009/012/013: Implemented (endpoints y pruebas). |
+| 2026-09-20 | Nuevos: FR-023 (acceso con Google, ya implementado por el equipo), FR-024 (wallet en el navegador), NFR-016/017 (coherencia y pruebas de frontend), C-013 (Vercel). Backend y frontend se especifican como una sola pieza: ver `api_contract.md`, `glossary.md`, `traceability.md`. |

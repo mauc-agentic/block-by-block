@@ -18,7 +18,7 @@
 
 1. Visitante o donante abre el listado de causas.
 2. Sistema consulta las causas en estado Verified.
-3. Sistema muestra cada causa con título, foto, monto objetivo y monto recaudado.
+3. Sistema muestra cada causa con título, descripción, nombre del receptor, foto, monto objetivo y monto recaudado.
 4. Visitante o donante recorre el listado.
 5. Visitante o donante elige una causa.
 6. Sistema abre el detalle de la causa (UC-008).

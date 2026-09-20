@@ -132,6 +132,14 @@ class TestRegisterDonationUC014:
         assert detail["donations"][0]["donor_wallet"].lower() == donor.wallet.address.lower()
         listed = {c["id"]: c for c in real_test_client.get("/api/v1/causes").json()}
         assert Decimal(listed[cause_id]["collected"]) == Decimal("10")  # UC-007 BR-002
+        # UC-007 paso 3: la tarjeta trae descripción, nombre del receptor y (con evidencia) la URL de la imagen
+        assert listed[cause_id]["description"] and listed[cause_id]["recipient_name"].startswith("e2e_d_")
+        assert listed[cause_id]["image_url"] is None
+        real_db_session.query(Cause).filter(Cause.id == cause_id).update({"image_hash": "a" * 64})
+        real_db_session.commit()
+        with_image = {c["id"]: c for c in real_test_client.get("/api/v1/causes").json()}
+        assert with_image[cause_id]["image_url"] == f"/causes/{cause_id}/evidence"
+        assert real_test_client.get(f"/api/v1/causes/{cause_id}").json()["recipient_name"] == listed[cause_id]["recipient_name"]
 
     def test_uc014_a2_same_transaction_is_not_duplicated(self, real_test_client, real_db_session, monkeypatch, make_user):
         owner, donor = make_user("recipient"), make_user("donor")
