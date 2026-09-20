@@ -113,7 +113,7 @@ export default function DashboardPage() {
         <h2 className="font-display text-2xl font-semibold text-ink">Tus causas</h2>
         <Link
           href="/cause/create"
-          className="shrink-0 bg-blueprint px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-blueprint-dark"
+          className="shrink-0 bg-emerald px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-emerald-dark"
         >
           + Crear causa
         </Link>

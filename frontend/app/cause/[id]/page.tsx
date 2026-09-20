@@ -3,8 +3,8 @@
 // UC-008: Ver detalle de causa. Ruta pública (no requiere sesión); si hay
 // sesión y el usuario es el titular, se ofrece sondeo del veredicto y
 // reintentar verificación (UC-006) mientras la causa está "Pending".
-// El bloque de donar (UC-009, UC-014) se construye aparte; aquí solo se
-// muestra el estado correspondiente (S2-6, S2-7 de docs/frontend_spec.md).
+// Incluye el bloque de donar (UC-009, UC-014) cuando corresponde
+// (S2-6, S2-7 de docs/frontend_spec.md).
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -20,6 +20,7 @@ import {
 import { BlockMeter } from "@/components/BlockMeter";
 import { CauseStatusBadge } from "@/components/dashboard/CauseStatusBadge";
 import { DonationsTable } from "@/components/cause/DonationsTable";
+import { DonationForm } from "@/components/cause/DonationForm";
 
 const POLL_INTERVAL_MS = 5_000;
 const RETRY_AFTER_MS = 2 * 60 * 1000;
@@ -32,9 +33,10 @@ export default function CauseDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
-  // El usuario ya está en localStorage antes del primer render (o no hay
-  // sesión); no depende de datos que lleguen tras un efecto.
+  // El usuario y el token ya están en localStorage antes del primer render (o
+  // no hay sesión); no dependen de datos que lleguen tras un efecto.
   const [user] = useState<AuthUser | null>(() => getStoredUser());
+  const [token] = useState<string | null>(() => getStoredToken());
 
   const [retrying, setRetrying] = useState(false);
   const [retryMessage, setRetryMessage] = useState<string | null>(null);
@@ -195,11 +197,13 @@ export default function CauseDetailPage() {
           <CauseStatusAction
             cause={cause}
             isOwner={isOwner}
-            hasUser={user !== null}
+            user={user}
+            token={token}
             canRetry={canRetry}
             retrying={retrying}
             retryMessage={retryMessage}
             onRetry={handleRetryVerification}
+            onDonated={refresh}
           />
 
           <div>
@@ -217,25 +221,29 @@ export default function CauseDetailPage() {
 }
 
 // UC-008 A2, A3; S2-6, S2-7: qué acción u mensaje mostrar según el estado de
-// la causa y quién la mira. El formulario de donar (UC-009, UC-014) se
-// construye en otro momento; aquí solo se indica cuándo correspondería.
+// la causa y quién la mira. UC-009/UC-014: bloque de donar cuando corresponde.
 function CauseStatusAction({
   cause,
   isOwner,
-  hasUser,
+  user,
+  token,
   canRetry,
   retrying,
   retryMessage,
   onRetry,
+  onDonated,
 }: {
   cause: CauseResponse;
   isOwner: boolean;
-  hasUser: boolean;
+  user: AuthUser | null;
+  token: string | null;
   canRetry: boolean;
   retrying: boolean;
   retryMessage: string | null;
   onRetry: () => void;
+  onDonated: () => void;
 }) {
+  const hasUser = user !== null;
   if (cause.status === "Pending") {
     if (!isOwner) {
       return (
@@ -302,23 +310,25 @@ function CauseStatusAction({
     );
   }
 
-  if (!hasUser) {
+  // S2 tabla "Verificada": sin sesión o sin wallet vinculada, mismo mensaje.
+  if (!hasUser || !user?.wallet_address || !token) {
     return (
       <p className="text-sm text-ink-soft">
-        <Link href="/auth/login" className="text-blueprint hover:underline">
-          Inicia sesión
-        </Link>{" "}
-        y vincula tu wallet para donar a esta causa.
+        {hasUser ? (
+          <Link href="/wallet" className="text-blueprint hover:underline">
+            Vincula tu wallet
+          </Link>
+        ) : (
+          <Link href="/auth/login" className="text-blueprint hover:underline">
+            Inicia sesión
+          </Link>
+        )}{" "}
+        para donar a esta causa.
       </p>
     );
   }
 
   return (
-    <div className="border border-line p-4">
-      <p className="text-sm text-ink">Donar a esta causa</p>
-      <p className="mt-1 text-xs text-ink-soft">
-        El formulario de donación estará disponible aquí próximamente.
-      </p>
-    </div>
+    <DonationForm cause={cause} token={token} walletAddress={user.wallet_address} onDonated={onDonated} />
   );
 }

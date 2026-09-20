@@ -66,7 +66,7 @@ export default function CreateCausePage() {
       >
         <Link
           href="/wallet"
-          className="inline-block bg-blueprint px-4 py-2.5 text-center text-sm font-medium text-paper transition-colors hover:bg-blueprint-dark"
+          className="inline-block bg-emerald px-4 py-2.5 text-center text-sm font-medium text-paper transition-colors hover:bg-emerald-dark"
         >
           Vincular wallet
         </Link>
@@ -187,7 +187,7 @@ export default function CreateCausePage() {
       >
         <Link
           href="/dashboard"
-          className="inline-block bg-blueprint px-4 py-2.5 text-center text-sm font-medium text-paper transition-colors hover:bg-blueprint-dark"
+          className="inline-block bg-emerald px-4 py-2.5 text-center text-sm font-medium text-paper transition-colors hover:bg-emerald-dark"
         >
           Ir a mi dashboard
         </Link>
@@ -209,7 +209,7 @@ export default function CreateCausePage() {
             <button
               type="button"
               onClick={retryPublish}
-              className="bg-blueprint px-4 py-2.5 text-center text-sm font-medium text-paper transition-colors hover:bg-blueprint-dark"
+              className="bg-emerald px-4 py-2.5 text-center text-sm font-medium text-paper transition-colors hover:bg-emerald-dark"
             >
               Reintentar publicación
             </button>
@@ -219,7 +219,7 @@ export default function CreateCausePage() {
             <button
               type="button"
               onClick={retryUpload}
-              className="bg-blueprint px-4 py-2.5 text-center text-sm font-medium text-paper transition-colors hover:bg-blueprint-dark"
+              className="bg-emerald px-4 py-2.5 text-center text-sm font-medium text-paper transition-colors hover:bg-emerald-dark"
             >
               Reintentar subida de la foto
             </button>
@@ -247,7 +247,7 @@ export default function CreateCausePage() {
             maxLength={255}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-blueprint"
+            className="w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-emerald"
           />
         </div>
 
@@ -266,7 +266,7 @@ export default function CreateCausePage() {
             rows={4}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full resize-none border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-blueprint"
+            className="w-full resize-none border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-emerald"
           />
           <p className="mt-1 text-xs text-ink-soft">Mínimo 20 caracteres.</p>
         </div>
@@ -286,7 +286,7 @@ export default function CreateCausePage() {
             required
             value={targetAmount}
             onChange={(e) => setTargetAmount(e.target.value)}
-            className="w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-blueprint"
+            className="w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-emerald"
           />
         </div>
 
@@ -300,7 +300,7 @@ export default function CreateCausePage() {
             accept="image/jpeg,image/png"
             required
             onChange={(e) => setImage(e.target.files?.[0] ?? null)}
-            className="w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none file:mr-3 file:border-0 file:bg-line file:px-3 file:py-1.5 file:text-sm file:text-ink focus:border-blueprint"
+            className="w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none file:mr-3 file:border-0 file:bg-line file:px-3 file:py-1.5 file:text-sm file:text-ink focus:border-emerald"
           />
           <p className="mt-1 text-xs text-ink-soft">
             Una IA revisa que la foto respalde la necesidad descrita antes de verificar la causa (UC-006). JPEG o PNG, hasta 5 MB.
@@ -312,7 +312,7 @@ export default function CreateCausePage() {
         <button
           type="submit"
           disabled={submitting}
-          className="bg-blueprint px-4 py-2.5 text-center text-sm font-medium text-paper transition-colors hover:bg-blueprint-dark disabled:opacity-60"
+          className="bg-emerald px-4 py-2.5 text-center text-sm font-medium text-paper transition-colors hover:bg-emerald-dark disabled:opacity-60"
         >
           {submitting ? "Creando…" : "Crear y publicar causa"}
         </button>

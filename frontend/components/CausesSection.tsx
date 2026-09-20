@@ -20,7 +20,7 @@ export async function CausesSection() {
           </div>
           <Link
             href="/causes"
-            className="shrink-0 text-sm font-medium text-blueprint hover:text-blueprint-dark"
+            className="shrink-0 text-sm font-medium text-emerald hover:text-emerald-dark"
           >
             Ver todas las causas
           </Link>
