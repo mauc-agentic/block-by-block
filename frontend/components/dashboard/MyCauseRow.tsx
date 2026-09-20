@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import type { DashboardCause } from "@/lib/auth";
 import { BlockMeter } from "@/components/BlockMeter";
@@ -8,6 +9,7 @@ import { CauseStatusBadge } from "./CauseStatusBadge";
 
 // UC-011: fila de una causa propia del receptor. El monto recaudado real
 // depende de UC-014 (aún Draft), por eso se muestra 0 hasta que exista.
+// UC-008: el título enlaza al mismo detalle de causa que se ve desde home.
 export function MyCauseRow({ cause }: { cause: DashboardCause }) {
   const [showVerdict, setShowVerdict] = useState(false);
   const isRejected = cause.status === "Rejected";
@@ -17,9 +19,12 @@ export function MyCauseRow({ cause }: { cause: DashboardCause }) {
     <article className="flex flex-col gap-3 border border-line bg-paper-raised p-5 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
         <div className="flex items-center gap-2">
-          <h3 className="truncate font-display text-lg font-semibold text-ink">
+          <Link
+            href={`/cause/${cause.id}`}
+            className="truncate font-display text-lg font-semibold text-ink hover:underline"
+          >
             {cause.title}
-          </h3>
+          </Link>
           <CauseStatusBadge status={cause.status} />
         </div>
         <p className="mt-1 line-clamp-1 text-sm text-ink-soft">
