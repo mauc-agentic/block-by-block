@@ -4,6 +4,7 @@
 
 import { useState } from "react";
 import { getStoredUser, updateStoredUser } from "@/lib/auth";
+import { useT } from "@/lib/i18n";
 import { WalletError, linkWallet } from "@/lib/wallet";
 
 function shortAddress(address: string): string {
@@ -11,6 +12,7 @@ function shortAddress(address: string): string {
 }
 
 export function WalletLinkCard() {
+  const { t } = useT();
   const [walletAddress, setWalletAddress] = useState<string | null>(
     () => getStoredUser()?.wallet_address ?? null
   );
@@ -25,7 +27,7 @@ export function WalletLinkCard() {
       updateStoredUser(user);
       setWalletAddress(user.wallet_address);
     } catch (err) {
-      setError(err instanceof WalletError ? err.message : "No se pudo vincular la wallet.");
+      setError(err instanceof WalletError ? err.message : t("wallet.linkFail"));
     } finally {
       setLoading(false);
     }
@@ -33,40 +35,39 @@ export function WalletLinkCard() {
 
   if (walletAddress) {
     return (
-      <div className="border border-line bg-paper-raised p-6">
-        <p className="text-xs font-medium tracking-wide text-ink-soft uppercase">Wallet vinculada</p>
-        <p className="mt-2 font-mono text-sm text-ink">{shortAddress(walletAddress)}</p>
+      <div className="border border-edge bg-surface rounded-lg p-6">
+        <p className="text-xs font-medium tracking-wide text-fg-soft uppercase">{t("wallet.linked")}</p>
+        <p className="mt-2 font-mono text-sm text-fg">{shortAddress(walletAddress)}</p>
       </div>
     );
   }
 
   return (
-    <div className="border border-line bg-paper-raised p-6">
-      <p className="text-sm text-ink-soft">
-        Conecta tu wallet Rabby para donar o recibir fondos. Vas a firmar un mensaje para
-        demostrar que la controlas; esto no mueve fondos ni cuesta gas.
+    <div className="border border-edge bg-surface rounded-lg p-6">
+      <p className="text-sm text-fg-soft">
+        {t("wallet.explain")}
       </p>
 
-      {error && <p className="mt-4 text-sm text-brick">{error}</p>}
+      {error && <p className="mt-4 text-sm text-danger">{error}</p>}
 
       <button
         type="button"
         onClick={handleConnect}
         disabled={loading}
-        className="mt-4 bg-blueprint px-4 py-2.5 text-center text-sm font-medium text-paper transition-colors hover:bg-blueprint-dark disabled:opacity-60"
+        className="mt-4 bg-eag-gradient rounded-sm px-4 py-2.5 text-center text-sm font-medium text-canvas transition-colors hover:brightness-110 disabled:opacity-60"
       >
-        {loading ? "Conectando…" : "Conectar wallet"}
+        {loading ? t("wallet.connecting") : t("wallet.connect")}
       </button>
 
-      <p className="mt-3 text-xs text-ink-soft">
-        ¿No tienes Rabby?{" "}
+      <p className="mt-3 text-xs text-fg-soft">
+        {t("wallet.noRabby")}{" "}
         <a
           href="https://rabby.io"
           target="_blank"
           rel="noreferrer"
-          className="font-medium text-blueprint hover:underline"
+          className="font-medium text-eag-secondary hover:underline"
         >
-          Instálala aquí
+          {t("wallet.install")}
         </a>
         .
       </p>

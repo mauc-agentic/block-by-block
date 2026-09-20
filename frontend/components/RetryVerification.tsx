@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { ApiError, retryVerification } from "@/lib/api";
+import { useT } from "@/lib/i18n";
 
 export const RETRY_AFTER_MS = 120_000;
 
@@ -16,6 +17,7 @@ export function RetryVerification({
   onQueued?: () => void;
   afterMs?: number;
 }) {
+  const { t } = useT();
   const [ready, setReady] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -29,10 +31,10 @@ export function RetryVerification({
     setBusy(true);
     try {
       await retryVerification(causeId);
-      setMessage("Verificación en cola");
+      setMessage(t("retry.queued"));
       onQueued?.();
     } catch (err) {
-      setMessage(err instanceof ApiError ? err.message : "No se pudo reintentar la verificación.");
+      setMessage(err instanceof ApiError ? err.message : t("retry.fail"));
       if (err instanceof ApiError && (err.status === 409 || err.status === 400)) onQueued?.();
     } finally {
       setBusy(false);
@@ -47,12 +49,12 @@ export function RetryVerification({
           type="button"
           disabled={busy}
           onClick={() => void retry()}
-          className="border border-line px-3 py-1 text-xs font-medium text-ink-soft hover:border-ink hover:text-ink disabled:opacity-60"
+          className="border border-edge px-3 py-1 text-xs font-medium text-fg-soft hover:border-fg-soft hover:text-fg disabled:opacity-60 rounded-sm"
         >
-          Reintentar verificación
+          {t("retry.button")}
         </button>
       )}
-      {message && <p className="mt-1 text-xs text-ink-soft">{message}</p>}
+      {message && <p className="mt-1 text-xs text-fg-soft">{message}</p>}
     </div>
   );
 }

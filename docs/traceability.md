@@ -58,7 +58,8 @@ Leyenda de estado por capa: **Done** (código + prueba), **Impl** (código, prue
 | NFR-010 Diseño responsivo (360 px) | Deferred | Frontend |
 | NFR-016 Coherencia front/back | Implemented | `api_contract.md` generado + `test_api_contract_doc` |
 | NFR-017 Pruebas de frontend | Open | Frontend |
-| NFR-018 Identidad visual | Open | `design_system.md`; migración de `globals.css` y componentes pendiente |
+| NFR-019 Idiomas ES/EN | Implemented | `lib/i18n/` (es.ts, en.ts, content.ts), `LanguageSwitcher`, `tests/i18n.test.tsx` |
+| NFR-018 Identidad visual | In Progress | `design_system.md`; migración de `globals.css` y componentes pendiente |
 | C-006 Next.js sobre Scaffold-ETH | Deferred | Next.js 16 sin Scaffold-ETH; wallet conectada directo vía EIP-1193 (Rabby), no con wagmi/RainbowKit |
 
 ## 4. Definición de terminado (por caso de uso)

@@ -3,6 +3,7 @@
 // mensaje para la persona (§7). Los tipos reflejan docs/api_contract.md.
 
 import { clearSession, getStoredToken } from "@/lib/auth";
+import { t, type MessageKey } from "@/lib/i18n";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
@@ -111,39 +112,36 @@ export class ApiError extends Error {
   }
 }
 
-// §7: tabla `detail` de la API -> mensaje en español.
-const DETAIL_MESSAGES: Record<string, string> = {
-  "Link a wallet first": "Vincula tu wallet para continuar.",
-  "Only verified causes": "Esta causa ya no recibe donaciones.",
-  "Amount > 0": "Escribe un monto válido.",
-  "Transaction not confirmed or not a donation": "Aún no vemos tu transacción; seguimos intentando…",
-  "Transaction not confirmed or not a cause creation": "Aún no vemos tu transacción; seguimos intentando…",
-  "Transaction does not match this cause and wallet":
-    "Esa transacción no salió de la wallet vinculada a tu cuenta. Cambia a esa cuenta en Rabby.",
-  "Transaction already registered": "Esta donación ya estaba registrada.",
-  "Cause already published on-chain": "Tu causa ya estaba publicada; seguimos con la foto.",
-  "Verification already in progress": "Ya estamos verificando tu causa.",
-  "Can only verify Pending causes": "Esta causa ya tiene resultado.",
-  "Publish the cause on-chain first": "Antes debes publicar la causa.",
-  "Upload evidence first": "Antes debes subir la foto.",
-  "No funds to withdraw": "No hay fondos para retirar.",
-  "Only the cause owner can do this": "Solo el titular de la causa puede hacerlo.",
-  "Cause not found": "Esta causa no existe.",
-  "Image > 5 MB": "La foto debe ser JPG o PNG de hasta 5 MB.",
-  "Only JPEG and PNG allowed": "La foto debe ser JPG o PNG de hasta 5 MB.",
+// §7: tabla `detail` de la API -> clave de mensaje (se traduce con el idioma activo).
+const DETAIL_KEYS: Record<string, MessageKey> = {
+  "Link a wallet first": "err.linkWallet",
+  "Only verified causes": "err.onlyVerified",
+  "Amount > 0": "err.amount",
+  "Transaction not confirmed or not a donation": "err.notConfirmed",
+  "Transaction not confirmed or not a cause creation": "err.notConfirmed",
+  "Transaction does not match this cause and wallet": "err.txMismatch",
+  "Transaction already registered": "err.alreadyRegistered",
+  "Cause already published on-chain": "err.alreadyPublished",
+  "Verification already in progress": "err.verifyRunning",
+  "Can only verify Pending causes": "err.notPending",
+  "Publish the cause on-chain first": "err.publishFirst",
+  "Upload evidence first": "err.uploadFirst",
+  "No funds to withdraw": "err.noFunds",
+  "Only the cause owner can do this": "err.ownerOnly",
+  "Cause not found": "err.notFound",
+  "Image > 5 MB": "err.image",
+  "Only JPEG and PNG allowed": "err.image",
 };
 
 export function mapApiError(status: number, detail: unknown): string {
-  if (status === 401 || status === 403) {
-    if (typeof detail === "string" && DETAIL_MESSAGES[detail]) return DETAIL_MESSAGES[detail];
-    return "Tu sesión expiró. Inicia sesión de nuevo.";
-  }
-  if (status === 422) return "Escribe un monto válido.";
-  if (typeof detail === "string" && DETAIL_MESSAGES[detail]) return DETAIL_MESSAGES[detail];
-  if (status === 404) return "Esta causa no existe.";
-  if (status === 413) return DETAIL_MESSAGES["Image > 5 MB"];
-  if (status >= 500) return "El servidor está despertando; reintentamos en unos segundos.";
-  return typeof detail === "string" && detail ? detail : "Algo salió mal. Intenta de nuevo.";
+  const known = typeof detail === "string" ? DETAIL_KEYS[detail] : undefined;
+  if (status === 401 || status === 403) return known ? t(known) : t("err.session");
+  if (status === 422) return t("err.amount");
+  if (known) return t(known);
+  if (status === 404) return t("err.notFound");
+  if (status === 413) return t("err.image");
+  if (status >= 500) return t("err.sleeping");
+  return typeof detail === "string" && detail ? detail : t("err.generic");
 }
 
 const SLEEPY_RETRY_MS = 5_000;
@@ -172,7 +170,7 @@ export async function apiFetch<T>(path: string, opts: Options = {}): Promise<T> 
     try {
       res = await fetch(`${API_URL}${path}`, init);
     } catch {
-      throw new ApiError(0, null, "El servidor está despertando; reintentamos en unos segundos.");
+      throw new ApiError(0, null, t("err.sleeping"));
     }
   }
 

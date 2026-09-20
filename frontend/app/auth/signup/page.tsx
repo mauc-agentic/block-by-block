@@ -6,11 +6,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { useT } from "@/lib/i18n";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { GoogleButton } from "@/components/auth/GoogleButton";
 import { AuthError, googleSignup, signup, storeSession } from "@/lib/auth";
 
 export default function SignupPage() {
+  const { t } = useT();
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -27,7 +29,7 @@ export default function SignupPage() {
       storeSession(token);
       router.push("/dashboard");
     } catch (err) {
-      setError(err instanceof AuthError ? err.message : "No se pudo completar el registro.");
+      setError(err instanceof AuthError ? err.message : t("signup.err"));
     } finally {
       setLoading(false);
     }
@@ -41,7 +43,7 @@ export default function SignupPage() {
       storeSession(token);
       router.push("/dashboard");
     } catch (err) {
-      setError(err instanceof AuthError ? err.message : "No se pudo completar el registro con Google.");
+      setError(err instanceof AuthError ? err.message : t("signup.errGoogle"));
     } finally {
       setLoading(false);
     }
@@ -49,13 +51,13 @@ export default function SignupPage() {
 
   return (
     <AuthCard
-      title="Crea tu cuenta"
-      subtitle="Regístrate para donar a causas verificadas o publicar la tuya."
+      title={t("signup.title")}
+      subtitle={t("signup.subtitle")}
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div>
-          <label htmlFor="username" className="mb-1 block text-xs font-medium tracking-wide text-ink-soft uppercase">
-            Nombre de usuario
+          <label htmlFor="username" className="mb-1 block text-xs font-medium tracking-wide text-fg-soft uppercase">
+            {t("common.username")}
           </label>
           <input
             id="username"
@@ -64,13 +66,13 @@ export default function SignupPage() {
             minLength={3}
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-blueprint"
+            className="w-full border border-fg-muted bg-canvas-2 px-3 py-2 text-sm text-fg outline-none transition-colors focus:border-eag-secondary focus:ring-2 focus:ring-eag-secondary/25 rounded-sm"
           />
         </div>
 
         <div>
-          <label htmlFor="email" className="mb-1 block text-xs font-medium tracking-wide text-ink-soft uppercase">
-            Correo
+          <label htmlFor="email" className="mb-1 block text-xs font-medium tracking-wide text-fg-soft uppercase">
+            {t("common.email")}
           </label>
           <input
             id="email"
@@ -78,13 +80,13 @@ export default function SignupPage() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-blueprint"
+            className="w-full border border-fg-muted bg-canvas-2 px-3 py-2 text-sm text-fg outline-none transition-colors focus:border-eag-secondary focus:ring-2 focus:ring-eag-secondary/25 rounded-sm"
           />
         </div>
 
         <div>
-          <label htmlFor="password" className="mb-1 block text-xs font-medium tracking-wide text-ink-soft uppercase">
-            Contraseña
+          <label htmlFor="password" className="mb-1 block text-xs font-medium tracking-wide text-fg-soft uppercase">
+            {t("common.password")}
           </label>
           <input
             id="password"
@@ -93,34 +95,34 @@ export default function SignupPage() {
             minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-blueprint"
+            className="w-full border border-fg-muted bg-canvas-2 px-3 py-2 text-sm text-fg outline-none transition-colors focus:border-eag-secondary focus:ring-2 focus:ring-eag-secondary/25 rounded-sm"
           />
-          <p className="mt-1 text-xs text-ink-soft">Mínimo 8 caracteres.</p>
+          <p className="mt-1 text-xs text-fg-soft">{t("signup.passwordHint")}</p>
         </div>
 
-        {error && <p className="text-sm text-brick">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
 
         <button
           type="submit"
           disabled={loading}
-          className="bg-blueprint px-4 py-2.5 text-center text-sm font-medium text-paper transition-colors hover:bg-blueprint-dark disabled:opacity-60"
+          className="bg-eag-gradient rounded-sm px-4 py-2.5 text-center text-sm font-medium text-canvas transition-colors hover:brightness-110 disabled:opacity-60"
         >
-          {loading ? "Creando cuenta…" : "Registrarse"}
+          {loading ? t("signup.submitting") : t("nav.signup")}
         </button>
       </form>
 
       <div className="my-6 flex items-center gap-3">
-        <div className="h-px flex-1 bg-line" />
-        <span className="text-xs text-ink-soft">o continúa con</span>
-        <div className="h-px flex-1 bg-line" />
+        <div className="h-px flex-1 bg-edge" />
+        <span className="text-xs text-fg-soft">{t("common.orContinue")}</span>
+        <div className="h-px flex-1 bg-edge" />
       </div>
 
       <GoogleButton onCredential={handleGoogleCredential} text="signup_with" />
 
-      <p className="mt-6 text-center text-sm text-ink-soft">
-        ¿Ya tienes cuenta?{" "}
-        <Link href="/auth/login" className="font-medium text-blueprint hover:underline">
-          Inicia sesión
+      <p className="mt-6 text-center text-sm text-fg-soft">
+        {t("signup.haveAccount")}{" "}
+        <Link href="/auth/login" className="font-medium text-eag-secondary hover:underline">
+          {t("signup.loginLink")}
         </Link>
       </p>
     </AuthCard>

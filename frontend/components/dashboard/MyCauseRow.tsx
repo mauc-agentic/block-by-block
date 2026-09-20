@@ -13,6 +13,7 @@ import { UsdtAmount } from "@/components/UsdtAmount";
 import { ApiError, requestWithdraw, type DashboardCauseFull, type SignInstruction } from "@/lib/api";
 import { VAULT_ABI } from "@/lib/chain";
 import { shortAddress } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import { WalletError, ensureLinkedAccount, sendContractTx, waitForReceipt } from "@/lib/wallet";
 import { CauseStatusBadge } from "./CauseStatusBadge";
 
@@ -27,6 +28,7 @@ export function MyCauseRow({
   walletAddress: string | null;
   onChanged: () => void;
 }) {
+  const { t } = useT();
   const [showVerdict, setShowVerdict] = useState(false);
   const [phase, setPhase] = useState<WithdrawPhase>("idle");
   const [instruction, setInstruction] = useState<SignInstruction | null>(null);
@@ -46,7 +48,7 @@ export function MyCauseRow({
       setPhase("confirming");
     } catch (err) {
       setPhase("error");
-      setMessage(err instanceof ApiError ? err.message : "No se pudo preparar el retiro.");
+      setMessage(err instanceof ApiError ? err.message : t("row.prepFail"));
     }
   }
 
@@ -69,28 +71,28 @@ export function MyCauseRow({
       onChanged();
     } catch (err) {
       setPhase("error");
-      setMessage(err instanceof WalletError || err instanceof ApiError ? err.message : "No se pudo retirar.");
+      setMessage(err instanceof WalletError || err instanceof ApiError ? err.message : t("row.withdrawFail"));
     }
   }
 
   return (
-    <article className="flex flex-col gap-3 border border-line bg-paper-raised p-5">
+    <article className="flex flex-col gap-3 border border-edge bg-surface rounded-lg p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <Link href={`/cause/${cause.id}`} className="truncate font-display text-lg font-semibold text-ink hover:underline">
+            <Link href={`/cause/${cause.id}`} className="truncate font-display text-lg font-semibold text-fg hover:underline">
               {cause.title}
             </Link>
             <CauseStatusBadge status={cause.status} />
           </div>
-          <p className="mt-1 line-clamp-1 text-sm text-ink-soft">{cause.description}</p>
+          <p className="mt-1 line-clamp-1 text-sm text-fg-soft">{cause.description}</p>
           {hasVerdict && (
             <button
               type="button"
               onClick={() => setShowVerdict(true)}
-              className="mt-1 text-xs font-medium text-blueprint hover:underline"
+              className="mt-1 text-xs font-medium text-eag-secondary hover:underline"
             >
-              {isRejected ? "Ver por qué se rechazó" : "Ver motivo de la IA"}
+              {isRejected ? t("row.rejectedWhy") : t("row.aiReason")}
             </button>
           )}
           {cause.status === "Pending" && <RetryVerification causeId={cause.id} onQueued={onChanged} />}
@@ -101,67 +103,67 @@ export function MyCauseRow({
       </div>
 
       {(cause.status === "Verified" || cause.status === "Completed") && (
-        <div className="flex flex-wrap items-center gap-3 border-t border-line pt-3 text-sm">
-          <span className="text-ink-soft">
-            Disponible para retirar: {available === null ? "—" : <UsdtAmount value={available} />}
+        <div className="flex flex-wrap items-center gap-3 border-t border-edge pt-3 text-sm">
+          <span className="text-fg-soft">
+            {t("row.available")} {available === null ? "—" : <UsdtAmount value={available} />}
           </span>
           {canWithdraw && phase !== "confirming" && phase !== "signing" && phase !== "waiting" && (
             <button
               type="button"
               onClick={() => void startWithdraw()}
-              className="bg-blueprint px-3 py-1.5 text-xs font-medium text-paper hover:bg-blueprint-dark"
+              className="bg-eag-gradient rounded-sm px-3 py-1.5 text-xs font-medium text-canvas hover:brightness-110"
             >
-              Retirar
+              {t("row.withdraw")}
             </button>
           )}
         </div>
       )}
 
       {phase === "confirming" && instruction && (
-        <div className="border border-line p-3 text-sm">
+        <div className="border border-edge p-3 text-sm rounded-lg">
           <p>
-            Retirarás <UsdtAmount value={instruction.amount} /> a{" "}
+            {t("row.willWithdraw")} <UsdtAmount value={instruction.amount} /> {t("row.to")}{" "}
             <span className="font-mono">{shortAddress(instruction.to_wallet ?? walletAddress ?? "")}</span>
           </p>
           <div className="mt-2 flex gap-2">
             <button
               type="button"
               onClick={() => void confirmWithdraw()}
-              className="bg-blueprint px-3 py-1.5 text-xs font-medium text-paper hover:bg-blueprint-dark"
+              className="bg-eag-gradient rounded-sm px-3 py-1.5 text-xs font-medium text-canvas hover:brightness-110"
             >
-              Confirmar retiro
+              {t("row.confirm")}
             </button>
-            <button type="button" onClick={() => setPhase("idle")} className="border border-line px-3 py-1.5 text-xs text-ink-soft">
-              Cancelar
+            <button type="button" onClick={() => setPhase("idle")} className="border border-edge px-3 py-1.5 text-xs text-fg-soft rounded-sm">
+              {t("common.cancel")}
             </button>
           </div>
         </div>
       )}
-      {phase === "signing" && <p className="text-sm text-ink-soft">Firma el retiro en tu wallet…</p>}
-      {phase === "waiting" && <p className="text-sm text-ink-soft">Esperando la confirmación en la cadena…</p>}
+      {phase === "signing" && <p className="text-sm text-fg-soft">{t("row.signing")}</p>}
+      {phase === "waiting" && <p className="text-sm text-fg-soft">{t("row.waiting")}</p>}
       {phase === "done" && txHash && (
-        <p className="text-sm text-moss">
-          Retiro confirmado. <ExplorerLink hash={txHash} label="Ver transacción" />
+        <p className="text-sm text-ok">
+          {t("row.done")} <ExplorerLink hash={txHash} label={t("common.viewTx")} />
         </p>
       )}
-      {message && <p className="text-sm text-brick">{message}</p>}
+      {message && <p className="text-sm text-danger">{message}</p>}
 
       {showVerdict && (
         <Modal
-          title={isRejected ? "Por qué se rechazó tu causa" : "Veredicto de la IA"}
+          title={isRejected ? t("row.modalRejected") : t("row.modalVerdict")}
           onClose={() => setShowVerdict(false)}
         >
           <div className="flex flex-col gap-3">
             <CauseStatusBadge status={cause.status} />
-            <p className="text-sm text-ink">{cause.verification_reason}</p>
+            <p className="text-sm text-fg">{cause.verification_reason}</p>
             {cause.verification_confidence != null && (
-              <p className="text-xs text-ink-soft">
-                Confianza del modelo: {Math.round(Number(cause.verification_confidence) * 100)}%
+              <p className="text-xs text-fg-soft">
+                {t("detail.confidence", { n: Math.round(Number(cause.verification_confidence) * 100) })}
               </p>
             )}
             {isRejected && (
-              <p className="text-xs text-ink-soft">
-                Puedes crear una nueva causa con una foto que muestre la necesidad con más claridad.
+              <p className="text-xs text-fg-soft">
+                {t("row.rejectedHint")}
               </p>
             )}
           </div>

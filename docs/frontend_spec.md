@@ -60,7 +60,8 @@ Variables públicas nuevas (`frontend/.env.example`): `NEXT_PUBLIC_TOKEN_ADDRESS
    wallet vinculada del usuario (`user.wallet_address`); si no, se bloquea con el mensaje del §7.
 9. **Trazabilidad:** cada página y cada hook lleva `// UC-###` y sus pruebas `describe('UC-### …')`.
 10. **Identidad visual:** colores, tipografía, cards, botones y estados salen de [design_system.md](design_system.md) (NFR-018); nada de colores sueltos y cada estado de causa se ve igual en toda pantalla.
-11. **Sin secretos** en variables `NEXT_PUBLIC_*` ni HTML de la API renderizado como HTML.
+11. **Idiomas (NFR-019):** todo texto de interfaz sale del diccionario `lib/i18n/{es,en}.ts` (clave en ambos idiomas; una prueba lo comprueba); montos y fechas siguen el idioma (`12,50 USDT` / `12.50 USDT`); los mensajes de error se traducen en `lib/`. El texto de las causas lo escribe el usuario y no se traduce.
+12. **Sin secretos** en variables `NEXT_PUBLIC_*` ni HTML de la API renderizado como HTML.
 
 ## 4. Pantallas
 

@@ -5,9 +5,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { getStoredToken } from "@/lib/auth";
 import { formatUsdt } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 import { listPending, registerPending, type PendingDonation } from "@/lib/pendingDonations";
 
 export function PendingDonationsNotice({ onRegistered }: { onRegistered?: () => void }) {
+  const { t } = useT();
   const [items, setItems] = useState<PendingDonation[]>([]);
   const [busy, setBusy] = useState(false);
 
@@ -39,12 +41,12 @@ export function PendingDonationsNotice({ onRegistered }: { onRegistered?: () => 
   if (items.length === 0) return null;
 
   return (
-    <div role="status" className="border border-brick/40 bg-brick/10 p-4">
-      <p className="text-sm font-medium text-ink">Tienes una donación pendiente de registrar</p>
-      <ul className="mt-1 text-sm text-ink-soft">
+    <div role="status" className="border border-danger/40 bg-danger/10 p-4 rounded-lg">
+      <p className="text-sm font-medium text-fg">{t("pending.title")}</p>
+      <ul className="mt-1 text-sm text-fg-soft">
         {items.map((item) => (
           <li key={item.txHash}>
-            {formatUsdt(item.amount)} a la causa #{item.causeId}
+            {t("pending.item", { amount: formatUsdt(item.amount), id: item.causeId })}
           </li>
         ))}
       </ul>
@@ -52,9 +54,9 @@ export function PendingDonationsNotice({ onRegistered }: { onRegistered?: () => 
         type="button"
         disabled={busy}
         onClick={() => void registerAll(items)}
-        className="mt-3 border border-brick/50 px-3 py-1 text-xs font-medium text-brick hover:bg-brick/10 disabled:opacity-60"
+        className="mt-3 border border-danger/50 px-3 py-1 text-xs font-medium text-danger hover:bg-danger/10 disabled:opacity-60 rounded-sm"
       >
-        {busy ? "Registrando…" : "Registrar ahora"}
+        {busy ? t("pending.busy") : t("pending.now")}
       </button>
     </div>
   );

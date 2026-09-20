@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 // UC-001, UC-002 — cliente de autenticación (email/contraseña y Google)
 // Cualquier cuenta puede donar y publicar causas; no hay un rol fijo por cuenta.
 
@@ -30,12 +31,12 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
       body: JSON.stringify(body),
     });
   } catch {
-    throw new AuthError("No se pudo conectar con el servidor. Intenta de nuevo.");
+    throw new AuthError(t("err.network"));
   }
 
   if (!res.ok) {
     const data = await res.json().catch(() => null);
-    throw new AuthError(data?.detail ?? "Ocurrió un error, intenta de nuevo.");
+    throw new AuthError(data?.detail ?? t("err.authGeneric"));
   }
 
   return res.json();

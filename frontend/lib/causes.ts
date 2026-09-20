@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 // UC-004, UC-013 — causa tal como la devuelve POST /causes, GET /causes/{id}
 // y las confirmaciones de publicación (CauseResponse en api_contract.md).
 export type CauseResponse = {
@@ -72,9 +73,9 @@ export async function createCause(
       body: JSON.stringify(input),
     });
   } catch {
-    throw new CauseError("No se pudo conectar con el servidor. Intenta de nuevo.");
+    throw new CauseError(t("err.network"));
   }
-  return parseCauseResponse<CauseResponse>(res, "No se pudo crear la causa.");
+  return parseCauseResponse<CauseResponse>(res, t("create.err.fail"));
 }
 
 // UC-013: pide la instrucción de firma de `createCause` para publicar la causa on-chain.
@@ -89,9 +90,9 @@ export async function requestPublishInstruction(
       headers: { Authorization: `Bearer ${token}` },
     });
   } catch {
-    throw new CauseError("No se pudo conectar con el servidor. Intenta de nuevo.");
+    throw new CauseError(t("err.network"));
   }
-  return parseCauseResponse<PublishInstruction>(res, "No se pudo preparar la publicación.");
+  return parseCauseResponse<PublishInstruction>(res, t("err.publishPrepare"));
 }
 
 // UC-013: confirma la publicación leyendo la transacción en la cadena. El RPC
@@ -103,7 +104,7 @@ export async function confirmPublish(
   txHash: string
 ): Promise<CauseResponse> {
   const deadline = Date.now() + 30_000;
-  let lastMessage = "No se pudo confirmar la publicación.";
+  let lastMessage = t("err.publishConfirm");
 
   while (Date.now() < deadline) {
     let res: Response;
@@ -114,7 +115,7 @@ export async function confirmPublish(
         body: JSON.stringify({ tx_hash: txHash }),
       });
     } catch {
-      throw new CauseError("No se pudo conectar con el servidor. Intenta de nuevo.");
+      throw new CauseError(t("err.network"));
     }
 
     if (res.ok) return res.json();
@@ -146,7 +147,7 @@ export async function uploadCauseImage(
       body: form,
     });
   } catch {
-    throw new CauseError("No se pudo conectar con el servidor. Intenta de nuevo.");
+    throw new CauseError(t("err.network"));
   }
-  return parseCauseResponse(res, "No se pudo subir la evidencia.");
+  return parseCauseResponse(res, t("create.stage.upload_failed"));
 }

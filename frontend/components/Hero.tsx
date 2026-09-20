@@ -1,11 +1,14 @@
+"use client";
+
 import Link from "next/link";
+import { useT } from "@/lib/i18n";
 
 const columns = [
-  { blocks: 3, color: "bg-blueprint" },
-  { blocks: 6, color: "bg-brick" },
-  { blocks: 4, color: "bg-moss" },
-  { blocks: 7, color: "bg-blueprint" },
-  { blocks: 5, color: "bg-brick" },
+  { blocks: 3, color: "bg-eag-primary" },
+  { blocks: 6, color: "bg-eth-primary" },
+  { blocks: 4, color: "bg-hsk-primary" },
+  { blocks: 7, color: "bg-eag-primary" },
+  { blocks: 5, color: "bg-eth-primary" },
 ];
 
 function BlockStack() {
@@ -26,49 +29,48 @@ function BlockStack() {
 }
 
 export function Hero() {
+  const { t } = useT();
   return (
     <section className="mx-auto grid max-w-6xl gap-10 px-4 pt-14 pb-16 sm:px-6 sm:pt-20 sm:pb-24 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:pt-28">
       <div>
-        <h1 className="font-display text-4xl leading-[0.95] font-semibold tracking-tight text-ink sm:text-6xl lg:text-7xl">
-          Dona directo,
+        <h1 className="font-display text-4xl leading-[1.1] font-semibold tracking-tight text-fg sm:text-6xl lg:text-6xl">
+          {t("hero.title1")}
           <br />
-          bloque por bloque.
+          <span className="text-eag-gradient">{t("hero.title2")}</span>
         </h1>
-        <p className="mt-6 max-w-md text-lg text-ink-soft">
-          Block by Block conecta donantes con receptores verificados por IA.
-          El dinero llega on-chain, sin intermediarios y sin comisión de
-          plataforma.
+        <p className="mt-6 max-w-md text-lg text-fg-soft">
+          {t("hero.lead")}
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Link
             href="/auth/signup"
-            className="bg-blueprint px-6 py-3 text-center font-medium text-paper transition-colors hover:bg-blueprint-dark"
+            className="bg-eag-gradient rounded-sm px-6 py-3 text-center font-medium text-canvas transition-colors hover:brightness-110"
           >
-            Registrarse
+            {t("nav.signup")}
           </Link>
           <a
             href="#causas"
-            className="border border-ink px-6 py-3 text-center font-medium text-ink transition-colors hover:bg-paper-raised"
+            className="border border-edge px-6 py-3 text-center font-medium text-fg transition-colors hover:border-eag-secondary hover:bg-eag-primary/10 rounded-sm"
           >
-            Explorar causas
+            {t("hero.explore")}
           </a>
         </div>
-        <dl className="mt-10 grid max-w-md grid-cols-3 gap-4 border-t border-line pt-6">
+        <dl className="mt-10 grid max-w-md grid-cols-3 gap-4 border-t border-edge pt-6">
           <div>
-            <dt className="text-sm text-ink-soft">Comisión</dt>
-            <dd className="font-display text-3xl font-semibold text-ink">
+            <dt className="text-sm text-fg-soft">{t("hero.fee")}</dt>
+            <dd className="font-display text-3xl font-semibold text-fg">
               0%
             </dd>
           </div>
           <div>
-            <dt className="text-sm text-ink-soft">Red</dt>
-            <dd className="font-display text-3xl font-semibold text-ink">
+            <dt className="text-sm text-fg-soft">{t("hero.network")}</dt>
+            <dd className="font-display text-3xl font-semibold text-fg">
               HSK
             </dd>
           </div>
           <div>
-            <dt className="text-sm text-ink-soft">Moneda</dt>
-            <dd className="font-display text-3xl font-semibold text-ink">
+            <dt className="text-sm text-fg-soft">{t("hero.currency")}</dt>
+            <dd className="font-display text-3xl font-semibold text-fg">
               USDT
             </dd>
           </div>

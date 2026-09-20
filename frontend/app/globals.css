@@ -1,30 +1,116 @@
 @import "tailwindcss";
 
-@theme {
-  --color-ink: #1a1a1a;
-  --color-ink-soft: #5c5c5c;
-  --color-paper: #dcdcda;
-  --color-paper-raised: #ececea;
-  --color-blueprint: #2e4e8c;
-  --color-blueprint-dark: #1f3763;
-  --color-brick: #a8431f;
-  --color-brick-dark: #832f13;
-  --color-moss: #3d6b52;
-  --color-line: #adada8;
+/* Design system EAG × ETH × HSK Chain (docs/design_system.md, NFR-018).
+   Los colores solo se definen aquí; los componentes usan las utilidades de @theme. */
+:root {
+  --eag-primary: #6C5CE7;
+  --eag-secondary: #A78BFA;
+  --eag-accent: #22D3EE;
 
-  --font-display: var(--font-big-shoulders), sans-serif;
-  --font-sans: var(--font-plex-sans), sans-serif;
-  --font-mono: var(--font-plex-mono), monospace;
+  --eth-primary: #627EEA;
+  --eth-secondary: #A8B5F7;
+  --eth-accent: #8B82F6;
+
+  --hsk-primary: #883BFF;
+  --hsk-secondary: #C9B6FF;
+  --hsk-accent: #4F5BFF;
+
+  --bg-primary: #050816;
+  --bg-secondary: #0B1220;
+
+  --surface: #111827;
+  --surface-card: #162033;
+
+  --border: #334155;
+
+  --text-primary: #EDE9FE;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+
+  --success: #10B981;
+  --warning: #F59E0B;
+  --error: #EF4444;
+  --info: #38BDF8;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.25);
+
+  --gradient-eag: linear-gradient(135deg, #6C5CE7 0%, #A78BFA 55%, #22D3EE 100%);
+  --gradient-eth: linear-gradient(135deg, #627EEA 0%, #8B82F6 100%);
+  --gradient-hsk: linear-gradient(135deg, #883BFF 0%, #4F5BFF 100%);
+  --glow: radial-gradient(circle, rgba(108, 92, 231, 0.18) 0%, transparent 65%);
+
+  color-scheme: dark;
 }
 
-:root {
-  --background: var(--color-paper);
-  --foreground: var(--color-ink);
+@theme inline {
+  --color-canvas: var(--bg-primary);
+  --color-canvas-2: var(--bg-secondary);
+  --color-surface: var(--surface);
+  --color-card: var(--surface-card);
+  --color-edge: var(--border);
+  --color-fg: var(--text-primary);
+  --color-fg-soft: var(--text-secondary);
+  --color-fg-muted: var(--text-muted);
+
+  --color-eag-primary: var(--eag-primary);
+  --color-eag-secondary: var(--eag-secondary);
+  --color-eag-accent: var(--eag-accent);
+  --color-eth-primary: var(--eth-primary);
+  --color-eth-secondary: var(--eth-secondary);
+  --color-eth-accent: var(--eth-accent);
+  --color-hsk-primary: var(--hsk-primary);
+  --color-hsk-secondary: var(--hsk-secondary);
+  --color-hsk-accent: var(--hsk-accent);
+
+  --color-ok: var(--success);
+  --color-warn: var(--warning);
+  --color-danger: var(--error);
+  --color-info: var(--info);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+
+  --font-display: var(--font-inter), system-ui, sans-serif;
+  --font-sans: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+}
+
+/* Botón primario: gradiente EAG con etiqueta #050816 (contraste >= 4.1:1 en todo el gradiente, D1). */
+@utility bg-eag-gradient {
+  background-image: var(--gradient-eag);
+}
+@utility bg-eth-gradient {
+  background-image: var(--gradient-eth);
+}
+@utility bg-hsk-gradient {
+  background-image: var(--gradient-hsk);
+}
+@utility text-eag-gradient {
+  background-image: var(--gradient-eag);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
 }
 
 body {
-  background: var(--color-paper);
-  color: var(--color-ink);
+  background-color: var(--bg-primary);
+  /* Glow único arriba de la página: nunca detrás de cada card. */
+  background-image: radial-gradient(50rem 32rem at 50% -8rem, rgba(108, 92, 231, 0.18), transparent 65%);
+  background-repeat: no-repeat;
+  color: var(--text-primary);
+}
+
+:focus-visible {
+  outline: 2px solid var(--eag-secondary);
+  outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -33,5 +119,15 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* Card interactiva (design_system §7): hover casi imperceptible. */
+@utility card-hover {
+  transition: border-color 200ms, transform 200ms, box-shadow 200ms;
+  &:hover {
+    border-color: color-mix(in srgb, var(--eag-secondary) 45%, transparent);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
   }
 }

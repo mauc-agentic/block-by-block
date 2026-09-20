@@ -61,7 +61,7 @@ La sección 2 se **genera** de los propios documentos (`cd backend && python -m 
 | Tipo | Verified | Implemented | In Progress | Open | Deferred | Total |
 |------|----------|-------------|-------------|------|----------|-------|
 | Funcionales (FR) | 9 | 3 | 9 | 2 | 4 | 27 |
-| No funcionales (NFR) | 0 | 8 | 4 | 4 | 2 | 18 |
+| No funcionales (NFR) | 0 | 9 | 5 | 3 | 2 | 19 |
 | Restricciones (C) | 0 | 10 | 2 | 0 | 1 | 13 |
 
 Requisitos aún no terminados:
@@ -84,7 +84,7 @@ Requisitos aún no terminados:
 - **NFR-013** Migraciones versionadas — Open
 - **NFR-015** Disponibilidad del servicio — In Progress
 - **NFR-017** Pruebas de frontend — Open
-- **NFR-018** Identidad visual — Open
+- **NFR-018** Identidad visual — In Progress
 - **C-007** Plazo — In Progress
 - **C-011** Despliegue backend — In Progress
 

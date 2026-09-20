@@ -7,6 +7,7 @@
 
 import Script from "next/script";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useT } from "@/lib/i18n";
 
 type GoogleCredentialResponse = {
   credential: string;
@@ -35,6 +36,7 @@ type GoogleButtonProps = {
 };
 
 export function GoogleButton({ onCredential, text = "continue_with" }: GoogleButtonProps) {
+  const { lang } = useT();
   const containerRef = useRef<HTMLDivElement>(null);
   const [scriptReady, setScriptReady] = useState(false);
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -55,9 +57,9 @@ export function GoogleButton({ onCredential, text = "continue_with" }: GoogleBut
       shape: "rectangular",
       text,
       width: 320,
-      locale: "es",
+      locale: lang,
     });
-  }, [clientId, onCredential, text]);
+  }, [clientId, onCredential, text, lang]);
 
   useEffect(() => {
     if (scriptReady) renderButton();

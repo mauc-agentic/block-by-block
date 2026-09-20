@@ -17,7 +17,7 @@ export function ExplorerLink({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="font-mono text-xs text-blueprint hover:underline"
+      className="font-mono text-xs text-eag-secondary hover:underline"
     >
       {label ?? shortAddress(value)}
     </a>

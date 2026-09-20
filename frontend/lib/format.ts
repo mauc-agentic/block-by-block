@@ -3,6 +3,7 @@
 // micro-USDT para no perder precisión (frontend_spec §3.2).
 
 import { parseUnits } from "viem";
+import { getLang, t } from "@/lib/i18n";
 
 export const USDT_DECIMALS = 6;
 
@@ -18,21 +19,22 @@ export function toMicros(value: string | number): bigint {
 /** Valida un monto escrito por la persona: > 0 y máximo 6 decimales. */
 export function parseUsdtInput(raw: string): { ok: true; micros: bigint } | { ok: false; reason: string } {
   const text = raw.trim().replace(",", ".");
-  if (!/^\d+(\.\d+)?$/.test(text)) return { ok: false, reason: "Escribe un monto válido." };
+  if (!/^\d+(\.\d+)?$/.test(text)) return { ok: false, reason: t("input.invalid") };
   const decimals = text.split(".")[1]?.length ?? 0;
-  if (decimals > USDT_DECIMALS) return { ok: false, reason: "Usa máximo 6 decimales." };
+  if (decimals > USDT_DECIMALS) return { ok: false, reason: t("input.decimals") };
   const micros = parseUnits(text, USDT_DECIMALS);
-  if (micros <= BigInt(0)) return { ok: false, reason: "El monto debe ser mayor que cero." };
+  if (micros <= BigInt(0)) return { ok: false, reason: t("input.positive") };
   return { ok: true, micros };
 }
 
-/** `12.500000` -> `12,50 USDT` (es-CO, 2 decimales, redondeo half-up). */
+/** `12.500000` -> `12,50 USDT` (es-CO) o `12.50 USDT` (en-US); 2 decimales, redondeo half-up. */
 export function formatUsdt(value: string | number | null | undefined): string {
   if (value === null || value === undefined) return "—";
   const cents = (toMicros(value) + BigInt(5000)) / BigInt(10000);
   const whole = cents / BigInt(100);
   const frac = (cents % BigInt(100)).toString().padStart(2, "0");
-  return `${new Intl.NumberFormat("es-CO").format(whole)},${frac} USDT`;
+  const en = getLang() === "en";
+  return `${new Intl.NumberFormat(en ? "en-US" : "es-CO").format(whole)}${en ? "." : ","}${frac} USDT`;
 }
 
 /** Porcentaje entero recaudado (sin tope: puede superar 100). */
@@ -59,5 +61,5 @@ export function explorerAddressUrl(address: string): string {
 }
 
 export function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" });
+  return new Date(iso).toLocaleString(getLang() === "en" ? "en-US" : "es-CO", { dateStyle: "medium", timeStyle: "short" });
 }

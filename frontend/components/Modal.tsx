@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
+import { useT } from "@/lib/i18n";
 
 type ModalProps = {
   title: string;
@@ -9,6 +10,7 @@ type ModalProps = {
 };
 
 export function Modal({ title, onClose, children }: ModalProps) {
+  const { t } = useT();
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -19,7 +21,7 @@ export function Modal({ title, onClose, children }: ModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-canvas/80 px-4"
       onClick={onClose}
     >
       <div
@@ -27,15 +29,15 @@ export function Modal({ title, onClose, children }: ModalProps) {
         aria-modal="true"
         aria-label={title}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md border border-line bg-paper p-6 shadow-lg"
+        className="w-full max-w-md border border-edge bg-canvas p-6 shadow-lg rounded-lg"
       >
         <div className="flex items-start justify-between gap-4">
-          <h2 className="font-display text-lg font-semibold text-ink">{title}</h2>
+          <h2 className="font-display text-lg font-semibold text-fg">{title}</h2>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Cerrar"
-            className="shrink-0 text-ink-soft transition-colors hover:text-ink"
+            aria-label={t("common.close")}
+            className="shrink-0 text-fg-soft transition-colors hover:text-fg"
           >
             ✕
           </button>

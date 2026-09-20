@@ -3,6 +3,7 @@
 // firma al proveedor inyectado por la extensión; la verificación vive en el
 // backend (verify_wallet_signature, BR-001).
 
+import { t } from "@/lib/i18n";
 import { decodeFunctionResult, encodeFunctionData, type Abi } from "viem";
 import {
   ERC20_ABI,
@@ -54,7 +55,7 @@ function toWalletError(err: unknown, fallback: string): WalletError {
   if (err instanceof WalletError) return err;
   if (isRpcError(err, -32002)) {
     return new WalletError(
-      "Rabby ya tiene una solicitud pendiente. Abre la extensión, apruébala o recházala, y vuelve a intentar."
+      t("wallet.err.pendingRequest")
     );
   }
   if (err instanceof Error && err.message) return new WalletError(err.message);
@@ -83,14 +84,13 @@ function withTimeout<T>(promise: Promise<T>, ms: number, timeoutMessage: string)
 }
 
 const WALLET_PROMPT_TIMEOUT_MS = 30_000;
-const WALLET_TIMEOUT_MESSAGE =
-  "Rabby no respondió a tiempo. Abre la extensión por si tiene una ventana de aprobación esperando, o reinicia el navegador si sigue sin responder.";
+const walletTimeoutMessage = () => t("wallet.err.timeout");
 
 async function ensureHskNetwork(provider: EthereumProvider) {
   const currentChainId = await withTimeout(
     provider.request({ method: "eth_chainId" }),
     WALLET_PROMPT_TIMEOUT_MS,
-    WALLET_TIMEOUT_MESSAGE
+    walletTimeoutMessage()
   );
   if (currentChainId === HSK_CHAIN_ID_HEX) return;
 
@@ -102,11 +102,11 @@ async function ensureHskNetwork(provider: EthereumProvider) {
         params: [{ chainId: HSK_CHAIN_ID_HEX }],
       }),
       WALLET_PROMPT_TIMEOUT_MS,
-      WALLET_TIMEOUT_MESSAGE
+      walletTimeoutMessage()
     );
   } catch (switchErr) {
     if (isRpcError(switchErr, 4001)) {
-      throw new WalletRejectedError("Cancelaste el cambio de red en tu wallet.");
+      throw new WalletRejectedError(t("wallet.err.networkCancel"));
     }
 
     // La wallet no tiene la red agregada. El código EIP-3326 (4902) para este
@@ -121,11 +121,11 @@ async function ensureHskNetwork(provider: EthereumProvider) {
           params: [HSK_CHAIN_PARAMS],
         }),
         WALLET_PROMPT_TIMEOUT_MS,
-        WALLET_TIMEOUT_MESSAGE
+        walletTimeoutMessage()
       );
     } catch (addErr) {
       if (isRpcError(addErr, 4001)) {
-        throw new WalletRejectedError("Cancelaste el cambio de red en tu wallet.");
+        throw new WalletRejectedError(t("wallet.err.networkCancel"));
       }
       throw addErr;
     }
@@ -134,7 +134,7 @@ async function ensureHskNetwork(provider: EthereumProvider) {
     const chainIdAfterAdd = await withTimeout(
       provider.request({ method: "eth_chainId" }),
       WALLET_PROMPT_TIMEOUT_MS,
-      WALLET_TIMEOUT_MESSAGE
+      walletTimeoutMessage()
     );
     if (chainIdAfterAdd !== HSK_CHAIN_ID_HEX) {
       try {
@@ -144,11 +144,11 @@ async function ensureHskNetwork(provider: EthereumProvider) {
             params: [{ chainId: HSK_CHAIN_ID_HEX }],
           }),
           WALLET_PROMPT_TIMEOUT_MS,
-          WALLET_TIMEOUT_MESSAGE
+          walletTimeoutMessage()
         );
       } catch (finalSwitchErr) {
         if (isRpcError(finalSwitchErr, 4001)) {
-          throw new WalletRejectedError("Cancelaste el cambio de red en tu wallet.");
+          throw new WalletRejectedError(t("wallet.err.networkCancel"));
         }
         throw finalSwitchErr;
       }
@@ -160,7 +160,7 @@ export async function connectWallet(): Promise<string> {
   const provider = getInjectedProvider();
   if (!provider) {
     throw new WalletError(
-      "No detectamos una wallet compatible. Instala Rabby (rabby.io) y recarga la página."
+      t("wallet.err.noProvider")
     );
   }
 
@@ -169,18 +169,18 @@ export async function connectWallet(): Promise<string> {
     accounts = (await withTimeout(
       provider.request({ method: "eth_requestAccounts" }),
       WALLET_PROMPT_TIMEOUT_MS,
-      WALLET_TIMEOUT_MESSAGE
+      walletTimeoutMessage()
     )) as string[];
   } catch (err) {
     if (isRpcError(err, 4001)) {
-      throw new WalletRejectedError("Cancelaste la conexión con tu wallet.");
+      throw new WalletRejectedError(t("wallet.err.connectCancel"));
     }
     throw err;
   }
 
   const address = accounts[0];
   if (!address) {
-    throw new WalletError("Tu wallet no devolvió ninguna cuenta.");
+    throw new WalletError(t("wallet.err.noAccount"));
   }
 
   await ensureHskNetwork(provider);
@@ -215,11 +215,11 @@ async function signMessage(provider: EthereumProvider, address: string, message:
         params: [toHexMessage(message), address],
       }),
       WALLET_PROMPT_TIMEOUT_MS,
-      WALLET_TIMEOUT_MESSAGE
+      walletTimeoutMessage()
     )) as string;
   } catch (err) {
     if (isRpcError(err, 4001)) {
-      throw new WalletRejectedError("Cancelaste la firma. Tu cuenta sigue sin wallet vinculada.");
+      throw new WalletRejectedError(t("wallet.err.signCancel"));
     }
     throw err;
   }
@@ -232,7 +232,7 @@ async function submitWalletLink(input: {
 }): Promise<AuthUser> {
   const token = getStoredToken();
   if (!token) {
-    throw new WalletError("Tu sesión expiró. Inicia sesión de nuevo.");
+    throw new WalletError(t("wallet.err.sessionExpired"));
   }
 
   let res: Response;
@@ -246,14 +246,14 @@ async function submitWalletLink(input: {
       body: JSON.stringify(input),
     });
   } catch {
-    throw new WalletError("No se pudo conectar con el servidor. Intenta de nuevo.");
+    throw new WalletError(t("err.network"));
   }
 
   if (!res.ok) {
     const data = await res.json().catch(() => null);
     // A1: firma inválida / A2: wallet vinculada a otra cuenta -> el backend
     // ya distingue el mensaje en `detail`.
-    throw new WalletError(data?.detail ?? "No se pudo vincular la wallet.");
+    throw new WalletError(data?.detail ?? t("wallet.err.linkInvalid"));
   }
 
   return res.json();
@@ -264,13 +264,13 @@ export async function linkWallet(): Promise<AuthUser> {
   try {
     const user = getStoredUser();
     if (!user) {
-      throw new WalletError("Tu sesión expiró. Inicia sesión de nuevo.");
+      throw new WalletError(t("wallet.err.sessionExpired"));
     }
 
     const provider = getInjectedProvider();
     const address = await connectWallet();
     if (!provider) {
-      throw new WalletError("No detectamos una wallet compatible.");
+      throw new WalletError(t("wallet.err.noProviderShort"));
     }
 
     const message = buildLinkMessage(address, user);
@@ -278,7 +278,7 @@ export async function linkWallet(): Promise<AuthUser> {
 
     return await submitWalletLink({ wallet_address: address, signature, message });
   } catch (err) {
-    throw toWalletError(err, "No se pudo vincular la wallet.");
+    throw toWalletError(err, t("wallet.err.linkInvalid"));
   }
 }
 
@@ -296,7 +296,7 @@ function requireProvider(): EthereumProvider {
   const provider = getInjectedProvider();
   if (!provider) {
     throw new WalletError(
-      "No detectamos una wallet compatible. Instala Rabby (rabby.io) y recarga la página."
+      t("wallet.err.noProvider")
     );
   }
   return provider;
@@ -317,7 +317,7 @@ export async function ensureLinkedAccount(linkedAddress: string): Promise<void> 
   const active = await getActiveAccount();
   if (!active || active.toLowerCase() !== linkedAddress.toLowerCase()) {
     throw new WalletError(
-      "La cuenta activa en Rabby no es la wallet vinculada a tu cuenta. Cambia a esa cuenta en Rabby y vuelve a intentar."
+      t("wallet.err.accountMismatch")
     );
   }
 }
@@ -338,11 +338,11 @@ export async function sendContractTx(call: ContractCall): Promise<string> {
         params: [{ from: call.from, to: call.to, data }],
       }),
       WALLET_PROMPT_TIMEOUT_MS,
-      WALLET_TIMEOUT_MESSAGE
+      walletTimeoutMessage()
     )) as string;
   } catch (err) {
-    if (isRpcError(err, 4001)) throw new WalletRejectedError("Cancelaste la firma.");
-    throw toWalletError(err, "No se pudo enviar la transacción.");
+    if (isRpcError(err, 4001)) throw new WalletRejectedError(t("wallet.err.cancelled"));
+    throw toWalletError(err, t("wallet.err.sendFail"));
   }
 }
 
@@ -363,12 +363,12 @@ export async function waitForReceipt(
       params: [hash],
     })) as { status?: string } | null;
     if (receipt) {
-      if (receipt.status === "0x0") throw new WalletError("La transacción fue revertida en la cadena.");
+      if (receipt.status === "0x0") throw new WalletError(t("wallet.err.reverted"));
       return;
     }
     await new Promise((resolve) => setTimeout(resolve, interval));
   }
-  throw new WalletError("La transacción tarda en confirmarse. Revisa el explorador en unos minutos.");
+  throw new WalletError(t("wallet.err.slowTx"));
 }
 
 async function ethCall(to: string, abi: Abi, functionName: string, args: readonly unknown[]) {
@@ -405,7 +405,7 @@ export async function watchUsdt(): Promise<boolean> {
       } as never)
     );
   } catch (err) {
-    throw toWalletError(err, "No se pudo agregar el token a tu wallet.");
+    throw toWalletError(err, t("wallet.err.watchFail"));
   }
 }
 
@@ -427,7 +427,7 @@ export async function publishCauseOnChain(
     // A3: el receptor cancela la firma en su wallet.
     if (err instanceof WalletRejectedError) {
       throw new WalletRejectedError(
-        "Cancelaste la firma. Tu causa sigue guardada, puedes reintentar publicarla en la cadena."
+        t("wallet.err.publishCancel")
       );
     }
     throw err;

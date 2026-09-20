@@ -3,7 +3,7 @@
 Es el **ADN visual** del producto: una sola fuente de verdad para colores, tipografía, layout y componentes. Complementa a [vision.md](vision.md) (qué somos) y a
 [frontend_spec.md](frontend_spec.md) (qué pantallas y qué comportamiento); aquí se define **cómo se ve y se siente**. Requisito: **NFR-018**. Vocabulario de la interfaz: [glossary.md](glossary.md).
 
-Estado: **Reviewed** (decidido 2026-09-20). El código aún usa el estilo anterior (papel/plano de obra, ver §14); la migración es trabajo del frontend y no cambia ningún UC.
+Estado: **Reviewed** (decidido 2026-09-20). Migración del frontend hecha el 2026-09-20 (tokens en `globals.css`, Inter + IBM Plex Mono, botón primario con gradiente y etiqueta `#050816`, estados de causa con su color fijo). Pendiente: logo `public/logo.png` (fondo claro), hover de cards, hero con glow propio y revisión visual pantalla por pantalla.
 
 ## 1. Dirección visual
 

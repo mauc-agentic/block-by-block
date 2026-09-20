@@ -14,11 +14,13 @@ import { DonationsTable } from "@/components/cause/DonationsTable";
 import { RetryVerification } from "@/components/RetryVerification";
 import { ApiError, getCause, imageSrc, type CauseDetail } from "@/lib/api";
 import type { AuthUser } from "@/lib/auth";
+import { useT } from "@/lib/i18n";
 import { useSessionUser } from "@/lib/useSession";
 
 const POLL_MS = 5_000;
 
 export default function CauseDetailPage() {
+  const { t } = useT();
   const { id } = useParams<{ id: string }>();
   const [cause, setCause] = useState<CauseDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -33,9 +35,9 @@ export default function CauseDetailPage() {
       })
       .catch((err) => {
         if (err instanceof ApiError && err.status === 404) setNotFound(true);
-        else setError(err instanceof Error ? err.message : "No se pudo cargar la causa.");
+        else setError(err instanceof Error ? err.message : t("detail.loadFail"));
       });
-  }, [id]);
+  }, [id, t]);
 
   useEffect(() => {
     load();
@@ -54,9 +56,9 @@ export default function CauseDetailPage() {
   if (notFound) {
     return (
       <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-        <h1 className="font-display text-3xl font-semibold text-ink">Esta causa no existe</h1>
-        <Link href="/causes" className="mt-4 inline-block text-sm font-medium text-blueprint hover:underline">
-          Volver a las causas
+        <h1 className="font-display text-3xl font-semibold text-fg">{t("detail.notFound")}</h1>
+        <Link href="/causes" className="mt-4 inline-block text-sm font-medium text-eag-secondary hover:underline">
+          {t("detail.backList")}
         </Link>
       </section>
     );
@@ -64,13 +66,13 @@ export default function CauseDetailPage() {
   if (error && !cause) {
     return (
       <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-        <p className="text-sm text-brick">{error}</p>
+        <p className="text-sm text-danger">{error}</p>
         <button
           type="button"
           onClick={() => load()}
-          className="mt-3 border border-line px-4 py-2 text-sm text-ink-soft hover:border-ink hover:text-ink"
+          className="mt-3 border border-edge px-4 py-2 text-sm text-fg-soft hover:border-fg-soft hover:text-fg rounded-sm"
         >
-          Reintentar
+          {t("common.retry")}
         </button>
       </section>
     );
@@ -78,7 +80,7 @@ export default function CauseDetailPage() {
   if (!cause) {
     return (
       <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-        <p className="text-sm text-ink-soft">Cargando la causa…</p>
+        <p className="text-sm text-fg-soft">{t("detail.loading")}</p>
       </section>
     );
   }
@@ -90,51 +92,51 @@ export default function CauseDetailPage() {
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-      <Link href="/causes" className="text-sm text-ink-soft hover:text-ink">
-        ← Todas las causas
+      <Link href="/causes" className="text-sm text-fg-soft hover:text-fg">
+        {t("detail.back")}
       </Link>
 
       {src && (
         // eslint-disable-next-line @next/next/no-img-element -- la evidencia la sirve la API
-        <img src={src} alt="" className="mt-4 aspect-[4/3] w-full border border-line object-cover" />
+        <img src={src} alt="" className="mt-4 aspect-video w-full rounded-lg border border-edge object-cover" />
       )}
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
-        <h1 className="font-display text-3xl font-semibold tracking-tight text-ink sm:text-4xl">{cause.title}</h1>
+        <h1 className="font-display text-3xl font-semibold tracking-tight text-fg sm:text-4xl">{cause.title}</h1>
         <CauseStatusBadge status={cause.status} />
       </div>
-      <p className="mt-1 text-sm text-ink-soft">{cause.recipient_name}</p>
-      <p className="mt-4 whitespace-pre-line text-ink">{cause.description}</p>
+      <p className="mt-1 text-sm text-fg-soft">{cause.recipient_name}</p>
+      <p className="mt-4 whitespace-pre-line text-fg">{cause.description}</p>
 
       <div className="mt-6">
         <CauseProgress collected={cause.collected} target={cause.target_amount} />
       </div>
 
       {cause.verification_reason && (cause.status === "Verified" || cause.status === "Rejected" || cause.status === "Completed") && (
-        <div className="mt-6 border border-line bg-paper-raised p-4">
-          <h2 className="text-sm font-semibold text-ink">Veredicto de la IA</h2>
-          <p className="mt-1 text-sm text-ink">{cause.verification_reason}</p>
-          {confidence !== null && <p className="mt-1 text-xs text-ink-soft">Confianza del modelo: {confidence}%</p>}
+        <div className="mt-6 border border-edge bg-surface rounded-lg p-4">
+          <h2 className="text-sm font-semibold text-fg">{t("detail.verdict")}</h2>
+          <p className="mt-1 text-sm text-fg">{cause.verification_reason}</p>
+          {confidence !== null && <p className="mt-1 text-xs text-fg-soft">{t("detail.confidence", { n: confidence })}</p>}
         </div>
       )}
 
       <div className="mt-8">
         {cause.status === "Pending" && (
           <div>
-            <p className="text-sm text-ink-soft">{isOwner ? "En revisión… esta página se actualiza sola." : "En revisión"}</p>
+            <p className="text-sm text-fg-soft">{isOwner ? t("detail.pendingOwner") : t("detail.pending")}</p>
             {isOwner && <RetryVerification causeId={cause.id} onQueued={() => load()} />}
           </div>
         )}
 
         {cause.status === "Rejected" && (
           <div>
-            <p className="text-sm text-brick">Esta causa fue rechazada y no recibe donaciones.</p>
+            <p className="text-sm text-danger">{t("detail.rejected")}</p>
             {isOwner && (
               <Link
                 href="/cause/create"
-                className="mt-3 inline-block bg-blueprint px-4 py-2 text-sm font-medium text-paper hover:bg-blueprint-dark"
+                className="mt-3 inline-block bg-eag-gradient rounded-sm px-4 py-2 text-sm font-medium text-canvas hover:brightness-110"
               >
-                Crear otra causa
+                {t("detail.createAnother")}
               </Link>
             )}
           </div>
@@ -142,10 +144,10 @@ export default function CauseDetailPage() {
 
         {cause.status === "Completed" && (
           <div>
-            <p className="text-sm font-medium text-blueprint">Meta alcanzada</p>
+            <p className="text-sm font-medium text-eag-secondary">{t("detail.completed")}</p>
             {isOwner && (
-              <Link href="/dashboard" className="mt-2 inline-block text-sm text-blueprint hover:underline">
-                Retirar en mi dashboard
+              <Link href="/dashboard" className="mt-2 inline-block text-sm text-eag-secondary hover:underline">
+                {t("detail.withdrawInDash")}
               </Link>
             )}
           </div>
@@ -153,30 +155,30 @@ export default function CauseDetailPage() {
 
         {cause.status === "Verified" &&
           (isOwner ? (
-            <Link href="/dashboard" className="text-sm font-medium text-blueprint hover:underline">
-              Ir a mi dashboard
+            <Link href="/dashboard" className="text-sm font-medium text-eag-secondary hover:underline">
+              {t("detail.toDash")}
             </Link>
           ) : linkedUser ? (
             <DonateBlock causeId={cause.id} user={linkedUser} onDonated={() => load()} />
           ) : user ? (
-            <p className="text-sm text-ink-soft">
-              <Link href="/wallet" className="font-medium text-blueprint hover:underline">
-                Vincula tu wallet
+            <p className="text-sm text-fg-soft">
+              <Link href="/wallet" className="font-medium text-eag-secondary hover:underline">
+                {t("detail.linkWallet")}
               </Link>{" "}
-              para donar.
+              {t("detail.toDonate")}
             </p>
           ) : (
-            <p className="text-sm text-ink-soft">
-              <Link href="/auth/login" className="font-medium text-blueprint hover:underline">
-                Inicia sesión
+            <p className="text-sm text-fg-soft">
+              <Link href="/auth/login" className="font-medium text-eag-secondary hover:underline">
+                {t("detail.login")}
               </Link>{" "}
-              y vincula tu wallet para donar.
+              {t("detail.loginToDonate")}
             </p>
           ))}
       </div>
 
       <div className="mt-12">
-        <h2 className="font-display text-xl font-semibold text-ink">Donaciones</h2>
+        <h2 className="font-display text-xl font-semibold text-fg">{t("detail.donations")}</h2>
         <div className="mt-3">
           <DonationsTable donations={cause.donations} />
         </div>

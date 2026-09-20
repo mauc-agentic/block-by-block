@@ -20,6 +20,7 @@ import {
   uploadCauseImage,
   type CauseResponse,
 } from "@/lib/causes";
+import { useT, type MessageKey } from "@/lib/i18n";
 import { WalletError, publishCauseOnChain } from "@/lib/wallet";
 
 const ALREADY_PUBLISHED = "Cause already published on-chain";
@@ -28,15 +29,8 @@ const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png"];
 
 type Stage = "publishing" | "publish_failed" | "uploading" | "upload_failed" | "done";
 
-const STAGE_LABEL: Record<Stage, string> = {
-  publishing: "Firma en tu wallet para publicar la causa en el contrato…",
-  publish_failed: "No se pudo publicar la causa en la cadena.",
-  uploading: "Subiendo tu foto…",
-  upload_failed: "No se pudo subir la evidencia.",
-  done: "¡Listo!",
-};
-
 export default function CreateCausePage() {
+  const { t } = useT();
   const router = useRouter();
   const [token] = useState(() => getStoredToken());
   const [user] = useState<AuthUser | null>(() => getStoredUser());
@@ -83,7 +77,7 @@ export default function CreateCausePage() {
       setStageError(
         err instanceof WalletError || err instanceof CauseError
           ? err.message
-          : "No se pudo publicar la causa en la cadena."
+          : t("create.stage.publish_failed")
       );
       return;
     }
@@ -100,7 +94,7 @@ export default function CreateCausePage() {
       router.push(`/cause/${target.id}`); // S5-1: termina en el detalle, "En revisión"
     } catch (err) {
       setStage("upload_failed");
-      setStageError(err instanceof CauseError ? err.message : "No se pudo subir la evidencia.");
+      setStageError(err instanceof CauseError ? err.message : t("create.stage.upload_failed"));
     }
   }
 
@@ -110,28 +104,28 @@ export default function CreateCausePage() {
 
     // A1: título, descripción o monto inválidos.
     if (title.trim().length < 5) {
-      setFormError("El título debe tener al menos 5 caracteres.");
+      setFormError(t("create.err.title"));
       return;
     }
     if (description.trim().length < 20) {
-      setFormError("La descripción debe tener al menos 20 caracteres.");
+      setFormError(t("create.err.desc"));
       return;
     }
     const amount = Number(targetAmount);
     if (!Number.isFinite(amount) || amount <= 0) {
-      setFormError("El monto objetivo debe ser mayor que cero."); // BR-002
+      setFormError(t("create.err.amount")); // BR-002
       return;
     }
     if (!image) {
-      setFormError("Sube una foto que respalde tu causa.");
+      setFormError(t("create.err.photo"));
       return;
     }
     if (!ALLOWED_IMAGE_TYPES.includes(image.type)) {
-      setFormError("Solo se aceptan imágenes JPEG o PNG."); // UC-005 BR-002
+      setFormError(t("create.err.type")); // UC-005 BR-002
       return;
     }
     if (image.size > MAX_IMAGE_BYTES) {
-      setFormError("La imagen no puede superar 5 MB."); // UC-005 BR-004
+      setFormError(t("create.err.size")); // UC-005 BR-004
       return;
     }
 
@@ -151,7 +145,7 @@ export default function CreateCausePage() {
       setCause(created);
       await publishAndUpload(created, image, walletAddress);
     } catch (err) {
-      setFormError(err instanceof CauseError ? err.message : "No se pudo crear la causa.");
+      setFormError(err instanceof CauseError ? err.message : t("create.err.fail"));
     } finally {
       setSubmitting(false);
     }
@@ -170,14 +164,14 @@ export default function CreateCausePage() {
   if (stage === "done") {
     return (
       <AuthCard
-        title="Causa enviada a verificación"
-        subtitle="Tu causa quedó publicada en el contrato y tu foto está en revisión por IA (UC-006). Te avisamos en tu dashboard en cuanto cambie de estado."
+        title={t("create.doneTitle")}
+        subtitle={t("create.doneSubtitle")}
       >
         <Link
           href="/dashboard"
-          className="inline-block bg-blueprint px-4 py-2.5 text-center text-sm font-medium text-paper transition-colors hover:bg-blueprint-dark"
+          className="inline-block bg-eag-gradient rounded-sm px-4 py-2.5 text-center text-sm font-medium text-canvas transition-colors hover:brightness-110"
         >
-          Ir a mi dashboard
+          {t("detail.toDash")}
         </Link>
       </AuthCard>
     );
@@ -187,19 +181,19 @@ export default function CreateCausePage() {
   // de publicación/subida; cada paso se puede reintentar sin duplicar la causa.
   if (cause && stage) {
     return (
-      <AuthCard title={cause.title} subtitle="Publicando tu causa">
+      <AuthCard title={cause.title} subtitle={t("create.publishing")}>
         <div className="flex flex-col gap-4">
-          <p className="text-sm text-ink-soft">{STAGE_LABEL[stage]}</p>
+          <p className="text-sm text-fg-soft">{t(`create.stage.${stage}` as MessageKey)}</p>
 
-          {stageError && <p className="text-sm text-brick">{stageError}</p>}
+          {stageError && <p className="text-sm text-danger">{stageError}</p>}
 
           {stage === "publish_failed" && (
             <button
               type="button"
               onClick={retryPublish}
-              className="bg-blueprint px-4 py-2.5 text-center text-sm font-medium text-paper transition-colors hover:bg-blueprint-dark"
+              className="bg-eag-gradient rounded-sm px-4 py-2.5 text-center text-sm font-medium text-canvas transition-colors hover:brightness-110"
             >
-              Reintentar publicación
+              {t("create.retryPublish")}
             </button>
           )}
 
@@ -207,9 +201,9 @@ export default function CreateCausePage() {
             <button
               type="button"
               onClick={retryUpload}
-              className="bg-blueprint px-4 py-2.5 text-center text-sm font-medium text-paper transition-colors hover:bg-blueprint-dark"
+              className="bg-eag-gradient rounded-sm px-4 py-2.5 text-center text-sm font-medium text-canvas transition-colors hover:brightness-110"
             >
-              Reintentar subida de la foto
+              {t("create.retryUpload")}
             </button>
           )}
         </div>
@@ -219,13 +213,13 @@ export default function CreateCausePage() {
 
   return (
     <AuthCard
-      title="Crear causa"
-      subtitle="Cuenta la necesidad, súbela con una foto y fírmala con tu wallet para publicarla en el contrato."
+      title={t("create.title")}
+      subtitle={t("create.subtitle")}
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div>
-          <label htmlFor="title" className="mb-1 block text-xs font-medium tracking-wide text-ink-soft uppercase">
-            Título
+          <label htmlFor="title" className="mb-1 block text-xs font-medium tracking-wide text-fg-soft uppercase">
+            {t("create.title.label")}
           </label>
           <input
             id="title"
@@ -235,16 +229,16 @@ export default function CreateCausePage() {
             maxLength={255}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-blueprint"
+            className="w-full border border-fg-muted bg-canvas-2 px-3 py-2 text-sm text-fg outline-none transition-colors focus:border-eag-secondary focus:ring-2 focus:ring-eag-secondary/25 rounded-sm"
           />
         </div>
 
         <div>
           <label
             htmlFor="description"
-            className="mb-1 block text-xs font-medium tracking-wide text-ink-soft uppercase"
+            className="mb-1 block text-xs font-medium tracking-wide text-fg-soft uppercase"
           >
-            Descripción
+            {t("create.desc.label")}
           </label>
           <textarea
             id="description"
@@ -254,17 +248,17 @@ export default function CreateCausePage() {
             rows={4}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full resize-none border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-blueprint"
+            className="w-full resize-none border border-fg-muted bg-canvas-2 px-3 py-2 text-sm text-fg outline-none transition-colors focus:border-eag-secondary focus:ring-2 focus:ring-eag-secondary/25 rounded-sm"
           />
-          <p className="mt-1 text-xs text-ink-soft">Mínimo 20 caracteres.</p>
+          <p className="mt-1 text-xs text-fg-soft">{t("create.desc.hint")}</p>
         </div>
 
         <div>
           <label
             htmlFor="target_amount"
-            className="mb-1 block text-xs font-medium tracking-wide text-ink-soft uppercase"
+            className="mb-1 block text-xs font-medium tracking-wide text-fg-soft uppercase"
           >
-            Monto objetivo (USDT)
+            {t("create.amount.label")}
           </label>
           <input
             id="target_amount"
@@ -274,13 +268,13 @@ export default function CreateCausePage() {
             required
             value={targetAmount}
             onChange={(e) => setTargetAmount(e.target.value)}
-            className="w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-blueprint"
+            className="w-full border border-fg-muted bg-canvas-2 px-3 py-2 text-sm text-fg outline-none transition-colors focus:border-eag-secondary focus:ring-2 focus:ring-eag-secondary/25 rounded-sm"
           />
         </div>
 
         <div>
-          <label htmlFor="image" className="mb-1 block text-xs font-medium tracking-wide text-ink-soft uppercase">
-            Foto de evidencia
+          <label htmlFor="image" className="mb-1 block text-xs font-medium tracking-wide text-fg-soft uppercase">
+            {t("create.photo.label")}
           </label>
           <input
             id="image"
@@ -288,21 +282,21 @@ export default function CreateCausePage() {
             accept="image/jpeg,image/png"
             required
             onChange={(e) => setImage(e.target.files?.[0] ?? null)}
-            className="w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none file:mr-3 file:border-0 file:bg-line file:px-3 file:py-1.5 file:text-sm file:text-ink focus:border-blueprint"
+            className="w-full border border-fg-muted bg-canvas-2 px-3 py-2 text-sm text-fg outline-none file:mr-3 file:border-0 file:bg-edge file:px-3 file:py-1.5 file:text-sm file:text-fg focus:border-eag-secondary rounded-sm"
           />
-          <p className="mt-1 text-xs text-ink-soft">
-            Una IA revisa que la foto respalde la necesidad descrita antes de verificar la causa (UC-006). JPEG o PNG, hasta 5 MB.
+          <p className="mt-1 text-xs text-fg-soft">
+            {t("create.photo.hint")}
           </p>
         </div>
 
-        {formError && <p className="text-sm text-brick">{formError}</p>}
+        {formError && <p className="text-sm text-danger">{formError}</p>}
 
         <button
           type="submit"
           disabled={submitting}
-          className="bg-blueprint px-4 py-2.5 text-center text-sm font-medium text-paper transition-colors hover:bg-blueprint-dark disabled:opacity-60"
+          className="bg-eag-gradient rounded-sm px-4 py-2.5 text-center text-sm font-medium text-canvas transition-colors hover:brightness-110 disabled:opacity-60"
         >
-          {submitting ? "Creando…" : "Crear y publicar causa"}
+          {submitting ? t("create.submitting") : t("create.submit")}
         </button>
       </form>
     </AuthCard>

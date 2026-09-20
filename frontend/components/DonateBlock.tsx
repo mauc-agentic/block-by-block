@@ -6,6 +6,7 @@
 
 import { useEffect, useState } from "react";
 import { formatUnits } from "viem";
+import { useT } from "@/lib/i18n";
 import { ExplorerLink } from "@/components/ExplorerLink";
 import { TxStepper, type StepState } from "@/components/TxStepper";
 import { ApiError, confirmDonation, requestDonation } from "@/lib/api";
@@ -46,6 +47,7 @@ export function DonateBlock({
   user: AuthUser & { wallet_address: string };
   onDonated: () => void;
 }) {
+  const { t } = useT();
   const [amount, setAmount] = useState("");
   const [balance, setBalance] = useState<bigint | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
@@ -64,7 +66,7 @@ export function DonateBlock({
   const invalidReason = parsed && !parsed.ok ? parsed.reason : null;
   const overBalance = parsed?.ok && balance !== null && parsed.micros > balance;
   const busy = phase === "approving" || phase === "donating" || phase === "registering";
-  const disabledReason = invalidReason ?? (overBalance ? "El monto supera tu saldo de USDT." : null);
+  const disabledReason = invalidReason ?? (overBalance ? t("donate.overBalance") : null);
   const canSubmit = parsed?.ok === true && !disabledReason && !busy;
 
   async function handleDonate() {
@@ -123,30 +125,28 @@ export function DonateBlock({
       setFailedAt(current);
       setPhase("error");
       if (err instanceof ApiError && err.notConfirmedYet) {
-        setMessage(
-          "Tu donación ya se firmó, pero aún no la vemos en la plataforma. Queda pendiente y se registrará sola al volver a entrar."
-        );
+        setMessage(t("donate.notRegistered"));
       } else if (err instanceof ApiError || err instanceof WalletError) {
         if (txHash && err instanceof WalletError) removePending(txHash);
         setMessage(err.message);
       } else {
-        setMessage("No se pudo completar la donación.");
+        setMessage(t("donate.fail"));
       }
     }
   }
 
   return (
-    <div className="border border-line bg-paper-raised p-5">
-      <h2 className="font-display text-xl font-semibold text-ink">Donar a esta causa</h2>
-      <p className="mt-1 text-sm text-ink-soft">
-        El dinero va directo al contrato, sin comisión de la plataforma.
-        {balance !== null && <> Tu saldo: <span className="font-mono">{formatUsdt(formatUnits(balance, 6))}</span>.</>}
+    <div className="border border-edge bg-surface rounded-lg p-5">
+      <h2 className="font-display text-xl font-semibold text-fg">{t("donate.title")}</h2>
+      <p className="mt-1 text-sm text-fg-soft">
+        {t("donate.lead")}
+        {balance !== null && <> {t("donate.balance")} <span className="font-mono">{formatUsdt(formatUnits(balance, 6))}</span>.</>}
       </p>
 
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start">
         <div className="flex-1">
-          <label htmlFor="donation-amount" className="mb-1 block text-xs font-medium tracking-wide text-ink-soft uppercase">
-            Monto (USDT)
+          <label htmlFor="donation-amount" className="mb-1 block text-xs font-medium tracking-wide text-fg-soft uppercase">
+            {t("donate.amount")}
           </label>
           <input
             id="donation-amount"
@@ -155,17 +155,17 @@ export function DonateBlock({
             disabled={busy}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="1"
-            className="w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-blueprint"
+            className="w-full border border-fg-muted bg-canvas-2 px-3 py-2 text-sm text-fg outline-none transition-colors focus:border-eag-secondary focus:ring-2 focus:ring-eag-secondary/25 rounded-sm"
           />
-          {disabledReason && <p className="mt-1 text-xs text-brick">{disabledReason}</p>}
+          {disabledReason && <p className="mt-1 text-xs text-danger">{disabledReason}</p>}
         </div>
         <button
           type="button"
           disabled={!canSubmit}
           onClick={() => void handleDonate()}
-          className="bg-blueprint px-5 py-2 text-sm font-medium text-paper transition-colors hover:bg-blueprint-dark disabled:opacity-50 sm:mt-5"
+          className="bg-eag-gradient rounded-sm px-5 py-2 text-sm font-medium text-canvas transition-colors hover:brightness-110 disabled:opacity-50 sm:mt-5"
         >
-          {busy ? "Donando…" : "Donar"}
+          {busy ? t("donate.busy") : t("donate.btn")}
         </button>
       </div>
 
@@ -173,19 +173,19 @@ export function DonateBlock({
         <div className="mt-4">
           <TxStepper
             steps={[
-              { label: "Aprobar USDT", state: stepState(phase, "approving", failedAt) },
-              { label: "Donar", state: stepState(phase, "donating", failedAt) },
-              { label: "Registrar", state: stepState(phase, "registering", failedAt) },
+              { label: t("donate.stepApprove"), state: stepState(phase, "approving", failedAt) },
+              { label: t("donate.stepDonate"), state: stepState(phase, "donating", failedAt) },
+              { label: t("donate.stepRegister"), state: stepState(phase, "registering", failedAt) },
             ]}
           />
         </div>
       )}
 
-      {message && <p className="mt-3 text-sm text-brick">{message}</p>}
+      {message && <p className="mt-3 text-sm text-danger">{message}</p>}
 
       {phase === "done" && donatedHash && (
-        <p className="mt-3 text-sm text-moss">
-          ¡Gracias! Donaste {formatUsdt(donatedAmount)}. <ExplorerLink hash={donatedHash} label="Ver transacción" />
+        <p className="mt-3 text-sm text-ok">
+          {t("donate.thanks", { amount: formatUsdt(donatedAmount) })} <ExplorerLink hash={donatedHash} label={t("common.viewTx")} />
         </p>
       )}
     </div>

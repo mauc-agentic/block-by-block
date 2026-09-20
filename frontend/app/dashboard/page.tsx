@@ -15,9 +15,11 @@ import { MyDonations } from "@/components/dashboard/MyDonations";
 import { WalletAlert } from "@/components/dashboard/WalletAlert";
 import { ApiError, fetchDashboard, type Dashboard } from "@/lib/api";
 import { clearSession, getStoredToken } from "@/lib/auth";
+import { useT } from "@/lib/i18n";
 import { WalletError, watchUsdt } from "@/lib/wallet";
 
 export default function DashboardPage() {
+  const { t } = useT();
   const router = useRouter();
   const [data, setData] = useState<Dashboard | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -34,9 +36,9 @@ export default function DashboardPage() {
           router.replace("/auth/login");
           return;
         }
-        setError(err instanceof Error ? err.message : "No se pudo cargar tu dashboard.");
+        setError(err instanceof Error ? err.message : t("dash.error"));
       });
-  }, [router]);
+  }, [router, t]);
 
   useEffect(() => {
     if (!getStoredToken()) {
@@ -49,9 +51,9 @@ export default function DashboardPage() {
   async function handleWatchAsset() {
     try {
       await watchUsdt();
-      setTokenMessage("Listo: revisa tu wallet para agregar USDT.");
+      setTokenMessage(t("dash.watchOk"));
     } catch (err) {
-      setTokenMessage(err instanceof WalletError ? err.message : "No se pudo agregar el token.");
+      setTokenMessage(err instanceof WalletError ? err.message : t("dash.watchFail"));
     }
   }
 
@@ -63,14 +65,14 @@ export default function DashboardPage() {
   if (error) {
     return (
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <p className="text-sm text-brick">{error}</p>
+        <p className="text-sm text-danger">{error}</p>
       </section>
     );
   }
   if (!data) {
     return (
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <p className="text-sm text-ink-soft">Cargando tu dashboard…</p>
+        <p className="text-sm text-fg-soft">{t("dash.loading")}</p>
       </section>
     );
   }
@@ -79,31 +81,31 @@ export default function DashboardPage() {
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-      <div className="flex flex-col justify-between gap-4 border-b border-line pb-6 sm:flex-row sm:items-center">
+      <div className="flex flex-col justify-between gap-4 border-b border-edge pb-6 sm:flex-row sm:items-center">
         <div>
-          <h1 className="font-display text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-            Hola, {user.username}
+          <h1 className="font-display text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
+            {t("dash.hello", { name: user.username })}
           </h1>
-          <p className="mt-1 text-sm text-ink-soft">{user.email}</p>
+          <p className="mt-1 text-sm text-fg-soft">{user.email}</p>
         </div>
         <div className="flex flex-wrap gap-2 self-start sm:self-center">
           <button
             type="button"
             onClick={() => void handleWatchAsset()}
-            className="border border-line px-4 py-2 text-sm font-medium text-ink-soft transition-colors hover:border-ink hover:text-ink"
+            className="border border-edge px-4 py-2 text-sm font-medium text-fg-soft transition-colors hover:border-fg-soft hover:text-fg rounded-sm"
           >
-            Ver USDT en mi wallet
+            {t("dash.watch")}
           </button>
           <button
             type="button"
             onClick={handleLogout}
-            className="border border-line px-4 py-2 text-sm font-medium text-ink-soft transition-colors hover:border-ink hover:text-ink"
+            className="border border-edge px-4 py-2 text-sm font-medium text-fg-soft transition-colors hover:border-fg-soft hover:text-fg rounded-sm"
           >
-            Cerrar sesión
+            {t("nav.logout")}
           </button>
         </div>
       </div>
-      {tokenMessage && <p className="mt-2 text-xs text-ink-soft">{tokenMessage}</p>}
+      {tokenMessage && <p className="mt-2 text-xs text-fg-soft">{tokenMessage}</p>}
 
       {!data.wallet_linked && (
         <div className="mt-6">
@@ -112,20 +114,19 @@ export default function DashboardPage() {
       )}
 
       <div className="mt-10 flex items-center justify-between gap-4">
-        <h2 className="font-display text-2xl font-semibold text-ink">Mis causas</h2>
+        <h2 className="font-display text-2xl font-semibold text-fg">{t("dash.myCauses")}</h2>
         <Link
           href="/cause/create"
-          className="shrink-0 bg-blueprint px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-blueprint-dark"
+          className="shrink-0 bg-eag-gradient rounded-sm px-4 py-2 text-sm font-medium text-canvas transition-colors hover:brightness-110"
         >
-          + Crear causa
+          {t("dash.create")}
         </Link>
       </div>
 
       {causes.length === 0 ? (
-        <div className="mt-4 border border-dashed border-line p-8 text-center">
-          <p className="text-sm text-ink-soft">
-            Todavía no has creado ninguna causa. Publica la tuya para empezar a
-            recibir donaciones verificadas.
+        <div className="mt-4 border border-dashed border-edge p-8 text-center rounded-lg">
+          <p className="text-sm text-fg-soft">
+            {t("dash.noCauses")}
           </p>
         </div>
       ) : (
