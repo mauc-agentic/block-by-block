@@ -45,23 +45,75 @@ function isRpcError(err: unknown, code: number): boolean {
   return typeof err === "object" && err !== null && "code" in err && (err as { code: unknown }).code === code;
 }
 
+// Convierte cualquier error (RPC de la wallet, red, bug) en un WalletError con
+// un mensaje real. Antes, un error no contemplado explícitamente (p.ej. -32002
+// "ya hay una solicitud pendiente") caía en un mensaje genérico que ocultaba la
+// causa real y hacía imposible depurar fallos de conexión con Rabby.
+function toWalletError(err: unknown, fallback: string): WalletError {
+  if (err instanceof WalletError) return err;
+  if (isRpcError(err, -32002)) {
+    return new WalletError(
+      "Rabby ya tiene una solicitud pendiente. Abre la extensión, apruébala o recházala, y vuelve a intentar."
+    );
+  }
+  if (err instanceof Error && err.message) return new WalletError(err.message);
+  if (typeof err === "string" && err) return new WalletError(err);
+  if (typeof err === "object" && err !== null && "message" in err) {
+    const message = (err as { message: unknown }).message;
+    if (typeof message === "string" && message) return new WalletError(message);
+  }
+  return new WalletError(fallback);
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number, timeoutMessage: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new WalletError(timeoutMessage)), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      }
+    );
+  });
+}
+
+const WALLET_PROMPT_TIMEOUT_MS = 30_000;
+const WALLET_TIMEOUT_MESSAGE =
+  "Rabby no respondió a tiempo. Abre la extensión por si tiene una ventana de aprobación esperando, o reinicia el navegador si sigue sin responder.";
+
 async function ensureHskNetwork(provider: EthereumProvider) {
-  const currentChainId = await provider.request({ method: "eth_chainId" });
+  const currentChainId = await withTimeout(
+    provider.request({ method: "eth_chainId" }),
+    WALLET_PROMPT_TIMEOUT_MS,
+    WALLET_TIMEOUT_MESSAGE
+  );
   if (currentChainId === HSK_CHAIN_ID_HEX) return;
 
   // A4: red incorrecta -> pedir cambio a HSK Chain testnet.
   try {
-    await provider.request({
-      method: "wallet_switchEthereumChain",
-      params: [{ chainId: HSK_CHAIN_ID_HEX }],
-    });
+    await withTimeout(
+      provider.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: HSK_CHAIN_ID_HEX }],
+      }),
+      WALLET_PROMPT_TIMEOUT_MS,
+      WALLET_TIMEOUT_MESSAGE
+    );
   } catch (err) {
     // 4902: la wallet no tiene la red agregada todavía.
     if (isRpcError(err, 4902)) {
-      await provider.request({
-        method: "wallet_addEthereumChain",
-        params: [HSK_CHAIN_PARAMS],
-      });
+      await withTimeout(
+        provider.request({
+          method: "wallet_addEthereumChain",
+          params: [HSK_CHAIN_PARAMS],
+        }),
+        WALLET_PROMPT_TIMEOUT_MS,
+        WALLET_TIMEOUT_MESSAGE
+      );
     } else if (isRpcError(err, 4001)) {
       throw new WalletRejectedError("Cancelaste el cambio de red en tu wallet.");
     } else {
@@ -80,7 +132,11 @@ export async function connectWallet(): Promise<string> {
 
   let accounts: string[];
   try {
-    accounts = (await provider.request({ method: "eth_requestAccounts" })) as string[];
+    accounts = (await withTimeout(
+      provider.request({ method: "eth_requestAccounts" }),
+      WALLET_PROMPT_TIMEOUT_MS,
+      WALLET_TIMEOUT_MESSAGE
+    )) as string[];
   } catch (err) {
     if (isRpcError(err, 4001)) {
       throw new WalletRejectedError("Cancelaste la conexión con tu wallet.");
@@ -107,12 +163,26 @@ function buildLinkMessage(address: string, user: AuthUser): string {
   ].join("\n");
 }
 
+function toHexMessage(message: string): string {
+  const bytes = new TextEncoder().encode(message);
+  return `0x${Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")}`;
+}
+
 async function signMessage(provider: EthereumProvider, address: string, message: string): Promise<string> {
   try {
-    return (await provider.request({
-      method: "personal_sign",
-      params: [message, address],
-    })) as string;
+    // El mensaje va hex-encodeado (spec de personal_sign); el backend recupera
+    // la dirección a partir del texto original con encode_defunct, que aplica
+    // el mismo prefijo EIP-191 sobre los mismos bytes.
+    return (await withTimeout(
+      provider.request({
+        method: "personal_sign",
+        params: [toHexMessage(message), address],
+      }),
+      WALLET_PROMPT_TIMEOUT_MS,
+      WALLET_TIMEOUT_MESSAGE
+    )) as string;
   } catch (err) {
     if (isRpcError(err, 4001)) {
       throw new WalletRejectedError("Cancelaste la firma. Tu cuenta sigue sin wallet vinculada.");
@@ -157,19 +227,23 @@ async function submitWalletLink(input: {
 
 /** Flujo completo de UC-003: conectar, firmar y vincular la wallet. */
 export async function linkWallet(): Promise<AuthUser> {
-  const user = getStoredUser();
-  if (!user) {
-    throw new WalletError("Tu sesión expiró. Inicia sesión de nuevo.");
+  try {
+    const user = getStoredUser();
+    if (!user) {
+      throw new WalletError("Tu sesión expiró. Inicia sesión de nuevo.");
+    }
+
+    const provider = getInjectedProvider();
+    const address = await connectWallet();
+    if (!provider) {
+      throw new WalletError("No detectamos una wallet compatible.");
+    }
+
+    const message = buildLinkMessage(address, user);
+    const signature = await signMessage(provider, address, message);
+
+    return await submitWalletLink({ wallet_address: address, signature, message });
+  } catch (err) {
+    throw toWalletError(err, "No se pudo vincular la wallet.");
   }
-
-  const provider = getInjectedProvider();
-  const address = await connectWallet();
-  if (!provider) {
-    throw new WalletError("No detectamos una wallet compatible.");
-  }
-
-  const message = buildLinkMessage(address, user);
-  const signature = await signMessage(provider, address, message);
-
-  return submitWalletLink({ wallet_address: address, signature, message });
 }

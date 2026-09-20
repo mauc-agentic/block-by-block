@@ -33,6 +33,11 @@ export function Header() {
     router.push("/");
   }
 
+  const inDashboard = pathname.startsWith("/dashboard");
+  const sessionLink = inDashboard
+    ? { href: "/wallet", label: "Mi wallet" }
+    : { href: "/dashboard", label: "Dashboard" };
+
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-paper/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
@@ -66,10 +71,10 @@ export function Header() {
           {user ? (
             <>
               <Link
-                href="/wallet"
+                href={sessionLink.href}
                 className="text-sm font-medium text-ink-soft transition-colors hover:text-ink"
               >
-                Mi wallet
+                {sessionLink.label}
               </Link>
               <button
                 type="button"
@@ -135,11 +140,11 @@ export function Header() {
             {user ? (
               <>
                 <Link
-                  href="/wallet"
+                  href={sessionLink.href}
                   className="rounded-sm px-2 py-2 text-sm text-ink-soft hover:bg-paper-raised hover:text-ink"
                   onClick={() => setMenuOpen(false)}
                 >
-                  Mi wallet
+                  {sessionLink.label}
                 </Link>
                 <button
                   type="button"
