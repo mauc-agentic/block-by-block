@@ -21,7 +21,7 @@
 2. Usuario ingresa correo y contraseña.
 3. Sistema valida las credenciales.
 4. Sistema abre una sesión de 24 horas.
-5. Sistema dirige al usuario a su dashboard según su rol.
+5. Sistema dirige al usuario a su dashboard.
 
 ## Alternative Flows
 
@@ -66,7 +66,7 @@ contraseña (step 2)
 ### Success Postconditions
 
 - Existe una sesión activa asociada al usuario
-- El usuario ve el dashboard correspondiente a su rol
+- El usuario ve su dashboard, con sus causas y sus donaciones
 
 ### Failure Postconditions
 

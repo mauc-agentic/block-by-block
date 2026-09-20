@@ -25,15 +25,14 @@ class User(Base):
     auth_provider = Column(String(20), nullable=False, default="local", server_default="local")
     external_id = Column(String(255), unique=True, nullable=True, index=True)  # UC-001 A3, UC-002 A3
     wallet_address = Column(String(42), unique=True, nullable=True, index=True)
-    user_type = Column(String(20), nullable=False)  # "donor" o "recipient"
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    
+
     # Relaciones
     causes = relationship("Cause", back_populates="recipient")
     donations = relationship("Donation", back_populates="donor")
-    
+
     def __repr__(self):
-        return f"<User {self.username} ({self.user_type})>"
+        return f"<User {self.username}>"
 
 class Cause(Base):
     """UC-004: Causa publicada por un receptor."""

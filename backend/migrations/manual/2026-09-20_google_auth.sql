@@ -10,3 +10,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(20) NOT NULL DE
 ALTER TABLE users ADD COLUMN IF NOT EXISTS external_id VARCHAR(255);
 ALTER TABLE users ADD CONSTRAINT users_external_id_key UNIQUE (external_id);
 CREATE INDEX IF NOT EXISTS ix_users_external_id ON users (external_id);
+
+-- Decisión de producto (2026-09-20): cualquier cuenta puede donar y publicar causas;
+-- ya no existe un rol fijo por cuenta (UC-001 BR-001 retirada, UC-004 BR-001 retirada).
+ALTER TABLE users DROP COLUMN IF EXISTS user_type;

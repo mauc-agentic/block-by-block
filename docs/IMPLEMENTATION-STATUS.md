@@ -82,7 +82,7 @@ Leyenda de prueba: **A** = automatizada, **P** = parcial, **—** = ninguna.
 | GAP-015 | Resuelta  | `get_current_user` devolvía la función `get_db` en vez de una sesión: todo endpoint autenticado respondía 500 en `main`. Corregido con `_db_session` (import diferido) y cubierto por `test_uc004_uc009_authenticated_flow` | UC-004..009 |
 | GAP-016 | Media     | Frontend sin integración con el resto de la API: `lib/causes.ts` usa datos de muestra; sin wallet, sin rutas de UC-004..011. Auth (UC-001, UC-002) ya conecta a `/auth/*` | C-006       |
 | GAP-020 | Media     | El SQL Editor / conexión directa de Supabase rechaza la IP de esta máquina de desarrollo (`EADDRNOTALLOWED`); los tests de integración no se pueden correr localmente hasta agregarla al allowlist del proyecto en Supabase | NFR-001 |
-| GAP-021 | Baja      | `Base.metadata.create_all` no altera columnas existentes: `auth_provider`/`external_id`/`hashed_password NULL` en `users` requieren correr `backend/migrations/manual/2026-09-20_google_auth.sql` a mano en Supabase antes de desplegar | UC-001, UC-002 |
+| GAP-021 | Baja      | `Base.metadata.create_all` no altera columnas existentes: `auth_provider`/`external_id`/`hashed_password NULL` (y el `DROP COLUMN user_type`, ver decisión abajo) en `users` requieren correr `backend/migrations/manual/2026-09-20_google_auth.sql` a mano en Supabase antes de desplegar | UC-001, UC-002, UC-004 |
 | GAP-017 | Media     | `SECRET_KEY` real subido a `main` en el commit de configuración de Render (ya eliminado del árbol, sigue en el historial). Rotar.                   | NFR-008     |
 | GAP-018 | Baja      | `venv/` había sido versionado por un `git add -A`; se retira del índice y se agrega a `.gitignore`                                                | C-008       |
 | GAP-019 | Baja      | `on_event("shutdown")`, `from_orm` y `datetime.utcnow` están deprecados                                                                            | —           |
@@ -127,3 +127,6 @@ Leyenda de prueba: **A** = automatizada, **P** = parcial, **—** = ninguna.
 - Despliegue: Render con Docker (`render.yaml`).
 - Login/registro con Google: Google Identity Services (ID token) verificado en el backend con `google-auth`
   (`GOOGLE_CLIENT_ID` como audience); sin NextAuth ni flujo de redirect/código OAuth.
+- Cambio de producto (2026-09-20): se retira el rol fijo por cuenta (`user_type`). Cualquier cuenta puede donar
+  y publicar causas; UC-001 BR-001 y UC-004 BR-001 se eliminaron (columna `users.user_type` se elimina via
+  `backend/migrations/manual/2026-09-20_google_auth.sql`, pendiente de ejecutar en Supabase).

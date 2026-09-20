@@ -9,7 +9,7 @@ Vocabulario de estado FR: `Open → In Progress → Implemented → Verified`. `
 
 | ID     | Title                      | User Story                                                                                                                                      | Priority | Status       |
 |--------|----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|----------|--------------|
-| FR-001 | Registro de cuenta         | As a visitante, I want registrarme como donante o receptor so that puedo usar la plataforma según mi rol.                                       | High     | Implemented  |
+| FR-001 | Registro de cuenta         | As a visitante, I want registrarme so that puedo donar a causas o publicar la mía, sin elegir un rol fijo.                                      | High     | Implemented  |
 | FR-002 | Inicio de sesión           | As a usuario registrado, I want iniciar sesión so that accedo a mi dashboard y acciones.                                                        | High     | Implemented  |
 | FR-003 | Vincular wallet            | As a usuario, I want vincular mi wallet demostrando que la controlo so that puedo donar o recibir fondos con mi dirección.                      | High     | Implemented  |
 | FR-004 | Crear causa                | As a receptor, I want describir mi necesidad con título, descripción y monto objetivo so that los donantes puedan conocerla.                    | High     | Implemented  |

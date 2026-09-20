@@ -1,12 +1,10 @@
 // UC-001, UC-002 — cliente de autenticación (email/contraseña y Google)
-
-export type UserType = "donor" | "recipient";
+// Cualquier cuenta puede donar y publicar causas; no hay un rol fijo por cuenta.
 
 export type AuthUser = {
   id: number;
   username: string;
   email: string;
-  user_type: UserType;
   auth_provider: "local" | "google";
   wallet_address: string | null;
   created_at: string;
@@ -47,7 +45,6 @@ export function signup(input: {
   username: string;
   email: string;
   password: string;
-  user_type: UserType;
 }) {
   return postJson<TokenResponse>("/auth/signup", input);
 }
@@ -56,7 +53,7 @@ export function login(input: { email: string; password: string }) {
   return postJson<TokenResponse>("/auth/login", input);
 }
 
-export function googleSignup(input: { id_token: string; user_type: UserType }) {
+export function googleSignup(input: { id_token: string }) {
   return postJson<TokenResponse>("/auth/google/signup", input);
 }
 

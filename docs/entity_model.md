@@ -13,7 +13,8 @@ erDiagram
 
 ### USER
 
-Cuenta de la plataforma, con rol de donante o receptor y wallet opcional. Puede autenticarse con contraseña propia o con un proveedor externo (OAuth).
+Cuenta de la plataforma, con wallet opcional. Puede donar a causas y publicar las suyas indistintamente, sin
+un rol fijo por cuenta. Puede autenticarse con contraseña propia o con un proveedor externo (OAuth).
 
 | Attribute       | Description                           | Data Type | Length/Precision | Validation Rules                                           |
 |-----------------|---------------------------------------|-----------|------------------|-------------------------------------------------------------|
@@ -24,7 +25,6 @@ Cuenta de la plataforma, con rol de donante o receptor y wallet opcional. Puede 
 | auth_provider   | Proveedor de autenticación            | String    | 20               | Not Null, Values: local, google, Default: local              |
 | external_id     | Identificador en el proveedor externo | String    | 255              | Optional, Unique (requerido si auth_provider ≠ local)        |
 | wallet_address  | Dirección de wallet vinculada         | String    | 42               | Optional, Unique                                             |
-| user_type       | Rol del usuario                       | String    | 20               | Not Null, Values: donor, recipient                           |
 | created_at      | Fecha de creación                     | DateTime  | -                | Not Null                                                     |
 
 ### CAUSE

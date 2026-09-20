@@ -5,7 +5,7 @@
 **Use Case ID:** UC-001  
 **Use Case Name:** Register Account  
 **Primary Actor:** Visitante  
-**Goal:** Crear una cuenta como donante o receptor  
+**Goal:** Crear una cuenta que pueda donar y publicar causas  
 **Status:** Implemented
 
 **Requirements:** [FR-001, NFR-006, NFR-007](../requirements.md)
@@ -17,8 +17,8 @@
 ## Main Success Scenario
 
 1. Visitante abre la página de registro.
-2. Sistema muestra el formulario con nombre de usuario, correo, contraseña y rol (donante o receptor).
-3. Visitante completa los datos y elige su rol.
+2. Sistema muestra el formulario con nombre de usuario, correo y contraseña.
+3. Visitante completa los datos.
 4. Visitante envía el formulario.
 5. Sistema valida los datos y verifica que el correo y el nombre de usuario no existan.
 6. Sistema crea la cuenta y abre una sesión de 24 horas.
@@ -37,7 +37,7 @@
 
 ### A2: Datos inválidos
 
-**Trigger:** Correo con formato inválido, contraseña corta o rol no permitido (step 5)  
+**Trigger:** Correo con formato inválido o contraseña corta (step 5)  
 **Flow:**
 
 1. Sistema indica los campos inválidos.
@@ -49,7 +49,7 @@
 **Trigger:** El visitante elige continuar con una cuenta externa (Google) en lugar de completar el formulario (step 2)  
 **Flow:**
 
-1. Sistema redirige al visitante al proveedor externo para que confirme su identidad y elija su rol (donante o receptor).
+1. Sistema redirige al visitante al proveedor externo para que confirme su identidad.
 2. Visitante autoriza a Block by Block a verificar su identidad ante el proveedor externo.
 3. Sistema recibe el correo verificado y la identidad confirmada por el proveedor externo.
 4. Sistema deriva un nombre de usuario a partir del perfil externo.
@@ -59,7 +59,7 @@
 
 ### Success Postconditions
 
-- Existe un usuario con el rol elegido y sin wallet vinculada
+- Existe un usuario que puede donar y publicar causas, sin wallet vinculada
 - Para cuentas registradas con correo y contraseña, la contraseña queda almacenada de forma no reversible
 - Para cuentas registradas con un proveedor externo, la cuenta queda asociada a esa identidad externa
 - Existe una sesión activa para el nuevo usuario
@@ -70,10 +70,6 @@
 - No se abre ninguna sesión
 
 ## Business Rules
-
-### BR-001: Rol único
-
-Cada cuenta tiene exactamente un rol: donante o receptor. El rol no cambia después del registro.
 
 ### BR-002: Unicidad
 
