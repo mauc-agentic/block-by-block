@@ -1,0 +1,22 @@
+# Secretos y locales
+z.txt
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+.venv/
+*.db
+
+# Node
+node_modules/
+.next/
+
+# Foundry
+cache/
+out/
+broadcast/
+
+# OS
+.DS_Store

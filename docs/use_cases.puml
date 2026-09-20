@@ -1,0 +1,42 @@
+@startuml Use Cases Overview
+left to right direction
+
+actor "Visitante" as visitor
+actor "Donante" as donor
+actor "Receptor" as recipient
+actor "Agente Verificador" as agent
+
+rectangle "Block by Block" {
+    usecase "UC-001\nRegistrar cuenta" as UC001
+    usecase "UC-002\nIniciar sesión" as UC002
+    usecase "UC-003\nVincular wallet" as UC003
+    usecase "UC-004\nCrear causa" as UC004
+    usecase "UC-005\nSubir evidencia de causa" as UC005
+    usecase "UC-006\nVerificar causa con IA" as UC006
+    usecase "UC-007\nExplorar causas verificadas" as UC007
+    usecase "UC-008\nVer detalle de causa" as UC008
+    usecase "UC-009\nDonar a una causa" as UC009
+    usecase "UC-010\nRetirar fondos" as UC010
+    usecase "UC-011\nVer dashboard" as UC011
+}
+
+visitor --> UC001
+donor --> UC002
+recipient --> UC002
+donor --> UC003
+recipient --> UC003
+recipient --> UC004
+recipient --> UC005
+agent --> UC006
+donor --> UC007
+donor --> UC008
+donor --> UC009
+recipient --> UC010
+donor --> UC011
+recipient --> UC011
+
+UC005 ..> UC006 : <<include>>
+UC009 ..> UC003 : <<precondition>>
+UC010 ..> UC003 : <<precondition>>
+
+@enduml
