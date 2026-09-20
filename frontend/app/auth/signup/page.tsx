@@ -64,7 +64,7 @@ export default function SignupPage() {
             minLength={3}
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-blueprint"
+            className="w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-emerald"
           />
         </div>
 
@@ -78,7 +78,7 @@ export default function SignupPage() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-blueprint"
+            className="w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-emerald"
           />
         </div>
 
@@ -93,7 +93,7 @@ export default function SignupPage() {
             minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-blueprint"
+            className="w-full border border-line bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-emerald"
           />
           <p className="mt-1 text-xs text-ink-soft">Mínimo 8 caracteres.</p>
         </div>
@@ -103,7 +103,7 @@ export default function SignupPage() {
         <button
           type="submit"
           disabled={loading}
-          className="bg-blueprint px-4 py-2.5 text-center text-sm font-medium text-paper transition-colors hover:bg-blueprint-dark disabled:opacity-60"
+          className="bg-emerald px-4 py-2.5 text-center text-sm font-medium text-paper transition-colors hover:bg-emerald-dark disabled:opacity-60"
         >
           {loading ? "Creando cuenta…" : "Registrarse"}
         </button>
@@ -119,7 +119,7 @@ export default function SignupPage() {
 
       <p className="mt-6 text-center text-sm text-ink-soft">
         ¿Ya tienes cuenta?{" "}
-        <Link href="/auth/login" className="font-medium text-blueprint hover:underline">
+        <Link href="/auth/login" className="font-medium text-emerald hover:underline">
           Inicia sesión
         </Link>
       </p>

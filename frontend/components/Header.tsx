@@ -94,7 +94,7 @@ export function Header() {
               </Link>
               <Link
                 href="/auth/signup"
-                className="bg-blueprint px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-blueprint-dark"
+                className="bg-emerald px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-emerald-dark"
               >
                 Registrarse
               </Link>
@@ -165,7 +165,7 @@ export function Header() {
                 </Link>
                 <Link
                   href="/auth/signup"
-                  className="mt-1 bg-blueprint px-4 py-2 text-center text-sm font-medium text-paper hover:bg-blueprint-dark"
+                  className="mt-1 bg-emerald px-4 py-2 text-center text-sm font-medium text-paper hover:bg-emerald-dark"
                   onClick={() => setMenuOpen(false)}
                 >
                   Registrarse
