@@ -1,16 +1,13 @@
 # app/main.py
 # FastAPI application factory
 
+import sys
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core import get_settings
 from app.api.v1.router import router as v1_router
-from app.db import Base, engine
 from app.tasks import shutdown_executor
-
-# Crear tablas
-Base.metadata.create_all(bind=engine)
 
 settings = get_settings()
 
@@ -20,6 +17,12 @@ app = FastAPI(
     description="Plataforma de donaciones descentralizada peer-to-peer",
     version="0.1.0",
 )
+
+# Crear tablas solo si no estamos en tests
+if "pytest" not in sys.modules:
+    from app.db import Base
+    from app.db.session import engine
+    Base.metadata.create_all(bind=engine)
 
 # CORS
 app.add_middleware(
