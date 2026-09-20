@@ -2,17 +2,20 @@
 # FastAPI application — Block by Block Backend
 # UC-001..011: Auth, CRUD causas, donaciones, dashboard
 
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from datetime import timedelta
+import hashlib
+import os
 
 from config import get_settings
 from database import Base, engine, get_db
 from models import User, Cause, CauseStatus
 from schemas import (
-    UserCreate, UserLogin, TokenResponse, UserResponse, 
-    WalletLinkRequest, CauseCreate, CauseResponse, CauseListResponse
+    UserCreate, UserLogin, TokenResponse, UserResponse,
+    WalletLinkRequest, CauseCreate, CauseResponse, CauseListResponse,
+    DonateRequest, DonationResponse
 )
 from auth import (
     hash_password, verify_password, create_access_token,
@@ -273,6 +276,145 @@ def get_user_profile(
         )
     
     return UserResponse.from_orm(user)
+
+# ============================================================================
+# UC-005: SUBIR EVIDENCIA DE CAUSA
+# ============================================================================
+
+@app.post("/causes/{cause_id}/upload-image")
+async def upload_cause_image(
+    cause_id: int,
+    image: UploadFile = File(...),
+    current_user: UserResponse = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    UC-005: Receptor sube foto de evidencia para su causa.
+
+    Business Rules:
+    - BR-001: Solo el dueño de la causa
+    - BR-002: Solo JPEG/PNG, máx 5 MB
+    - BR-003: Causa aún en Pending
+
+    Workflow:
+    1. Valida formato y tamaño
+    2. Guarda imagen y calcula hash
+    3. Encola verificación (UC-006)
+    """
+
+    # Obtener causa
+    cause = db.query(Cause).filter(Cause.id == cause_id).first()
+
+    if not cause:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Cause not found"
+        )
+
+    if cause.recipient_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the cause owner can upload images"
+        )
+
+    if cause.status != CauseStatus.Pending.value:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Can only upload image to Pending causes"
+        )
+
+    # Validar formato
+    allowed_types = ["image/jpeg", "image/png"]
+    if image.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Only JPEG and PNG allowed. Got {image.content_type}"
+        )
+
+    # Validar tamaño (máx 5 MB)
+    contents = await image.read()
+    if len(contents) > 5 * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Image must be <= 5 MB"
+        )
+
+    # Calcular hash SHA-256 (simula IPFS)
+    image_hash = hashlib.sha256(contents).hexdigest()[:10]
+
+    # Guardar imagen en la BD
+    cause.image_hash = image_hash
+    db.commit()
+    db.refresh(cause)
+
+    # TODO: Encolar tarea de verificación (celery/background task)
+    # tasks.verify_cause_with_ai.delay(cause_id, image_hash)
+
+    return {
+        "cause_id": cause_id,
+        "image_hash": image_hash,
+        "status": "queued for verification",
+        "message": "Image uploaded. Verification will start shortly (UC-006)."
+    }
+
+# ============================================================================
+# UC-009: DONAR A UNA CAUSA
+# ============================================================================
+
+@app.post("/causes/{cause_id}/donate", response_model=DonationResponse)
+def donate_to_cause(
+    cause_id: int,
+    req: DonateRequest,
+    current_user: UserResponse = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    UC-009: Devuelve instrucción de firma para que el frontend haga la donación.
+
+    Business Rules:
+    - BR-001: Solo causas Verified
+    - BR-002: Sin comisión (100% al receptor)
+    - BR-003: Monto > 0
+    - BR-004: Backend no firma (donante firma en su wallet)
+
+    Respuesta: instrucción para que frontend firme en su wallet la tx donate().
+    """
+
+    # Validar causa
+    cause = db.query(Cause).filter(Cause.id == cause_id).first()
+
+    if not cause:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Cause not found"
+        )
+
+    if cause.status != CauseStatus.Verified.value:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only verified causes accept donations"
+        )
+
+    if req.amount <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Amount must be > 0"
+        )
+
+    # Convertir monto a formato on-chain (USDT con 6 decimales)
+    amount_wei = int(req.amount * (10 ** 6))
+
+    # Construir instrucción para el frontend
+    # Frontend debe:
+    # 1. Llamar approve(CauseVault, amount) en USDT
+    # 2. Llamar donate(causeId, amount) en CauseVault
+    return DonationResponse(
+        status="sign_required",
+        contract=settings.cause_vault_address,
+        function="donate",
+        params=[cause_id, amount_wei],
+        message=f"Sign to donate {req.amount} USDT to cause '{cause.title}'"
+    )
 
 # ============================================================================
 # STARTUP
