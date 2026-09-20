@@ -1,54 +1,39 @@
 services:
   - type: web
     name: block-by-block-backend
-    runtime: docker
-    plan: starter
+    runtime: python
     rootDir: backend
-    dockerfilePath: Dockerfile
-    
-    # Environment variables (non-secret)
-    env:
-      - key: PORT
-        value: "8000"
-      - key: PYTHON_VERSION
-        value: "3.12"
-    
-    # Secrets (configure in Render dashboard)
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/v1/health
     envVars:
-      - key: SUPABASE_DB_URL
-        scope: project
-      - key: SECRET_KEY
-        scope: project
-      - key: OPENROUTER_API_KEY
-        scope: project
+      - key: PYTHON_VERSION
+        value: 3.12.4
       - key: HSK_RPC_URL
         value: https://testnet.hsk.xyz
       - key: HSK_CHAIN_ID
         value: "133"
-      - key: AGENT_ADDRESS
-        scope: project
-      - key: AGENT_PRIVATE_KEY
-        scope: project
-      - key: CAUSE_VAULT_ADDRESS
-        scope: project
-      - key: ALLOWED_ORIGINS
-        value: "https://block-by-block-backend.onrender.com,http://localhost:3000"
       - key: ALGORITHM
         value: HS256
       - key: ACCESS_TOKEN_EXPIRE_HOURS
         value: "24"
-
-  # Frontend (opcional, descomentar cuando esté listo)
-  # - type: web
-  #   name: block-by-block-frontend
-  #   runtime: node
-  #   rootDir: frontend
-  #   buildCommand: "npm install && npm run build"
-  #   startCommand: "npm start"
-  #   env:
-  #     - key: NEXT_PUBLIC_API_URL
-  #       value: https://block-by-block-backend.onrender.com
-  #     - key: NEXT_PUBLIC_CHAIN_ID
-  #       value: "133"
-  #     - key: NEXT_PUBLIC_RPC_URL
-  #       value: https://testnet.hsk.xyz
+      - key: OPENROUTER_URL
+        value: https://openrouter.ai/api/v1/messages
+      - key: ALLOWED_ORIGINS
+        value: http://localhost:3000
+      - key: SUPABASE_DB_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: AGENT_ADDRESS
+        sync: false
+      - key: AGENT_PRIVATE_KEY
+        sync: false
+      - key: CAUSE_VAULT_ADDRESS
+        sync: false
