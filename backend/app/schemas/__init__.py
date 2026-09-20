@@ -13,6 +13,7 @@ from app.schemas.common import (
     DonationResponse,
     PublishInstruction,
     PublishConfirmRequest,
+    DashboardResponse,
 )
 
 __all__ = [
@@ -30,4 +31,5 @@ __all__ = [
     "DonationResponse",
     "PublishInstruction",
     "PublishConfirmRequest",
+    "DashboardResponse",
 ]

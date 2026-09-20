@@ -10,6 +10,29 @@ export type Cause = {
   recipientName: string;
 };
 
+// UC-007 — causa tal como la devuelve GET /causes (solo estado "Verified").
+export type VerifiedCause = {
+  id: number;
+  title: string;
+  description: string;
+  image_hash: string | null;
+  target_amount: string | number;
+  collected: string | number;
+  status: "Verified";
+};
+
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+
+// UC-007: lista pública de causas verificadas disponibles para donar.
+export async function fetchVerifiedCauses(): Promise<VerifiedCause[]> {
+  const res = await fetch(`${API_URL}/causes`);
+  if (!res.ok) {
+    throw new Error("No se pudieron cargar las causas verificadas.");
+  }
+  return res.json();
+}
+
 export const featuredCauses: Cause[] = [
   {
     id: 1,

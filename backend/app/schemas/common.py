@@ -87,6 +87,7 @@ class CauseListResponse(BaseModel):
     """UC-007: Listado de causas (resumen)."""
     id: int
     title: str
+    description: str
     image_hash: Optional[str] = None
     target_amount: Decimal
     collected: Decimal = Decimal("0")  # Se calcula del contrato
@@ -127,14 +128,12 @@ class DonationResponse(BaseModel):
 # DASHBOARD SCHEMAS (UC-011)
 # ============================================================================
 
-class DashboardDonorResponse(BaseModel):
-    """UC-011: Dashboard del donante."""
-    user: UserResponse
-    total_donated: Decimal
-    causes_supported: int
-    donations: list  # [{"cause_id": 1, "title": "...", "amount": ..., "date": ...}]
+class DashboardResponse(BaseModel):
+    """UC-011: Resumen del dashboard del usuario autenticado.
 
-class DashboardRecipientResponse(BaseModel):
-    """UC-011: Dashboard del receptor."""
+    Cualquier cuenta puede donar y publicar causas (no hay rol fijo), por lo
+    que el resumen combina ambas facetas en una sola respuesta en vez de
+    separarlas por rol.
+    """
     user: UserResponse
-    causes: list  # [{"id": 1, "title": "...", "target": ..., "collected": ..., "status": "..."}]
+    causes: list[CauseResponse]  # UC-011 A2: causas propias (recipient_id == user.id)
