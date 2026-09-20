@@ -9,8 +9,9 @@ aquí existan). Estado por capa: [traceability.md](traceability.md).
 
 ## 1. Alcance y resultado esperado
 
-**Hecho:** autenticación (correo y Google), vinculación de wallet con Rabby, crear causa con foto y publicación on-chain (`/cause/create`), dashboard con causas propias
-y modal del motivo de rechazo, landing con causas reales. **Backend y contrato: completos** para todo lo de abajo (ver §9).
+**Estado (2026-09-20):** todo lo de S1 a S6 está **implementado y con pruebas** (69 pruebas Vitest + MSW, lint y build en verde), en el design system de [design_system.md](design_system.md) (NFR-018) y con
+idiomas ES/EN (NFR-019). **Falta ejecutar TC-005 en vivo** con dos personas y sus wallets (§10); hasta entonces los UC de pantalla no pasan de `Implemented`. Antes ya estaban: autenticación (correo y Google),
+vinculación de wallet con Rabby, crear causa con foto y publicación on-chain, landing con causas reales. **Backend y contrato: completos** para todo lo de abajo (ver §9).
 
 **Se construye aquí:**
 
@@ -172,18 +173,22 @@ redirigir a `/wallet` con el aviso (UC-004 A2); (3) si la causa ya fue publicada
 |----|----------|
 | S5-1 | *Dado* que creo una causa completa, *entonces* termino en `/cause/{id}` viendo "En revisión". |
 | S5-2 | *Dado* que no tengo wallet vinculada, *entonces* se me lleva a `/wallet` antes de crear nada. |
+| S5-3 | *Dado* que la causa ya estaba publicada (409), *entonces* se continúa con la foto sin volver a firmar. |
 
 ## 5. Piezas transversales (S6)
 
 | Pieza | Responsabilidad |
 |-------|-----------------|
-| `lib/api.ts` | Cliente único, errores tipados, reintento por servidor dormido, tipos generados de `openapi.json` |
+| `lib/api.ts` | Cliente único, errores tipados, reintento por servidor dormido; los tipos están alineados a mano con `schemas/common.py` (pendiente generarlos de `openapi.json`) |
 | `lib/format.ts` | `formatUsdt`, `formatPercent`, `shortAddress`, `explorerTxUrl`, `explorerAddressUrl` |
 | `lib/chain.ts` | Configuración de la red 133 y fragmentos de ABI: ERC-20 `approve`, `allowance`, `balanceOf`; vault `donate`, `withdrawFunds` |
-| `lib/wallet.ts` (ya existe) | Añadir `sendContractTx(instruction)` genérico y `waitForReceipt(hash)`; `publishCauseOnChain` pasa a usarlos |
+| `lib/wallet.ts` | Hecho: `sendContractTx`, `waitForReceipt`, `ensureLinkedAccount`, lecturas de saldo y allowance, `watchUsdt`; `publishCauseOnChain` los usa |
 | `lib/pendingDonations.ts` | Lectura, escritura y reintento de `bbb_pending_donations` |
 | `components/TxStepper.tsx` | Indicador de pasos con estados pendiente / en curso / hecho / error |
 | `components/ExplorerLink.tsx`, `components/UsdtAmount.tsx` | Enlace al explorador y montos formateados |
+| `components/DonateBlock.tsx`, `PendingDonationsNotice.tsx`, `RetryVerification.tsx`, `cause/DonationsTable.tsx`, `CauseProgress.tsx`, `dashboard/MyCauseRow.tsx`, `MyDonations.tsx` | Piezas de S2, S3 y S4 |
+| `lib/i18n/` (`es.ts`, `en.ts`, `content.ts`, `index.ts`), `components/LanguageSwitcher.tsx` | Idiomas ES/EN (NFR-019): diccionario con claves idénticas en ambos idiomas, `useT()` en componentes y `t()` en `lib/` |
+| `app/globals.css`, `components/Logo.tsx`, `lib/useSession.ts` | Tokens del design system (NFR-018), logo SVG y sesión reactiva |
 
 ## 6. Estados y máquinas
 
@@ -225,7 +230,8 @@ Cada criterio de aceptación es una prueba con este nombre: `describe('UC-008 �
 | S2 | S2-1, S2-2, S2-3 (sondeo con reloj simulado), S2-4, S2-5, S2-6, S2-7 |
 | S3 | S3-1, S3-2, S3-3, S3-4 (reintento con reloj simulado), S3-5, S3-6, S3-7, S3-8 |
 | S4 | S4-1, S4-2, S4-3, S4-4, S4-5, S4-6 |
-| S5 | S5-1, S5-2 |
+| S5 | S5-1, S5-2, S5-3 |
+| i18n (NFR-019) | Mismas claves y marcadores en ES y EN, el selector cambia la interfaz sin recargar, montos y errores por idioma (`tests/i18n.test.tsx`) |
 | `lib/` | `formatUsdt` (redondeo y 6 decimales sin `parseFloat`), `parseUnits` de montos, `mapApiError` (todas las filas del §7), `pendingDonations` (guardar, listar, borrar) |
 
 ## 9. Lo que el backend y el contrato ya ofrecen (sin trabajo de backend)
@@ -265,13 +271,13 @@ donar con la cuenta activa equivocada (S3-6).
 
 | Paso | PR | Depende de |
 |------|----|------------|
-| 1 | S6 base: `lib/api.ts` con tipos generados, `lib/format.ts`, `lib/chain.ts`, `sendContractTx` y `waitForReceipt`; instalar Vitest + MSW con una primera prueba | — |
-| 2 | S2 detalle en solo lectura (estado, avance, veredicto, donaciones) + sondeo | 1 |
-| 3 | S1 listado y enlace desde la landing | 1, 2 |
-| 4 | S3 donar (`approve` + `donate` + registro con reintentos + pendientes) | 1, 2 |
-| 5 | S4 dashboard: mis donaciones, retirar, reintentar, ver USDT en la wallet | 1, 4 |
-| 6 | S5 ajustes de crear causa | 2 |
-| 7 | Ejecutar el guion del §10 y guardar la evidencia | todos |
+| 1 | ✅ S6 base: `lib/api.ts` con tipos generados, `lib/format.ts`, `lib/chain.ts`, `sendContractTx` y `waitForReceipt`; instalar Vitest + MSW con una primera prueba | — |
+| 2 | ✅ S2 detalle en solo lectura (estado, avance, veredicto, donaciones) + sondeo | 1 |
+| 3 | ✅ S1 listado y enlace desde la landing | 1, 2 |
+| 4 | ✅ S3 donar (`approve` + `donate` + registro con reintentos + pendientes) | 1, 2 |
+| 5 | ✅ S4 dashboard: mis donaciones, retirar, reintentar, ver USDT en la wallet | 1, 4 |
+| 6 | ✅ S5 ajustes de crear causa | 2 |
+| 7 | Ejecutar el guion del §10 y guardar la evidencia (**en curso**, ver el registro de ejecución de TC-005) | todos |
 
 Los pasos 2 y 3 pueden hacerse en paralelo con el 4 una vez listo el 1.
 
@@ -279,8 +285,8 @@ Los pasos 2 y 3 pueden hacerse en paralelo con el 4 una vez listo el 1.
 
 | # | Pregunta | Propuesta |
 |---|----------|-----------|
-| 1 | ¿El titular puede donar a su propia causa? | No en la interfaz (el contrato sí lo permite) |
-| 2 | ¿Monto mínimo de donación en la interfaz? | 1 USDT como valor por defecto sugerido; el mínimo técnico es 0.000001 |
-| 3 | ¿Mostrar wallets de donantes? | Sí, abreviadas (ya son públicas en la cadena) |
-| 4 | ¿Retirar parcial? | No: `withdrawFunds` retira todo el saldo (UC-010 BR-003) |
-| 5 | ¿Reintento tras un rechazo? | No: crear una causa nueva (la interfaz lo explica) |
+| 1 | ¿El titular puede donar a su propia causa? | No en la interfaz (el contrato sí lo permite). **Aplicada** (S2-6) |
+| 2 | ¿Monto mínimo de donación en la interfaz? | 1 USDT como valor por defecto sugerido; el mínimo técnico es 0.000001. **Aplicada**: se sugiere 1 (placeholder) y se acepta cualquier monto válido |
+| 3 | ¿Mostrar wallets de donantes? | Sí, abreviadas (ya son públicas en la cadena). **Aplicada** |
+| 4 | ¿Retirar parcial? | No: `withdrawFunds` retira todo el saldo (UC-010 BR-003). **Aplicada** |
+| 5 | ¿Reintento tras un rechazo? | No: crear una causa nueva (la interfaz lo explica). **Aplicada** |
