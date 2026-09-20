@@ -7,7 +7,7 @@
 **Primary Actor:** Donante  
 **Secondary Actors:** Receptor  
 **Goal:** Asociar una wallet a la cuenta demostrando que el usuario la controla  
-**Status:** Draft
+**Status:** Implemented
 
 **Requirements:** [FR-003](../requirements.md)
 

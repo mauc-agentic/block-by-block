@@ -32,7 +32,7 @@
 ### Funcionalidades Core (11 UC)
 - [x] **UC-001**: Signup `POST /api/v1/auth/signup`
 - [x] **UC-002**: Login `POST /api/v1/auth/login`
-- [x] **UC-003**: Wallet link `POST /api/v1/auth/wallet/link` (TODO: validar firma)
+- [x] **UC-003**: Wallet link `POST /api/v1/auth/wallet/link` (✅ sig validation)
 - [x] **UC-004**: Create cause `POST /api/v1/causes`
 - [x] **UC-005**: Upload image `POST /api/v1/causes/{id}/upload-image`
 - [x] **UC-007**: List causes `GET /api/v1/causes`
@@ -85,13 +85,11 @@
 
 ## 📋 Funcionalidades por UC
 
-### ✅ Completadas (9)
-- UC-001, 002, 004, 005, 007, 008, 009, 011
+### ✅ Completadas (10)
+- UC-001, 002, 003, 004, 005, 007, 008, 009, 011
 - UC-010 (solo en contrato, no en backend)
 
-### 🟡 En progreso (3)
-- **UC-003**: Endpoints hecho, falta validar firma
-- **UC-006**: Agente hecho, falta background tasks
+### 🟡 En progreso (1)
 - **UC-006**: Agente hecho, falta background tasks
 
 ### ⏸️ Deferred (0)
