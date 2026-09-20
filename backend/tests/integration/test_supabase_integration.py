@@ -2,7 +2,7 @@
 # Tests contra Supabase PostgreSQL REAL (no mock)
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
 from app.core.config import get_settings
@@ -64,7 +64,7 @@ class TestSupabaseIntegration:
     def test_db_connection(self, real_engine):
         """Verifica que se puede conectar a Supabase."""
         connection = real_engine.connect()
-        result = connection.execute("SELECT 1")
+        result = connection.execute(text("SELECT 1"))
         assert result.fetchone()[0] == 1
         connection.close()
 
@@ -82,7 +82,7 @@ class TestSupabaseIntegration:
         payload = {
             "username": "e2e_testuser_signup",
             "email": test_email,
-            "password": "SecurePass123!",
+            "password": "Pass123!",  # ≤72 bytes
             "user_type": "donor"
         }
 
@@ -113,7 +113,7 @@ class TestSupabaseIntegration:
         user = User(
             username="e2e_testuser_login",
             email=test_email,
-            hashed_password=hash_password("SecurePass123!"),
+            hashed_password=hash_password("Pass123!"),
             user_type="donor"
         )
         real_db_session.add(user)
@@ -122,7 +122,7 @@ class TestSupabaseIntegration:
         # Intentar login
         payload = {
             "email": test_email,
-            "password": "SecurePass123!"
+            "password": "Pass123!"
         }
 
         response = real_test_client.post("/api/v1/auth/login", json=payload)

@@ -11,8 +11,8 @@ from app.core.config import get_settings
 
 settings = get_settings()
 
-# Contexto de hash de contraseñas
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Contexto de hash de contraseñas (argon2 es más moderno y seguro que bcrypt)
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 # Esquema de seguridad HTTP Bearer
 security = HTTPBearer()
@@ -62,7 +62,7 @@ def verify_token(token: str, db: Session):
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(lambda: __import__('app.db', fromlist=['get_db']).get_db())
+    db: Session = Depends(lambda: __import__('app.db', fromlist=['get_db']).get_db),
 ):
     """Dependency para extraer el usuario actual del token."""
     return verify_token(credentials.credentials, db)

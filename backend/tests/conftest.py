@@ -10,9 +10,9 @@ from fastapi.testclient import TestClient
 # Usar SQLite para tests (en memoria)
 SQLALCHEMY_TEST_DATABASE_URL = "sqlite:///:memory:"
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def test_engine():
-    """Crea engine de prueba con SQLite."""
+    """Crea engine de prueba con SQLite (scope function para limpiar entre tests)."""
     engine = create_engine(
         SQLALCHEMY_TEST_DATABASE_URL,
         connect_args={"check_same_thread": False},
@@ -20,10 +20,12 @@ def test_engine():
     )
     return engine
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def setup_db(test_engine):
-    """Crea todas las tablas."""
-    from app.db.session import Base
+    """Crea todas las tablas para cada test."""
+    from app.db import Base
+    # Importar modelos para registrarlos en Base.metadata
+    from app.db.models import User, Cause, Donation, Verification
     Base.metadata.create_all(bind=test_engine)
     yield
     Base.metadata.drop_all(bind=test_engine)
@@ -51,10 +53,7 @@ def test_client(db_session):
     from app.db import get_db
 
     def override_get_db():
-        try:
-            yield db_session
-        finally:
-            pass
+        return db_session
 
     app.dependency_overrides[get_db] = override_get_db
 
