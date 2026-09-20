@@ -102,8 +102,8 @@ docs/        artefactos AIUP
 - `withdrawFunds` pone `collected = 0`: definir cómo conservar el total histórico recaudado.
 - Validar la firma de wallet con web3.py (hoy es un TODO en el spec técnico).
 - Umbral de confianza del agente: 0.80 (UC-006 BR-002).
-- El spec original llama a `https://openrouter.ai/api/v1/messages`; OpenRouter usa formato OpenAI-compatible en
-  `/api/v1/chat/completions` (imágenes como `image_url`). Confirmar con la doc actual antes de implementar UC-006.
+- Modelo IA: **DeepSeek v4.1 Flash** via OpenRouter (antes Claude 3.5 Sonnet).
+- OpenRouter endpoint: `https://openrouter.ai/api/v1/messages` con formato OpenAI-compatible.
 
 ## Verificación
 

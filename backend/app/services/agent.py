@@ -11,9 +11,9 @@ import hashlib
 from typing import Optional
 from web3 import Web3
 from web3.contract import Contract
-from config import get_settings
-from database import SessionLocal
-from models import Cause, Verification, CauseStatus
+from app.core import get_settings
+from app.db import SessionLocal
+from app.db.models import Cause, Verification, CauseStatus
 from sqlalchemy.orm import Session
 import logging
 
@@ -85,7 +85,7 @@ Responde SOLO el JSON."""
     }
     
     payload = {
-        "model": "anthropic/claude-3-5-sonnet",
+        "model": "deepseek/deepseek-v4.1-flash",
         "messages": [
             {
                 "role": "user",

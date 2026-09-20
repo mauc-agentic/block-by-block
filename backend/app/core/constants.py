@@ -27,9 +27,9 @@ ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png"}
 # Blockchain
 USDT_DECIMALS = 6
 
-# IA
+# IA (OpenRouter)
 AI_CONFIDENCE_THRESHOLD = 0.80
-AI_MODEL = "anthropic/claude-3-5-sonnet"
+AI_MODEL = "deepseek/deepseek-v4.1-flash"
 
 # Tokens
 JWT_ALGORITHM = "HS256"
