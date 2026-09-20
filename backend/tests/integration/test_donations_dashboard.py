@@ -189,20 +189,22 @@ class TestRegisterDonationUC014:
 
 
 class TestDashboardUC011:
+    def _get(self, client, person):
+        return client.get("/api/v1/users/me/dashboard", headers=person.headers)
+
     def test_uc011_donor_sees_own_donations_and_total(self, real_test_client, real_db_session, monkeypatch, make_user):
         owner, donor = make_user(), make_user()
         cause_id, onchain = verified_cause(real_test_client, real_db_session, owner)
         fake_donation(monkeypatch, onchain, donor)
         confirm(real_test_client, cause_id, donor)
-        body = real_test_client.get(f"/api/v1/users/{donor.id}", headers=donor.headers).json()
-        assert body["wallet_linked"] is True and body["recipient"] == {"causes": []}
-        assert Decimal(body["donor"]["total_donated"]) == Decimal("10")
-        assert body["donor"]["donations"][0]["cause_id"] == cause_id
+        body = self._get(real_test_client, donor).json()
+        assert body["wallet_linked"] is True and body["causes"] == []
+        assert Decimal(body["total_donated"]) == Decimal("10")
+        assert body["donations"][0]["cause_id"] == cause_id
 
-    def test_uc011_a1_donor_without_donations(self, real_test_client, make_user):
-        donor = make_user()
-        body = real_test_client.get(f"/api/v1/users/{donor.id}", headers=donor.headers).json()
-        assert Decimal(body["donor"]["total_donated"]) == 0 and body["donor"]["donations"] == []
+    def test_uc011_a1_user_without_donations(self, real_test_client, make_user):
+        body = self._get(real_test_client, make_user()).json()
+        assert Decimal(body["total_donated"]) == 0 and body["donations"] == []
 
     def test_uc011_one_account_sees_both_activities(self, real_test_client, real_db_session, monkeypatch, make_user):
         """Sin rol fijo: la misma cuenta publica una causa y dona a la de otra persona."""
@@ -211,37 +213,38 @@ class TestDashboardUC011:
         fake_donation(monkeypatch, onchain, donor)
         confirm(real_test_client, cause_id, donor)
         mine, _ = verified_cause(real_test_client, real_db_session, donor)
-        body = real_test_client.get(f"/api/v1/users/{donor.id}", headers=donor.headers).json()
-        assert Decimal(body["donor"]["total_donated"]) == Decimal("10")
-        assert [c["id"] for c in body["recipient"]["causes"]] == [mine]
+        body = self._get(real_test_client, donor).json()
+        assert Decimal(body["total_donated"]) == Decimal("10")
+        assert [c["id"] for c in body["causes"]] == [mine]
 
-    def test_uc011_recipient_sees_causes_collected_and_available(self, real_test_client, real_db_session, monkeypatch, make_user):
+    def test_uc011_causes_include_collected_available_and_onchain_id(self, real_test_client, real_db_session, monkeypatch, make_user):
         owner, donor = make_user(), make_user()
         cause_id, onchain = verified_cause(real_test_client, real_db_session, owner)
         fake_donation(monkeypatch, onchain, donor)
         confirm(real_test_client, cause_id, donor)
         monkeypatch.setattr(users_ep, "read_cause_state", lambda i: {"status": 1, "collected": 10_000_000})
-        item = real_test_client.get(f"/api/v1/users/{owner.id}", headers=owner.headers).json()["recipient"]["causes"][0]
+        item = self._get(real_test_client, owner).json()["causes"][0]
         assert item["id"] == cause_id and item["status"] == "Verified"
+        assert item["onchain_cause_id"] == onchain  # el receptor lo usa para firmar withdrawFunds
         assert Decimal(item["collected"]) == Decimal("10") and Decimal(item["available_to_withdraw"]) == Decimal("10")
+        assert item["recipient_name"].startswith("e2e_d_") and item["donations"][0]["tx_hash"]
 
     def test_uc011_available_is_none_when_chain_unreachable_or_not_verified(self, real_test_client, real_db_session, monkeypatch, make_user):
         owner = make_user()
         verified_cause(real_test_client, real_db_session, owner)
         verified_cause(real_test_client, real_db_session, owner, status="Pending")
         monkeypatch.setattr(users_ep, "read_cause_state", lambda i: None)
-        causes = real_test_client.get(f"/api/v1/users/{owner.id}", headers=owner.headers).json()["recipient"]["causes"]
+        causes = self._get(real_test_client, owner).json()["causes"]
         assert len(causes) == 2 and all(c["available_to_withdraw"] is None for c in causes)
 
-    def test_uc011_a2_recipient_without_causes(self, real_test_client, make_user):
-        owner = make_user()
-        assert real_test_client.get(f"/api/v1/users/{owner.id}", headers=owner.headers).json()["recipient"] == {"causes": []}
+    def test_uc011_a2_user_without_causes(self, real_test_client, make_user):
+        assert self._get(real_test_client, make_user()).json()["causes"] == []
 
     def test_uc011_a3_wallet_not_linked_is_reported(self, real_test_client, make_user):
-        donor = make_user(with_wallet=False)
-        assert real_test_client.get(f"/api/v1/users/{donor.id}", headers=donor.headers).json()["wallet_linked"] is False
+        assert self._get(real_test_client, make_user(with_wallet=False)).json()["wallet_linked"] is False
 
-    def test_uc011_br002_cannot_view_another_dashboard(self, real_test_client, make_user):
+    def test_uc011_br002_data_comes_from_the_session_not_from_a_parameter(self, real_test_client, real_db_session, make_user):
         a, b = make_user(), make_user()
-        assert real_test_client.get(f"/api/v1/users/{b.id}", headers=a.headers).status_code == 403
-        assert real_test_client.get(f"/api/v1/users/{b.id}").status_code in (401, 403)
+        verified_cause(real_test_client, real_db_session, b)
+        assert self._get(real_test_client, a).json()["causes"] == []        # a no ve las causas de b
+        assert real_test_client.get("/api/v1/users/me/dashboard").status_code in (401, 403)

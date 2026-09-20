@@ -7,7 +7,7 @@
 **Primary Actor:** Administrador  
 **Secondary Actors:** Agente Verificador  
 **Goal:** Pausar o reanudar la plataforma en el contrato y rotar la dirección autorizada del agente  
-**Status:** Implemented
+**Status:** Approved
 
 **Requirements:** [FR-018, NFR-008, NFR-009](../requirements.md)
 

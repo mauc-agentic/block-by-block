@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core import get_settings
 from app.api.v1.router import router as v1_router
-from app.tasks import shutdown_executor
+from app.tasks import resume_pending_verifications, shutdown_executor
 
 settings = get_settings()
 
@@ -35,6 +35,12 @@ app.add_middleware(
 
 # Incluir routers
 app.include_router(v1_router)
+
+# UC-006 A7: retomar verificaciones interrumpidas por un reinicio (no en pruebas)
+@app.on_event("startup")
+def on_startup():
+    if "pytest" not in sys.modules:
+        resume_pending_verifications()
 
 # Shutdown hook para background tasks
 @app.on_event("shutdown")

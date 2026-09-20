@@ -1,14 +1,99 @@
 # Implementation Status — Block by Block
 
-**Auditado:** 2026-09-20 contra el código de `main` (backend, contrato, frontend) ejecutando `pytest --cov`, `forge test` y `forge coverage`.
+**Auditado:** 2026-09-20 contra `main` (contrato, backend, frontend, despliegue) ejecutando `pytest --cov`, `forge test`/`forge coverage` y las pruebas reales de punta a punta.
 **Stack:** Solidity ^0.8.24 + Foundry · FastAPI + Supabase (session pooler) · DeepSeek v4.1 Flash vía OpenRouter · Next.js 16 · HSK testnet (133).
-
-> Este documento sustituye la versión anterior, que declaraba UC-011 implementado, 0 % de frontend y "bcrypt".
-> Regla: un UC solo pasa a `Implemented` con código + prueba; `Tested` cuando cada A* y BR tiene prueba.
+**Cómo leer este documento:** frontend, backend y contrato son **una sola pieza** (ver [vision.md](vision.md)). El estado por capa de cada UC está en
+[traceability.md](traceability.md), el vocabulario en [glossary.md](glossary.md) y el contrato de API en [api_contract.md](api_contract.md).
+La sección 2 se **genera** de los propios documentos (`cd backend && python -m scripts.aiup_summary`); una prueba falla si se desactualiza.
 
 ---
 
-## 1. Estado general
+## 1. Resumen ejecutivo
+
+- **Backend y contrato están completos para el flujo principal** y verificados de punta a punta en HSK testnet con dinero de prueba real:
+  crear causa → publicar on-chain → evidencia → IA → veredicto on-chain → listado → donar → registrar → dashboard → retirar.
+- **El frontend tiene** landing, autenticación (correo y Google), vinculación de wallet con Rabby (verificada en vivo) y dashboard. **Le faltan** las pantallas de
+  crear causa, publicar, detalle, donar y retirar, y la firma de transacciones con la wallet. Es lo que hoy impide correr el flujo completo desde la interfaz (TC-005).
+- **Calidad:** 177 pruebas automatizadas de backend (3 omitidas a propósito), cobertura de líneas **92 %** (meta 85 %); contrato **88.5 %** con 2 pruebas Foundry fallando.
+- **Riesgos abiertos principales:** firmar transacciones en el frontend (GAP-024/026), pruebas Foundry (GAP-006), wallet del agente = wallet personal (GAP-032),
+  donaciones sin reconciliar si el cliente no confirma (GAP-034) y secreto rotado que sigue en el historial de `main` (GAP-017).
+
+---
+
+## 2. Resumen generado desde los documentos AIUP
+
+<!-- BEGIN SUMMARY -->
+### Casos de uso
+
+| UC | Caso de uso | Estado |
+|----|-------------|--------|
+| UC-001 | Register Account | Implemented |
+| UC-002 | Log In | Implemented |
+| UC-003 | Link Wallet | Implemented |
+| UC-004 | Create Cause | Approved |
+| UC-005 | Upload Cause Evidence | Approved |
+| UC-006 | Verify Cause With AI | Implemented |
+| UC-007 | Browse Verified Causes | Approved |
+| UC-008 | View Cause Detail | Approved |
+| UC-009 | Donate To Cause | Approved |
+| UC-010 | Withdraw Funds | Approved |
+| UC-011 | View Dashboard | Approved |
+| UC-012 | Administer Contract | Approved |
+| UC-013 | Publish Cause On-Chain | Approved |
+| UC-014 | Register Donation | Approved |
+
+### Casos de prueba (journeys)
+
+| TC | Journey | Estado |
+|----|---------|--------|
+| TC-001 | Recipient To Donor Happy Path | Implemented |
+| TC-002 | Rejected Cause Blocks Funds | Implemented |
+| TC-003 | AI Provider Failure Keeps Cause Pending | Implemented |
+| TC-004 | Contract Pause And Agent Rotation | Draft |
+| TC-005 | Live End-to-End With Real Users | Draft |
+
+### Requisitos por estado
+
+| Tipo | Verified | Implemented | In Progress | Open | Deferred | Total |
+|------|----------|-------------|-------------|------|----------|-------|
+| Funcionales (FR) | 6 | 2 | 12 | 0 | 4 | 24 |
+| No funcionales (NFR) | 0 | 8 | 4 | 3 | 2 | 17 |
+| Restricciones (C) | 0 | 10 | 2 | 0 | 1 | 13 |
+
+Requisitos aún no terminados:
+
+- **FR-004** Crear causa — In Progress
+- **FR-005** Subir evidencia — In Progress
+- **FR-008** Explorar causas — In Progress
+- **FR-009** Detalle de causa — In Progress
+- **FR-010** Donar — In Progress
+- **FR-011** Retirar fondos — In Progress
+- **FR-012** Dashboard de donante — In Progress
+- **FR-013** Dashboard de receptor — In Progress
+- **FR-018** Administración del contrato — In Progress
+- **FR-019** Publicar causa on-chain — In Progress
+- **FR-020** Registrar donación — In Progress
+- **FR-024** Wallet en el navegador — In Progress
+- **NFR-002** Latencia de listado — In Progress
+- **NFR-003** Tiempo de verificación — In Progress
+- **NFR-008** Secretos fuera del repo — In Progress
+- **NFR-012** Observabilidad — Open
+- **NFR-013** Migraciones versionadas — Open
+- **NFR-015** Disponibilidad del servicio — In Progress
+- **NFR-017** Pruebas de frontend — Open
+- **C-007** Plazo — In Progress
+- **C-011** Despliegue backend — In Progress
+
+### Brechas
+
+| Crítica | Alta | Media | Baja | Abiertas | Resueltas | Total |
+|---------|------|-------|------|----------|-----------|-------|
+| 0 | 3 | 13 | 3 | 19 | 17 | 36 |
+<!-- END SUMMARY -->
+
+---
+
+## 3. Estado por componente
 
 | Componente            | Estado real                                                                                       |
 |-----------------------|---------------------------------------------------------------------------------------------------|
@@ -19,14 +104,77 @@
 | Agente IA (UC-006)    | Flujo IA + firma on-chain escrito; **no cierra el ciclo** (ver GAP-001..003)                      |
 | Frontend Next.js      | Landing (causas verificadas reales vía `GET /causes`, con `featuredCauses` de muestra solo si aún no hay ninguna), FAQ, términos, **auth (signup/login, email y Google)**, **dashboard (`/dashboard`, causas propias + verificadas)**, **vinculación de wallet (`/wallet`, Rabby/EIP-1193)** y **crear causa (`/cause/create`: UC-004 + UC-013 firmando `createCause` con la wallet + UC-005 subiendo la evidencia)** conectados al backend; sin verificar manualmente en HSK testnet todavía. Faltan detalle de causa y donar/retirar — GAP-026 |
 | Despliegue            | `Dockerfile`, `render.yaml`, `DEPLOYMENT.md` listos; **desplegado**: backend en Render, frontend en Vercel |
+| Componente | Estado real |
+|------------|-------------|
+| **Contrato `CauseVault`** | Desplegado en HSK testnet. Foundry: **7 de 9 pruebas pasan, 2 fallan** (GAP-006); cobertura de líneas 88.5 %, ramas 69.7 %. Sin pruebas de pausa ni de rotación de agente (GAP-030). |
+| **Backend FastAPI** | 17 endpoints: auth (correo y Google), wallet, causas, publicar y confirmar, evidencia, reintento de verificación, donar y confirmar, dashboard. **Desplegado en Render**; la última versión con `POST /causes/{id}/verify` está en `main` y pendiente de redespliegue. |
+| **Agente IA (UC-006)** | Ciclo cerrado y verificado en real: IA → veredicto on-chain → estado de la causa. Reintento manual, barrido al arrancar y una verificación a la vez por causa. Ensayo previo de una foto con `try_ai_verdict`. |
+| **Frontend Next.js** | Rutas: `/`, `/faq`, `/terms`, `/auth/login`, `/auth/signup`, `/wallet`, `/dashboard`. Sin `/cause/create` ni `/cause/[id]`, sin firma de transacciones y **sin pruebas**. Desplegado en Vercel. |
+| **Base de datos** | Supabase por session pooler. El esquema lo cambian scripts manuales en `backend/migrations/manual/` (Alembic pendiente, GAP-013). Se retiró `users.user_type` por decisión de producto. |
+| **Despliegue** | Backend en Render (Python 3.12.4, `render.yaml`), frontend en Vercel, `DEPLOYMENT.md` con notas operativas. Render gratuito duerme (~50 s de arranque en frío, GAP-035). |
+| **Documentación AIUP** | Conjunto único: visión, glosario, contrato de API generado y probado, trazabilidad por capa, 14 UC, 5 TC, requisitos y este estado. Regla "una sola pieza": un UC/FR es `Implemented` solo con todas sus capas. **Pruebas de integridad** (`test_aiup_integrity.py`) validan IDs, estados y enlaces entre archivos. |
 
 ### Direcciones en HSK testnet
 
-| Elemento     | Dirección                                    |
-|--------------|-----------------------------------------------|
-| CauseVault   | `0x591723edf457032ad341366f4654a973fbd0daa9`  |
-| MockUSDT     | `0xD6D6fbbcAe342788DCC18fF2b1cd692c8b8837ec`  |
-| Agente/Owner | `0x94C5E2065F555e01364ad83879D3ADDD298E706f`  |
+| Elemento | Dirección |
+|----------|-----------|
+| CauseVault | `0x591723edf457032ad341366f4654a973fbd0daa9` |
+| MockUSDT | `0xD6D6fbbcAe342788DCC18fF2b1cd692c8b8837ec` |
+| Agente / dueño / wallet de Miguel | `0x94C5E2065F555e01364ad83879D3ADDD298E706f` |
+
+---
+
+## 4. Lo que se completó
+
+**Especificación y proceso**
+- Conjunto AIUP unificado para frontend y backend: `glossary.md`, `api_contract.md` (tablas generadas del código), `traceability.md`, este estado generado y 5 TC (TC-001..003 automatizados).
+- 14 UC especificados y validados con el validador AIUP; **4 en `Implemented`** (UC-001, 002, 003, 006: todas sus capas existen) y 10 en `Approved` con backend y contrato listos y la pantalla pendiente. Pruebas de integridad de la documentación.
+
+**Contrato y backend**
+- Registro e inicio de sesión (correo y Google), vinculación de wallet por firma, crear causa, **publicar on-chain**, subir evidencia, verificación con IA con veredicto on-chain,
+  listado con monto recaudado, detalle con donaciones, donar (`approve` + `donate`), registrar donaciones leyendo la cadena, dashboard, reintento de verificación.
+- Argon2id, JWT 24 h, nonce seguro del agente, eventos filtrados por la dirección del contrato, evidencia guardada con SHA-256.
+- Herramientas: `e2e_verification`, `e2e_donation`, `try_ai_verdict`, `fund_wallet`, `generate_api_contract`, `aiup_summary`.
+
+**Frontend**
+- Landing, FAQ, términos, autenticación (correo y Google), vinculación de wallet con Rabby verificada en vivo, dashboard protegido con alerta de wallet.
+
+**Verificado en real (HSK testnet)**
+- Causa rechazada por la IA real (motivo coherente) y verificada con veredicto simulado; donación de 3 USDT con `approve` + `donate` desde una wallet distinta, registro,
+  dashboards y retiro del receptor (+3.0 USDT). Carlos ya tiene 100 MockUSDT para la prueba con usuarios reales.
+
+---
+
+## 5. Pendiente (backlog priorizado)
+
+### P0 — Para correr TC-005 (flujo real Miguel → Carlos)
+
+| # | Tarea | Responsable | Brecha |
+|---|-------|-------------|--------|
+| 1 | Pantalla **crear causa** con subida de foto | Frontend | GAP-026 |
+| 2 | **Publicar** en el contrato: firmar `createCause` con Rabby, cambiar a la red 133 y confirmar con reintentos | Frontend | GAP-024 |
+| 3 | Pantalla de **detalle** con estado (esperar el veredicto), barra de avance y donaciones, y botón "Reintentar verificación" | Frontend | GAP-026 |
+| 4 | **Donar**: `approve` + `donate` con Rabby, `confirm` con reintentos y hash guardado en `localStorage` | Frontend | GAP-024, GAP-023 |
+| 5 | **Retirar** (`withdrawFunds(onchain_cause_id)`) y añadir MockUSDT a Rabby (`wallet_watchAsset`) | Frontend | GAP-024 |
+| 6 | **Ensayar la foto real** con `try_ai_verdict` (3 de 3 aprobadas) | Miguel | GAP-033 |
+| 7 | **Redesplegar Render** con el último `main` y comprobar `/verify`, `OPENROUTER_URL`, `ALLOWED_ORIGINS`; despertar el servicio antes de la demo | Miguel / Andres | GAP-035 |
+| 8 | **Ejecutar TC-005 en vivo** y guardar la evidencia (hashes y capturas) | Todos | — |
+
+### P1 — Antes de dar el MVP por cerrado
+
+| # | Tarea | Responsable | Brecha |
+|---|-------|-------------|--------|
+| 9 | Corregir las 2 pruebas Foundry y agregar las de pausa y rotación de agente | Contrato | GAP-006, GAP-030 |
+| 10 | Bloquear donaciones a causas `Completed` en el contrato | Contrato | GAP-022 |
+| 11 | Reconciliar donaciones on-chain que el cliente no confirmó (tarea que lea eventos `DonationReceived`) | Backend | GAP-034 |
+| 12 | Separar la wallet del agente de la personal y de la dueña del contrato | Miguel | GAP-032 |
+| 13 | Mensaje de un solo uso para vincular wallet (UC-003 BR-003) | Backend | GAP-009 |
+| 14 | Decidir si se reescribe otra vez el historial de `main` (secreto rotado reintroducido por un merge) | Equipo | GAP-017 |
+
+### P2 — Endurecimiento
+
+Alembic (GAP-013), logging estructurado y middleware de errores (GAP-014), pruebas de frontend (GAP-027), adaptar `lib/causes.ts` al contrato (GAP-025),
+medir NFR-002 y NFR-003 (GAP-031), deprecaciones (GAP-019), límite de tasa (NFR-014, diferido), revisión humana de rechazos (FR-014, diferido; GAP-033).
 
 ---
 
@@ -97,44 +245,33 @@ Leyenda de prueba: **A** = automatizada, **P** = parcial, **—** = ninguna.
 
 ---
 
-## 4. Métricas medidas
+## 8. Métricas y medidas de éxito
 
-| Métrica                       | Medido 2026-09-20                  | Meta        |
-|-------------------------------|-------------------------------------|-------------|
-| `pytest`                      | 120 pasan, 3 skip, 0 fallan         | —           |
-| Cobertura backend             | 91 % (885 líneas, 81 sin cubrir)    | ≥ 85 %      |
-| `forge test`                  | 7 pasan, 2 fallan                   | 100 %       |
-| Cobertura contrato (líneas)   | 88.52 % (54/61)                     | ≥ 85 %      |
-| UC en `Implemented`           | 8 de 14 (UC-001,002,003,005,006,010,012,013) | 14 |
-| UC en `Approved`              | 5 (UC-004, 007, 008, 009, 011)      | —           |
-| UC en `Draft`                 | 1 (UC-014)                          | —           |
-| FR Implemented o Verified     | 12 de 22 (Verified: FR-003, 005, 006, 007, 019, 021, 022) | 17 (sin Deferred) |
+| Métrica | Medido 2026-09-20 | Meta |
+|---------|-------------------|------|
+| `pytest` (unit + integración) | 96 + 81 = 177 pruebas; 3 omitidas a propósito; 0 fallos | — |
+| Cobertura del backend | 92 % (929 líneas, 74 sin cubrir) | ≥ 85 % |
+| Cobertura del contrato (líneas) | 88.5 % (54/61) | ≥ 85 % |
+| `forge test` | 7 pasan, 2 fallan | 100 % |
+| Pruebas de frontend | 0 | ≥ 1 por pantalla ligada a un UC (NFR-017) |
+| Endpoints | 17 | — |
+
+| Medida de éxito de la visión | Estado |
+|------------------------------|--------|
+| Flujo completo demostrable de punta a punta | **Backend y contrato: sí** (scripts reales en testnet). **Con interfaz: no** (TC-005 pendiente por las pantallas) |
+| Cobertura superior al 85 % | Sí (92 % backend, 88.5 % contrato) |
+| Contrato desplegado y verificable en HSK testnet | Sí |
+| Cero fondos donados a causas no verificadas | Sí: el contrato exige `verified` y el backend solo entrega instrucciones para causas `Verified` |
+| Un receptor pasa de registro a causa verificada en menos de 5 minutos | Sin medir con interfaz real |
 
 ---
 
-## 5. Camino a MVP demostrable (orden sugerido)
+## 9. Decisiones vigentes
 
-Hecho y verificado en HSK testnet con `backend/scripts/e2e_verification.py` y `e2e_donation.py`:
-crear causa → publicar on-chain → evidencia → IA → veredicto on-chain → listado → donar (`approve` + `donate`)
-→ registrar donación → dashboards → retirar.
-
-1. **GAP-024/GAP-026**: conectar el resto del frontend — crear/publicar causa, detalle, donar, retirar (`createCause`, `approve`, `donate`, `withdrawFunds`, y reintento de `confirm`). La vinculación de wallet (UC-003, `/wallet`) y el dashboard (UC-011, `/dashboard`) ya están conectados.
-2. **GAP-006**: corregir las dos pruebas de Foundry y cerrar GAP-022 (bloquear donaciones a `Completed` en el contrato).
-3. **GAP-007/008**: cerrar el 85 % de cobertura (auth, seguridad) y **GAP-009** (mensaje de wallet de un solo uso).
-4. **GAP-013/014**: Alembic (incluye automatizar la migración manual ya aplicada, ver GAP-021) y logging estructurado; **reintento de verificación** si Render reinicia a mitad.
-5. **GAP-017**: rotar `SECRET_KEY` (hecho por el equipo) y actualizar `OPENROUTER_URL` en Render.
-6. **GAP-020**: agregar la IP de cada desarrollador al allowlist de Supabase para correr `pytest` de integración en local.
-
-## 6. Decisiones vigentes
-
-- Red: HSK Chain testnet (133). Token: `MockUSDT` en testnet (C-012).
-- BD: Supabase PostgreSQL por session pooler (C-010).
-- Hash de contraseñas: argon2id (NFR-006).
-- IA: `deepseek/deepseek-v4.1-flash` vía OpenRouter, umbral 0.80.
-- Tareas de fondo: `ThreadPoolExecutor` (MVP); ruta de migración a Celery en `backend/TASKS.md`.
-- Despliegue: Render con Docker (`render.yaml`).
-- Login/registro con Google: Google Identity Services (ID token) verificado en el backend con `google-auth`
-  (`GOOGLE_CLIENT_ID` como audience); sin NextAuth ni flujo de redirect/código OAuth.
-- Cambio de producto (2026-09-20): se retira el rol fijo por cuenta (`user_type`). Cualquier cuenta puede donar
-  y publicar causas; UC-001 BR-001 y UC-004 BR-001 se eliminaron (columna `users.user_type` se elimina via
-  `backend/migrations/manual/2026-09-20_google_auth.sql`, ya ejecutada en Supabase).
+- Red: HSK Chain testnet (133). Token de pruebas: `MockUSDT` (C-012). BD: Supabase por session pooler (C-010).
+- **Sin rol fijo por cuenta:** cualquier usuario puede donar y publicar causas; "Donante" y "Receptor" son roles por caso de uso (glosario).
+- Hash de contraseñas: argon2id. Sesión: JWT de 24 h.
+- IA: `deepseek/deepseek-v4.1-flash` vía `/chat/completions`, umbral de confianza 0.80, 3 reintentos. Sin revisión humana en el MVP (FR-014 diferido).
+- Tareas de fondo: `ThreadPoolExecutor` con barrido al arrancar; ruta a Celery documentada en `backend/TASKS.md`.
+- El backend nunca firma por un usuario (C-009): entrega instrucciones de firma y confirma leyendo la cadena.
+- Despliegue: Render (backend) y Vercel (frontend); el esquema cambia solo con scripts versionados.

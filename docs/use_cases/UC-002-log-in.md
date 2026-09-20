@@ -9,7 +9,7 @@
 **Goal:** Iniciar sesión para acceder a las funciones de la plataforma  
 **Status:** Implemented
 
-**Requirements:** [FR-002, NFR-006, NFR-007](../requirements.md)
+**Requirements:** [FR-002, NFR-006, NFR-007, FR-023](../requirements.md)
 
 ## Preconditions
 

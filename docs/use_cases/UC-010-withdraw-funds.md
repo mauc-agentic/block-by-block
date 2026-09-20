@@ -6,9 +6,9 @@
 **Use Case Name:** Withdraw Funds  
 **Primary Actor:** Receptor  
 **Goal:** Retirar a su wallet los fondos recaudados por una causa verificada  
-**Status:** Implemented
+**Status:** Approved
 
-**Requirements:** [FR-011, NFR-005, NFR-009, NFR-011](../requirements.md)
+**Requirements:** [FR-011, NFR-005, NFR-009, NFR-011, FR-024](../requirements.md)
 
 ## Preconditions
 

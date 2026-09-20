@@ -6,7 +6,7 @@
 **Use Case Name:** Create Cause  
 **Primary Actor:** Usuario  
 **Goal:** Publicar una necesidad con monto objetivo para que sea evaluada  
-**Status:** Implemented
+**Status:** Approved
 
 **Requirements:** [FR-004, FR-019](../requirements.md)
 

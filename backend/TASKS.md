@@ -23,7 +23,7 @@ _executor.submit(_run_verification_task)
 ### Key Features
 
 - **Nonce seguro:** `sign_verification_tx` usa el nonce `pending` y un bloqueo (`_tx_lock`) al firmar/enviar, para que varias verificaciones simultáneas no choquen.
-- **Solo en memoria:** si el proceso se reinicia con tareas en curso, la causa queda `Pending` sin reintento automático (pendiente: barrido al arrancar o endpoint de reintento).
+- **Reinicios:** la cola es en memoria, pero al arrancar `resume_pending_verifications()` reencola las causas Pending, publicadas y con evidencia (UC-006 A7), y `POST /causes/{id}/verify` permite al titular reintentar (A6). `_inflight` evita dos verificaciones simultáneas de la misma causa (BR-007).
 - **Non-blocking:** Upload endpoint returns `202 Accepted` immediately
 - **Retries:** Built-in exponential backoff (2^attempt seconds, max 3 attempts)
 - **Error handling:** Failed tasks logged, cause remains `Pending`

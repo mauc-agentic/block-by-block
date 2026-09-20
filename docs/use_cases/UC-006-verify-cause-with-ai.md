@@ -70,6 +70,32 @@
 2. Si los reintentos se agotan, la causa permanece Pending y el fallo queda registrado.
 3. Use case ends.
 
+### A6: Reintento solicitado por el titular
+
+**Trigger:** La causa lleva demasiado tiempo Pending y el titular solicita reintentar la verificación (step 1)  
+**Flow:**
+
+1. Sistema comprueba que la causa está Pending, publicada en el contrato y con evidencia.
+2. Sistema encola la verificación y responde de inmediato.
+3. Use case continues at step 2.
+
+### A7: Reinicio del servicio
+
+**Trigger:** El servicio se reinicia mientras había verificaciones en curso (step 1)  
+**Flow:**
+
+1. Al arrancar, sistema busca las causas Pending, publicadas y con evidencia.
+2. Sistema encola su verificación.
+3. Use case continues at step 2.
+
+### A8: Verificación ya en curso
+
+**Trigger:** Ya hay una verificación en curso para la misma causa (step 1)  
+**Flow:**
+
+1. Sistema no encola otra y lo informa.
+2. Use case ends.
+
 ## Postconditions
 
 ### Success Postconditions
@@ -107,3 +133,11 @@ Cuando el veredicto queda registrado en el contrato, la plataforma actualiza en 
 ### BR-006: Evaluación de la evidencia real
 
 El agente evalúa la imagen efectivamente subida por el receptor; una imagen sustituta o ausente impide la verificación y deja la causa en Pending.
+
+### BR-007: Una verificación a la vez
+
+Para una misma causa solo puede haber una verificación en curso; solicitar otra mientras tanto no genera un segundo veredicto.
+
+### BR-008: Reintento solo del titular
+
+Solo el titular de la causa puede solicitar el reintento, y solo mientras la causa esté Pending.

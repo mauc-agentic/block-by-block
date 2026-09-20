@@ -8,7 +8,7 @@
 **Goal:** Crear una cuenta que pueda donar y publicar causas  
 **Status:** Implemented
 
-**Requirements:** [FR-001, NFR-006, NFR-007](../requirements.md)
+**Requirements:** [FR-001, NFR-006, NFR-007, FR-023](../requirements.md)
 
 ## Preconditions
 

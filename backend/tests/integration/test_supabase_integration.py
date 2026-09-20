@@ -58,6 +58,20 @@ def real_test_client(real_db_session):
     app.dependency_overrides.clear()
 
 
+def link_test_wallet(client, headers, tag):
+    """UC-004 A2: crear una causa exige wallet vinculada; la vincula con una firma real (UC-003 BR-001)."""
+    from eth_account import Account
+    from eth_account.messages import encode_defunct
+
+    wallet = Account.create()
+    message = f"Link {tag}"
+    sig = wallet.sign_message(encode_defunct(text=message)).signature.hex()
+    response = client.post("/api/v1/auth/wallet/link", headers=headers, json={
+        "wallet_address": wallet.address, "signature": "0x" + sig.removeprefix("0x"), "message": message})
+    assert response.status_code == 200, response.text
+    return wallet
+
+
 class TestSupabaseIntegration:
     """Tests contra Supabase PostgreSQL real."""
 
@@ -313,6 +327,11 @@ class TestSupabaseIntegration:
             data = empty.json()
             assert data["causes"] == []  # A2
             assert data["user"]["wallet_address"] is None  # A3
+            assert data["wallet_linked"] is False
+
+            wallet = link_test_wallet(real_test_client, headers, tag)  # UC-004 A2: sin wallet no se crea la causa
+            linked = real_test_client.get("/api/v1/users/me/dashboard", headers=headers).json()
+            assert linked["wallet_linked"] is True and linked["user"]["wallet_address"].lower() == wallet.address.lower()
 
             created = real_test_client.post("/api/v1/causes", headers=headers, json={
                 "title": "Causa del dashboard e2e",
@@ -353,6 +372,7 @@ class TestSupabaseIntegration:
         other_id = other.json()["user"]["id"]
 
         try:
+            link_test_wallet(real_test_client, owner_headers, f"own{tag}")  # UC-004 A2
             created = real_test_client.post("/api/v1/causes", headers=owner_headers, json={
                 "title": "Causa privada del propietario",
                 "description": "descripción de prueba de aislamiento del dashboard",

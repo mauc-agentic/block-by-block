@@ -7,7 +7,7 @@
 **Primary Actor:** Usuario  
 **Secondary Actors:** —  
 **Goal:** Ver un resumen de su actividad como donante y como receptor  
-**Status:** Implemented
+**Status:** Approved
 
 **Requirements:** [FR-012, FR-013, FR-020](../requirements.md)
 

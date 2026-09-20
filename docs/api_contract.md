@@ -59,7 +59,9 @@ Pending ──(publish/confirm + upload-image)──► verificación del agente
 | Completed | No | No | Sí |
 
 La verificación es asíncrona: `upload-image` responde de inmediato (`queued for verification`) y el estado cambia cuando el agente
-confirma el veredicto on-chain (decenas de segundos). El frontend consulta `GET /causes/{id}` hasta que el estado deje de ser `Pending`.
+confirma el veredicto on-chain (decenas de segundos). El frontend consulta `GET /causes/{id}` hasta que el estado deje de ser `Pending`. Si pasan más de ~2 minutos, puede ofrecer
+**"Reintentar verificación"** (`POST /causes/{id}/verify`, solo el titular; 202 si se encola, 400 si falta publicar o subir evidencia, 409 si ya hay una en curso).
+El backend además retoma solo las verificaciones interrumpidas por un reinicio.
 
 ## 3. Mapa del contrato inteligente (`CauseVault`)
 
@@ -69,7 +71,7 @@ confirma el veredicto on-chain (decenas de segundos). El frontend consulta `GET 
 | `verifyCause(id, verified, hash)` | Agente (backend) | Automática tras `upload-image` | UC-006 |
 | `approve(spender, amount)` (token) | Donante | Incluida en la respuesta de `donate` | UC-009 |
 | `donate(id, amount)` | Donante | `donate` → `donations/confirm` | UC-009, UC-014 |
-| `withdrawFunds(id)` | Receptor | Ninguno: solo on-chain; el saldo se ve en `GET /users/{id}` | UC-010 |
+| `withdrawFunds(id)` | Receptor | Ninguno: solo on-chain; el saldo se ve en `GET /users/me/dashboard` (`available_to_withdraw`; el `id` para firmar es `onchain_cause_id`) | UC-010 |
 | `pause`, `unpause`, `setAgent` | Administrador | Ninguno | UC-012 |
 
 ## 4. Correspondencia de tipos (frontend ⇄ backend)
@@ -118,8 +120,9 @@ Datos que la API **nunca** expone de terceros: correo, hash de contraseña y `ex
 | POST | `/api/v1/causes/{cause_id}/publish` | Bearer | UC-013 | — | PublishInstruction |
 | POST | `/api/v1/causes/{cause_id}/publish/confirm` | Bearer | UC-013 | PublishConfirmRequest | CauseResponse |
 | POST | `/api/v1/causes/{cause_id}/upload-image` | Bearer | UC-005, UC-006 | multipart (image) | object |
+| POST | `/api/v1/causes/{cause_id}/verify` | Bearer | UC-006 | — | — |
 | GET | `/api/v1/health` | — | — | — | object |
-| GET | `/api/v1/users/{user_id}` | Bearer | UC-011 | — | DashboardResponse |
+| GET | `/api/v1/users/me/dashboard` | Bearer | UC-011 | — | DashboardResponse |
 
 ### Esquemas
 
@@ -164,14 +167,35 @@ Datos que la API **nunca** expone de terceros: correo, hash de contraseña y `ex
 | `collected` | decimal (string) | no |
 | `donations` | list[DonationItem] | no |
 
+**DashboardCause**
+
+| Campo | Tipo | Requerido |
+|---|---|---|
+| `id` | integer | sí |
+| `recipient_id` | integer | sí |
+| `onchain_cause_id` | integer | null | no |
+| `title` | string | sí |
+| `description` | string | sí |
+| `image_hash` | string | null | no |
+| `target_amount` | decimal (string) | sí |
+| `status` | string | sí |
+| `verification_hash` | string | null | no |
+| `created_at` | datetime (ISO 8601, UTC) | sí |
+| `recipient_name` | string | null | no |
+| `image_url` | string | null | no |
+| `collected` | decimal (string) | no |
+| `donations` | list[DonationItem] | no |
+| `available_to_withdraw` | decimal (string) | null | no |
+
 **DashboardResponse**
 
 | Campo | Tipo | Requerido |
 |---|---|---|
 | `user` | UserResponse | sí |
 | `wallet_linked` | boolean | sí |
-| `donor` | DonorDashboard | sí |
-| `recipient` | RecipientDashboard | sí |
+| `causes` | list[DashboardCause] | sí |
+| `total_donated` | decimal (string) | no |
+| `donations` | list[DonorDonationItem] | no |
 
 **DonateRequest**
 
@@ -216,13 +240,6 @@ Datos que la API **nunca** expone de terceros: correo, hash de contraseña y `ex
 | `message` | string | sí |
 | `approve` | object | null | no |
 
-**DonorDashboard**
-
-| Campo | Tipo | Requerido |
-|---|---|---|
-| `total_donated` | decimal (string) | sí |
-| `donations` | list[DonorDonationItem] | sí |
-
 **DonorDonationItem**
 
 | Campo | Tipo | Requerido |
@@ -260,23 +277,6 @@ Datos que la API **nunca** expone de terceros: correo, hash de contraseña y `ex
 | `function` | string | no |
 | `params` | list[object] | sí |
 | `message` | string | sí |
-
-**RecipientCauseItem**
-
-| Campo | Tipo | Requerido |
-|---|---|---|
-| `id` | integer | sí |
-| `title` | string | sí |
-| `status` | string | sí |
-| `target_amount` | decimal (string) | sí |
-| `collected` | decimal (string) | sí |
-| `available_to_withdraw` | decimal (string) | null | no |
-
-**RecipientDashboard**
-
-| Campo | Tipo | Requerido |
-|---|---|---|
-| `causes` | list[RecipientCauseItem] | sí |
 
 **TokenResponse**
 
