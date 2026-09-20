@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core import get_settings
 from app.api.v1.router import router as v1_router
 from app.db import Base, engine
+from app.tasks import shutdown_executor
 
 # Crear tablas
 Base.metadata.create_all(bind=engine)
@@ -31,6 +32,12 @@ app.add_middleware(
 
 # Incluir routers
 app.include_router(v1_router)
+
+# Shutdown hook para background tasks
+@app.on_event("shutdown")
+def on_shutdown():
+    """Limpieza de recursos al apagar la aplicación."""
+    shutdown_executor()
 
 if __name__ == "__main__":
     import uvicorn

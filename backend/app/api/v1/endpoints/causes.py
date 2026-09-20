@@ -1,5 +1,5 @@
 # app/api/v1/endpoints/causes.py
-# UC-004, UC-007, UC-008, UC-011: Causes endpoints
+# UC-004, UC-005, UC-007, UC-008, UC-011: Causes endpoints
 
 from fastapi import APIRouter, HTTPException, Depends, File, UploadFile
 from sqlalchemy.orm import Session
@@ -15,6 +15,7 @@ from app.schemas import (
     CauseResponse,
     CauseListResponse,
 )
+from app.tasks import enqueue_verification
 
 router = APIRouter(prefix="/causes", tags=["causes"])
 settings = get_settings()
@@ -68,32 +69,35 @@ async def upload_image(
     current_user: UserResponse = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """UC-005: Subir evidencia de causa."""
-    
+    """UC-005: Subir evidencia de causa; UC-006: Encolar verificación."""
+
     cause = db.query(Cause).filter(Cause.id == cause_id).first()
-    
+
     if not cause:
         raise HTTPException(status_code=404, detail="Cause not found")
-    
+
     if cause.recipient_id != current_user.id:
         raise HTTPException(status_code=403, detail="Only the cause owner can upload")
-    
+
     if cause.status != CauseStatus.Pending.value:
         raise HTTPException(status_code=400, detail="Can only upload to Pending causes")
-    
+
     if image.content_type not in {"image/jpeg", "image/png"}:
         raise HTTPException(status_code=400, detail="Only JPEG and PNG allowed")
-    
+
     contents = await image.read()
     if len(contents) > 5 * 1024 * 1024:
         raise HTTPException(status_code=413, detail="Image > 5 MB")
-    
+
     image_hash = hashlib.sha256(contents).hexdigest()[:10]
-    
+
     cause.image_hash = image_hash
     db.commit()
     db.refresh(cause)
-    
+
+    # UC-006: Encolar verificación asincrónica (no bloquea endpoint)
+    enqueue_verification(cause_id)
+
     return {
         "cause_id": cause_id,
         "image_hash": image_hash,
