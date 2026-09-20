@@ -60,7 +60,7 @@ export default function FaqPage() {
         Si tu pregunta no está aquí, revisa los{" "}
         <Link
           href="/terms"
-          className="text-blueprint hover:text-blueprint-dark"
+          className="text-emerald hover:text-emerald-dark"
         >
           términos y condiciones
         </Link>{" "}

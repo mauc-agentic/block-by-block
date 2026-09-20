@@ -1,16 +1,19 @@
 @import "tailwindcss";
 
 @theme {
-  --color-ink: #1a1a1a;
-  --color-ink-soft: #5c5c5c;
-  --color-paper: #dcdcda;
-  --color-paper-raised: #ececea;
-  --color-blueprint: #2e4e8c;
-  --color-blueprint-dark: #1f3763;
+  --color-ink: #12211b;
+  --color-ink-soft: #526056;
+  --color-paper: #e9f3ec;
+  --color-paper-deep: #d9ecdf;
+  --color-paper-raised: #ffffff;
+  --color-emerald: #0a7d54;
+  --color-emerald-dark: #085f40;
+  --color-emerald-soft: #e3f5ec;
+  --color-amber: #ce7f33;
+  --color-amber-dark: #a3651f;
   --color-brick: #a8431f;
   --color-brick-dark: #832f13;
-  --color-moss: #3d6b52;
-  --color-line: #adada8;
+  --color-line: #cfe3d5;
 
   --font-display: var(--font-big-shoulders), sans-serif;
   --font-sans: var(--font-plex-sans), sans-serif;
@@ -25,6 +28,32 @@
 body {
   background: var(--color-paper);
   color: var(--color-ink);
+}
+
+/* Entrada escalonada del stack de bloques en el hero: un único momento de
+   animación al cargar la página, no un efecto repetido por sección. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Cada bloque del medidor de progreso "aparece" al montar, reforzando la idea
+   de que la causa se construye bloque por bloque con cada donación. */
+@keyframes block-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

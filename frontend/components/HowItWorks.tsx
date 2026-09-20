@@ -35,7 +35,7 @@ export function HowItWorks() {
           <div className="hidden sm:grid sm:grid-cols-4 sm:gap-6">
             {steps.map((_, i) => (
               <div key={i} className="flex items-center">
-                <span className="h-3 w-3 shrink-0 bg-brick" />
+                <span className="h-3 w-3 shrink-0 bg-emerald" />
                 {i < steps.length - 1 && (
                   <span className="ml-2 h-0.5 flex-1 bg-line" />
                 )}
@@ -46,7 +46,7 @@ export function HowItWorks() {
           <ol className="grid gap-8 sm:mt-4 sm:grid-cols-4 sm:gap-6">
             {steps.map((step) => (
               <li key={step.title} className="flex gap-3 sm:block">
-                <span className="mt-1.5 h-3 w-3 shrink-0 bg-brick sm:hidden" />
+                <span className="mt-1.5 h-3 w-3 shrink-0 bg-emerald sm:hidden" />
                 <div>
                   <h3 className="font-display text-xl font-semibold text-ink">
                     {step.title}
