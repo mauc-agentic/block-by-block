@@ -17,7 +17,7 @@ export function CauseCard({ cause }: { cause: Cause }) {
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
         />
-        <span className="absolute top-3 left-3 rounded-full bg-moss px-2.5 py-1 text-xs font-medium text-white shadow-sm">
+        <span className="absolute top-3 left-3 rounded-full bg-emerald px-2.5 py-1 text-xs font-medium text-white shadow-sm">
           Verificada
         </span>
       </div>
