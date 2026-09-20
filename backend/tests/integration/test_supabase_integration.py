@@ -143,6 +143,41 @@ class TestSupabaseIntegration:
         assert isinstance(data, list)
         # Puede haber 0 o más causas verificadas
 
+    def test_uc004_uc009_authenticated_flow(self, real_test_client, real_db_session):
+        """UC-004 BR-001, UC-008, UC-009 BR-001: endpoints autenticados con sesión real."""
+        import uuid
+        from app.db.models import User, Cause
+
+        tag = uuid.uuid4().hex[:8]
+        signup = real_test_client.post("/api/v1/auth/signup", json={
+            "username": f"e2e_rec_{tag}", "email": f"e2e_rec_{tag}@block-by-block.com",
+            "password": "Pass123!", "user_type": "recipient",
+        })
+        assert signup.status_code == 200
+        headers = {"Authorization": f"Bearer {signup.json()['access_token']}"}
+        user_id = signup.json()["user"]["id"]
+
+        try:
+            assert real_test_client.post("/api/v1/causes", json={
+                "title": "Causa sin sesión", "description": "descripción de prueba sin autenticación", "target_amount": 10}).status_code in (401, 403)
+
+            created = real_test_client.post("/api/v1/causes", headers=headers, json={
+                "title": "Causa e2e", "description": "descripción de prueba para flujo autenticado", "target_amount": 10})
+            assert created.status_code == 200
+            cause_id = created.json()["id"]
+            assert created.json()["status"] == "Pending"
+
+            assert real_test_client.get(f"/api/v1/causes/{cause_id}").status_code == 200
+
+            donate = real_test_client.post(
+                f"/api/v1/causes/{cause_id}/donate", headers=headers, json={"amount": 5})
+            assert donate.status_code == 400
+        finally:
+            real_db_session.rollback()
+            real_db_session.query(Cause).filter(Cause.recipient_id == user_id).delete()
+            real_db_session.query(User).filter(User.id == user_id).delete()
+            real_db_session.commit()
+
 
 class TestHSKIntegration:
     """Tests contra HSK testnet (si credenciales están configuradas)."""

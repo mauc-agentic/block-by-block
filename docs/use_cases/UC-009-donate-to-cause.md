@@ -6,9 +6,9 @@
 **Use Case Name:** Donate To Cause  
 **Primary Actor:** Donante  
 **Goal:** Enviar una donación en stablecoin directamente al contrato de la causa  
-**Status:** Draft
+**Status:** Approved
 
-**Requirements:** [FR-010, NFR-005, NFR-009, NFR-011](../requirements.md)
+**Requirements:** [FR-010, NFR-005, NFR-009, NFR-011, FR-020](../requirements.md)
 
 ## Preconditions
 
@@ -75,6 +75,7 @@
 
 ### Success Postconditions
 
+- La donación puede reflejarse en la plataforma mediante UC-014
 - El contrato retiene el monto donado a favor de la causa
 - El monto recaudado de la causa aumenta en el monto donado
 - Existe un registro de la donación con donante, monto y fecha

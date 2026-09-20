@@ -7,9 +7,9 @@
 **Primary Actor:** Donante  
 **Secondary Actors:** Receptor  
 **Goal:** Ver un resumen personal según el rol del usuario  
-**Status:** Draft
+**Status:** Approved
 
-**Requirements:** [FR-012, FR-013](../requirements.md)
+**Requirements:** [FR-012, FR-013, FR-020](../requirements.md)
 
 ## Preconditions
 
@@ -69,3 +69,7 @@ El donante solo ve datos de sus donaciones; el receptor solo ve datos de sus cau
 ### BR-002: Datos privados
 
 Un usuario no puede ver el dashboard de otro usuario.
+
+### BR-003: Donaciones confirmadas
+
+Las donaciones y montos del dashboard provienen solo de donaciones confirmadas por el contrato (UC-014).

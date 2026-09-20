@@ -27,6 +27,8 @@ on-chain, en stablecoins, desde el donante hasta el receptor, y cada movimiento 
 ### In scope
 
 - Registro e inicio de sesión de donantes y receptores.
+- Publicación de la causa en el contrato y registro de donaciones confirmadas en la plataforma (UC-013, UC-014).
+- Administración de emergencia del contrato: pausa y rotación del agente (UC-012).
 - Vinculación de wallet con prueba de propiedad.
 - Creación de causas con foto de evidencia.
 - Verificación automática de causas por un agente de IA (OpenRouter) y registro del resultado on-chain.
@@ -68,6 +70,10 @@ on-chain, en stablecoins, desde el donante hasta el receptor, y cada movimiento 
 | Compromiso de la llave privada del agente      | Muy baja     | ✅ Llave solo en .env (no en repo); AWS Secrets Manager en prod            |
 | Sincronización BD ↔ contrato (id de causa)     | Alta         | ✅ Campo `onchain_cause_id` en CAUSE model para enlazar IDs                |
 | `withdrawFunds` deja `collected = 0`           | Media        | ✅ Diseño: total histórico separado; `collected` es el saldo retirable     |
-| Firma de wallet sin validar                    | Alta         | 🔲 TODO en UC-003: validar con web3.py (eth_account.Account.recover)     |
-| Background tasks para agente                   | Alta         | 🔲 TODO: implementar Celery/RQ para UC-006 async                          |
-| Tests y cobertura 85%                          | Media        | 🔲 TODO: pytest para FR-001..013, NFR-001                                 |
+| Firma de wallet sin validar                    | Alta         | ✅ Validada con eth_account (UC-003 BR-001); falta mensaje de un solo uso (BR-003) |
+| Background tasks para agente                   | Alta         | ✅ ThreadPoolExecutor (MVP); Celery/Redis como ruta de escalamiento        |
+| Tests y cobertura 85%                          | Media        | 🟡 Contrato 88.5 %, backend 66 % (NFR-001)                                 |
+| Ciclo de verificación incompleto               | Alta         | 🔲 La causa no pasa a Verified, la imagen no se guarda y `createCause` no se invoca (FR-019, FR-021, FR-022) |
+| Donaciones sin reflejo en la plataforma        | Alta         | 🔲 UC-014 / FR-020 sin implementar; dashboards (UC-011) dependen de ello   |
+| Secreto versionado por error                   | Media        | 🟡 `SECRET_KEY` estuvo en `main`; retirado del árbol, pendiente rotar (NFR-008) |
+| Token real vs MockUSDT                         | Media        | 🟡 Testnet usa `MockUSDT` (C-012); configurar USDT real por constructor en mainnet |

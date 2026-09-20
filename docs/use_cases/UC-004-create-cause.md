@@ -6,9 +6,9 @@
 **Use Case Name:** Create Cause  
 **Primary Actor:** Receptor  
 **Goal:** Publicar una necesidad con monto objetivo para que sea evaluada  
-**Status:** Draft
+**Status:** Approved
 
-**Requirements:** [FR-004](../requirements.md)
+**Requirements:** [FR-004, FR-019](../requirements.md)
 
 ## Preconditions
 
@@ -77,3 +77,7 @@ El monto objetivo debe ser mayor que cero.
 ### BR-003: Estado inicial
 
 Toda causa nace en estado Pending y no acepta donaciones hasta ser verificada.
+
+### BR-004: Publicación on-chain separada
+
+La causa creada en la plataforma queda Pending hasta que el receptor la publica en el contrato (UC-013); sin esa publicación no puede verificarse.

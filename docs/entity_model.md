@@ -69,3 +69,21 @@ Resultado de cada evaluación del agente de IA sobre una causa.
 | reason     | Explicación breve del modelo                 | String    | 500              | Not Null                          |
 | tx_hash    | Hash de la tx `verifyCause` en HSK           | String    | 66               | Optional, Unique                  |
 | created_at | Fecha de la evaluación                       | DateTime  | -                | Not Null                          |
+
+## Implementation Notes (auditoría 2026-09-20)
+
+Diferencias entre este modelo y `backend/app/db/models/base.py`. El modelo lógico manda; estas filas son deuda de implementación.
+
+| Entidad      | Atributo / regla                     | Modelo lógico                                   | Código actual                                                                 | Acción                                                                 |
+|--------------|--------------------------------------|-------------------------------------------------|--------------------------------------------------------------------------------|------------------------------------------------------------------------|
+| USER         | auth_provider, external_id           | Presentes (OAuth Google, UC-001 A3)             | Ausentes                                                                       | Deferred con UC-001 A3                                                 |
+| USER         | hashed_password                      | Optional (solo local)                           | Not Null                                                                       | Ajustar al implementar OAuth                                           |
+| USER         | hashed_password (algoritmo)          | bcrypt                                          | argon2id (NFR-006 actualizado)                                                 | Modelo actualizado: hash adaptativo                                    |
+| CAUSE        | onchain_cause_id                     | Enlaza con CauseVault                           | Columna existe; nada la asigna                                                 | UC-013 / FR-019                                                        |
+| CAUSE        | image_hash                           | Hash IPFS de la foto                            | Primeros 10 hex de SHA-256; la imagen no se almacena                           | FR-021: almacenar evidencia                                            |
+| CAUSE        | status                               | Pending, Verified, Rejected, Completed          | Nada transiciona a Verified/Rejected/Completed tras el veredicto               | FR-022 / UC-006 BR-005                                                 |
+| CAUSE        | verification_hash                    | Hash IPFS del análisis                          | Columna existe; el agente calcula `Qm`+sha256[:10] simulado y no lo persiste   | Definir almacenamiento real o marcar como huella SHA-256               |
+| VERIFICATION | cause_id                             | Una fila por evaluación (relación 1:N)          | `unique=True` (1:1)                                                            | Decidir: 1:1 (modelo se ajusta) o quitar unique para reintentos        |
+| DONATION     | (toda la entidad)                    | Espejo de donaciones on-chain                   | Tabla existe; ningún endpoint escribe filas                                    | UC-014 / FR-020                                                        |
+| Contrato     | Cause, Donation on-chain             | Fuente de verdad de donaciones y verificación   | `CauseVault`: `Cause{verified,collected,...}`, `Donation`, eventos             | Documentado en UC-009/010, NFR-011                                     |
+

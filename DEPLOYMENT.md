@@ -46,7 +46,7 @@ SUPABASE_DB_URL = postgresql://postgres.yrsvgcnrtfggcoksginp:[PASSWORD]@aws-0-ca
 
 ### Backend Security
 ```
-SECRET_KEY = UQs8TAjmd-vzsZludDr10OBYUipv-fxqTbc8fIgP5yo
+SECRET_KEY = <generar-con-secrets.token_urlsafe(32)>
 ```
 
 ### AI Verification (OpenRouter)
@@ -146,7 +146,7 @@ If health checks fail, check backend logs for errors.
 | `HSK_RPC_URL` | ✅ | `https://testnet.hsk.xyz` | Blockchain RPC endpoint |
 | `HSK_CHAIN_ID` | ✅ | `133` | HSK testnet chain ID |
 | `AGENT_ADDRESS` | ✅ | `0x94C5E2065...` | Agent wallet address |
-| `AGENT_PRIVATE_KEY` | ✅ | `0xd08d300d...` | Agent private key (hex) |
+| `AGENT_PRIVATE_KEY` | ✅ | `0x<64-hex>` | Agent private key (hex) |
 | `CAUSE_VAULT_ADDRESS` | ✅ | `0x591723ed...` | Smart contract address |
 | `ALLOWED_ORIGINS` | ✅ | `https://...` | CORS allowed domains |
 | `ALGORITHM` | ⚠️ | `HS256` | JWT algorithm |

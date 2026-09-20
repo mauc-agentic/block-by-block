@@ -7,13 +7,13 @@
 **Primary Actor:** Agente Verificador  
 **Secondary Actors:** Receptor  
 **Goal:** Evaluar foto y descripción de una causa y registrar el resultado on-chain  
-**Status:** Implemented
+**Status:** Approved
 
-**Requirements:** [FR-006, FR-007, NFR-003, NFR-004, NFR-008](../requirements.md)
+**Requirements:** [FR-006, FR-007, NFR-003, NFR-004, NFR-008, FR-019, FR-021, FR-022](../requirements.md)
 
 ## Preconditions
 
-- Existe una causa en estado Pending con imagen y descripción
+- Existe una causa en estado Pending con imagen y descripción, publicada en el contrato (UC-013)
 - El agente tiene acceso al modelo de visión y es la dirección autorizada en el contrato
 
 ## Main Success Scenario
@@ -98,3 +98,11 @@ La llave privada del agente solo se lee de variables de entorno y nunca se regis
 ### BR-004: Veredicto auditable
 
 La huella del análisis se almacena on-chain junto al veredicto para su auditoría pública.
+
+### BR-005: Estado sincronizado
+
+Cuando el veredicto queda registrado en el contrato, la plataforma actualiza en el mismo flujo el estado de la causa (Verified o Rejected); nunca queda Verified en la plataforma sin veredicto on-chain, ni al revés.
+
+### BR-006: Evaluación de la evidencia real
+
+El agente evalúa la imagen efectivamente subida por el receptor; una imagen sustituta o ausente impide la verificación y deja la causa en Pending.
