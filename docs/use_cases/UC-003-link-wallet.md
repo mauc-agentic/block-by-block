@@ -9,7 +9,7 @@
 **Goal:** Asociar una wallet a la cuenta demostrando que el usuario la controla  
 **Status:** Implemented
 
-**Requirements:** [FR-003](../requirements.md)
+**Requirements:** [FR-003, FR-024](../requirements.md)
 
 ## Preconditions
 

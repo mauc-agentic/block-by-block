@@ -7,7 +7,7 @@
 **Primary Actor:** Donante  
 **Secondary Actors:** —  
 **Goal:** Reflejar en la plataforma una donación confirmada en el contrato  
-**Status:** Implemented
+**Status:** Approved
 
 **Requirements:** [FR-020, FR-009, FR-012, NFR-011](../requirements.md)
 

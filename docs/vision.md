@@ -72,16 +72,21 @@ Frontend, backend y contrato inteligente son **un único producto**: comparten e
 | Timeout de RPC                                 | Media        | ✅ Reintentos con backoff exponencial (3 intentos, 30s timeout)            |
 | Timeout de OpenRouter                          | Baja         | ✅ Reintentos con backoff exponencial (3 intentos)                         |
 | Colusión donante-receptor                      | Baja         | ✅ Auditoría pública on-chain (eventos con CA-XXX BC)                     |
-| Compromiso de la llave privada del agente      | Muy baja     | ✅ Llave solo en .env (no en repo); AWS Secrets Manager en prod            |
+| Compromiso de la llave privada del agente      | Media        | 🟡 La llave solo vive en variables de entorno, pero el agente es la wallet personal de Miguel y dueña del contrato (GAP-032) |
 | Sincronización BD ↔ contrato (id de causa)     | Alta         | ✅ Campo `onchain_cause_id` en CAUSE model para enlazar IDs                |
 | `withdrawFunds` deja `collected = 0`           | Media        | ✅ Diseño: total histórico separado; `collected` es el saldo retirable     |
 | Firma de wallet sin validar                    | Alta         | ✅ Validada con eth_account (UC-003 BR-001); falta mensaje de un solo uso (BR-003) |
 | Background tasks para agente                   | Alta         | ✅ ThreadPoolExecutor (MVP); Celery/Redis como ruta de escalamiento        |
-| Tests y cobertura 85%                          | Media        | 🟡 Contrato 88.5 %, backend 66 % (NFR-001)                                 |
+| Tests y cobertura 85%                          | Media        | ✅ Backend 92 %, contrato 88.5 % (NFR-001); 2 pruebas Foundry fallan (GAP-006) |
 | Ciclo de verificación incompleto               | Alta         | ✅ Cerrado y verificado en HSK testnet (FR-019, FR-021, FR-022; `scripts/e2e_verification.py`) |
 | Donaciones sin reflejo en la plataforma        | Alta         | ✅ UC-014 y dashboards (UC-011) implementados y verificados (`scripts/e2e_donation.py`) |
 | RPC de HSK con nodos desfasados                | Media        | 🟡 `confirm` puede responder "not confirmed" justo tras firmar; el cliente reintenta (UC-014 A4, GAP-023) |
 | Donaciones sobre la meta en el contrato        | Media        | 🔲 `donate` solo exige `verified`; corregir en el contrato (GAP-022, UC-009 A4) |
 | Nonce del agente con verificaciones simultáneas | Media       | ✅ Nonce `pending` y bloqueo de envío en `sign_verification_tx` |
-| Secreto versionado por error                   | Media        | 🟡 `SECRET_KEY` estuvo en `main`; retirado del árbol, pendiente rotar (NFR-008) |
+| Secreto versionado por error                   | Media        | 🟡 `SECRET_KEY` rotado; el historial de `main` volvió a contenerlo por un merge (GAP-017) |
 | Token real vs MockUSDT                         | Media        | 🟡 Testnet usa `MockUSDT` (C-012); configurar USDT real por constructor en mainnet |
+| La IA rechaza una foto legítima                | Media        | 🟡 Sin revisión humana en el MVP; ensayar la foto con `scripts/try_ai_verdict.py` antes de la demostración (GAP-033) |
+| Donación on-chain sin registro en la plataforma | Media       | 🟡 Depende de que el cliente llame a `donations/confirm`; falta reconciliar por eventos (GAP-034) |
+| Frontend sin firma de transacciones            | Alta         | 🔲 Impide correr el flujo completo desde la interfaz (TC-005); pantallas y firma pendientes (GAP-024, GAP-026) |
+| Cambio de esquema en la base compartida        | Media        | ✅ Todo cambio es un script versionado en `backend/migrations/manual/` con aviso al equipo (regla de CLAUDE.md) |
+| Render gratuito duerme                          | Baja         | 🟡 ~50 s de arranque en frío; despertar el servicio antes de la demostración (GAP-035) |
