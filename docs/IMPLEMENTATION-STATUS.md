@@ -128,6 +128,7 @@ Requisitos aún no terminados:
 **Frontend**
 - Landing con causas verificadas reales, FAQ, términos, autenticación (correo y Google), vinculación de wallet con Rabby verificada en vivo, dashboard protegido con alerta de wallet.
 - **Crear causa** (`/cause/create`): formulario, subida de foto y publicación on-chain firmando `createCause` con la wallet, con confirmación por reintentos (UC-004, UC-005, UC-013; Andres, PR #8).
+- **Motivo del veredicto de IA** (UC-006): `CauseResponse`/`DashboardCause` ahora exponen `verification_reason` y `verification_confidence` (tabla `verifications`, antes solo en Postgres); el dashboard (`MyCauseRow`) muestra un botón "Ver por qué se rechazó"/"Ver motivo de la IA" que abre un modal (`components/Modal.tsx`) con el motivo y la confianza del modelo.
 
 **Verificado en real (HSK testnet)**
 - **Con usuarios reales desde la interfaz (2026-09-20):** Carlos creó la causa #348 "MacStudio para mi" en `/cause/create`: firmó `createCause` con su wallet (id on-chain 7), subió la foto y la IA real la **rechazó** (confianza 0.90; motivo: no evidencia una necesidad real) con el veredicto confirmado en la cadena (tx `0xae57df55…d20c`). Valida UC-004, UC-005, UC-013 y UC-006 con cuentas reales y el caso TC-002 (causa rechazada fuera del listado).

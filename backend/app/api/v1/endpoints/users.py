@@ -30,7 +30,7 @@ def get_dashboard(
     por parámetro, por lo que un usuario no puede ver el dashboard de otro.
     """
     causes = (
-        db.query(Cause).options(joinedload(Cause.recipient))
+        db.query(Cause).options(joinedload(Cause.recipient), joinedload(Cause.verification))
         .filter(Cause.recipient_id == current_user.id)
         .order_by(Cause.created_at.desc())
         .all()

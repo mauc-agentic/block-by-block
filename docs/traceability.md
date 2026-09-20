@@ -20,7 +20,7 @@ Leyenda de estado por capa: **Done** (código + prueba), **Impl** (código, prue
 | UC-004 | Crear causa | `POST /causes` | — | `app/cause/create/page.tsx`, `lib/causes.ts` | Done | n/a | Impl |
 | UC-013 | Publicar causa on-chain | `POST /causes/{id}/publish`, `…/publish/confirm` | `createCause`, `CauseCreated` | `app/cause/create/page.tsx` (firma con wallet + reintento de confirmación), `lib/wallet.ts` (`publishCauseOnChain`) | Done | Done | Impl |
 | UC-005 | Subir evidencia | `POST /causes/{id}/upload-image`, `GET …/evidence` | — | `app/cause/create/page.tsx`, `lib/causes.ts` (`uploadCauseImage`) | Done | n/a | Impl |
-| UC-006 | Verificar causa con IA | `services/agent.py` (automático) | `verifyCause` | — (mostrar estado y esperar el veredicto) | Done | Done | Open |
+| UC-006 | Verificar causa con IA | `services/agent.py` (automático); `verification_reason`/`verification_confidence` en `CauseResponse`/`DashboardCause` | `verifyCause` | `components/dashboard/MyCauseRow.tsx` (modal con motivo y confianza del veredicto), `components/Modal.tsx` | Done | Done | Impl |
 | UC-007 | Explorar causas verificadas | `GET /causes` | — | `components/CausesSection.tsx`, `CauseCard.tsx`, `lib/causes.ts` (datos reales; `featuredCauses` solo si aún no hay ninguna Verified) | Done | n/a | Impl |
 | UC-008 | Ver detalle de causa | `GET /causes/{id}` | — | — (`/cause/[id]`) | Done | n/a | Open |
 | UC-009 | Donar | `POST /causes/{id}/donate` | `approve`, `donate` | — (`/cause/[id]`) | Done | Impl | Open |

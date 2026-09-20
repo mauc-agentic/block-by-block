@@ -64,10 +64,13 @@ def image_url(cause: Cause) -> str | None:
 
 def cause_response(cause: Cause, collected: Decimal = Decimal("0"), donations: list | None = None) -> CauseResponse:
     """CauseResponse explícito: no se usa from_orm porque la relación `Cause.donations` chocaría con el campo del esquema."""
-    skip = {"collected", "donations", "recipient_name", "image_url"}
+    skip = {"collected", "donations", "recipient_name", "image_url", "verification_reason", "verification_confidence"}
     base = {name: getattr(cause, name) for name in CauseResponse.model_fields if name not in skip}
+    verification = cause.verification  # UC-006: motivo y confianza del veredicto de IA, si ya se evaluó
     return CauseResponse(**base, recipient_name=cause.recipient.username if cause.recipient else None,
-                         image_url=image_url(cause), collected=collected, donations=donations or [])
+                         image_url=image_url(cause), collected=collected, donations=donations or [],
+                         verification_reason=verification.reason if verification else None,
+                         verification_confidence=verification.confidence if verification else None)
 
 
 def donation_items(donations: list) -> list[DonationItem]:
@@ -127,7 +130,10 @@ def list_causes(db: Session = Depends(get_db)):
 def get_cause(cause_id: int, db: Session = Depends(get_db)):
     """UC-008: Ver detalle de causa con avance y donaciones confirmadas."""
 
-    cause = db.query(Cause).filter(Cause.id == cause_id).first()
+    cause = (
+        db.query(Cause).options(joinedload(Cause.recipient), joinedload(Cause.verification))
+        .filter(Cause.id == cause_id).first()
+    )
 
     if not cause:
         raise HTTPException(status_code=404, detail="Cause not found")
