@@ -16,9 +16,23 @@ from app.schemas.common import (
     DonationRecordResponse,
     PublishInstruction,
     PublishConfirmRequest,
-    DonorDonationItem,
-    DonorDashboard,
-    RecipientCauseItem,
-    RecipientDashboard,
     DashboardResponse,
 )
+
+__all__ = [
+    "UserCreate",
+    "UserLogin",
+    "GoogleSignupRequest",
+    "GoogleLoginRequest",
+    "UserResponse",
+    "TokenResponse",
+    "WalletLinkRequest",
+    "CauseCreate",
+    "CauseResponse",
+    "CauseListResponse",
+    "DonateRequest",
+    "DonationResponse",
+    "PublishInstruction",
+    "PublishConfirmRequest",
+    "DashboardResponse",
+]

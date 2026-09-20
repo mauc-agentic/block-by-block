@@ -99,7 +99,6 @@ class CauseListResponse(BaseModel):
     id: int
     title: str
     description: str
-    recipient_name: str  # Nombre de usuario del receptor (público)
     image_hash: Optional[str] = None
     image_url: Optional[str] = None  # Ruta relativa a la Base URL de la API (GET /causes/{id}/evidence)
     target_amount: Decimal
@@ -155,31 +154,12 @@ class DonationRecordResponse(BaseModel):
 # DASHBOARD SCHEMAS (UC-011)
 # ============================================================================
 
-class DonorDonationItem(BaseModel):
-    cause_id: int
-    cause_title: str
-    amount: Decimal
-    tx_hash: str
-    created_at: datetime
-
-class DonorDashboard(BaseModel):
-    total_donated: Decimal
-    donations: list[DonorDonationItem]
-
-class RecipientCauseItem(BaseModel):
-    id: int
-    title: str
-    status: str
-    target_amount: Decimal
-    collected: Decimal
-    available_to_withdraw: Optional[Decimal] = None  # Saldo retirable en el contrato; None si no aplica o la red no responde
-
-class RecipientDashboard(BaseModel):
-    causes: list[RecipientCauseItem]
-
 class DashboardResponse(BaseModel):
-    """UC-011: Resumen personal: actividad como donante y como receptor (una cuenta puede hacer ambas)."""
+    """UC-011: Resumen del dashboard del usuario autenticado.
+
+    Cualquier cuenta puede donar y publicar causas (no hay rol fijo), por lo
+    que el resumen combina ambas facetas en una sola respuesta en vez de
+    separarlas por rol.
+    """
     user: UserResponse
-    wallet_linked: bool
-    donor: DonorDashboard
-    recipient: RecipientDashboard
+    causes: list[CauseResponse]  # UC-011 A2: causas propias (recipient_id == user.id)
