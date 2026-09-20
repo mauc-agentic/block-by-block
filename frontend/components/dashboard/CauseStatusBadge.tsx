@@ -1,6 +1,6 @@
 const STYLES: Record<string, string> = {
   Pending: "border-line text-ink-soft",
-  Verified: "border-moss bg-moss text-paper",
+  Verified: "border-moss bg-moss text-white",
   Rejected: "border-brick/50 bg-brick/10 text-brick",
   Completed: "border-blueprint/50 bg-blueprint/10 text-blueprint",
 };
