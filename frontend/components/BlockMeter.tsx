@@ -21,9 +21,17 @@ export function BlockMeter({
         {Array.from({ length: TOTAL_BLOCKS }, (_, i) => (
           <span
             key={i}
-            className={`h-3 flex-1 ${
-              i < filledBlocks ? "bg-brick" : "bg-line/60"
+            className={`h-3 flex-1 rounded-[1px] ${
+              i < filledBlocks ? "bg-emerald" : "bg-line/60"
             }`}
+            style={
+              i < filledBlocks
+                ? {
+                    animation: "block-pop 0.3s ease-out backwards",
+                    animationDelay: `${i * 45}ms`,
+                  }
+                : undefined
+            }
           />
         ))}
       </div>

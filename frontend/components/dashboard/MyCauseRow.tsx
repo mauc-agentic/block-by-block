@@ -29,7 +29,7 @@ export function MyCauseRow({ cause }: { cause: DashboardCause }) {
           <button
             type="button"
             onClick={() => setShowVerdict(true)}
-            className="mt-1 text-xs font-medium text-blueprint hover:underline"
+            className="mt-1 text-xs font-medium text-emerald hover:underline"
           >
             {isRejected ? "Ver por qué se rechazó" : "Ver motivo de la IA"}
           </button>

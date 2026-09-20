@@ -53,7 +53,7 @@ export function WalletLinkCard() {
         type="button"
         onClick={handleConnect}
         disabled={loading}
-        className="mt-4 bg-blueprint px-4 py-2.5 text-center text-sm font-medium text-paper transition-colors hover:bg-blueprint-dark disabled:opacity-60"
+        className="mt-4 bg-emerald px-4 py-2.5 text-center text-sm font-medium text-paper transition-colors hover:bg-emerald-dark disabled:opacity-60"
       >
         {loading ? "Conectando…" : "Conectar wallet"}
       </button>
@@ -64,7 +64,7 @@ export function WalletLinkCard() {
           href="https://rabby.io"
           target="_blank"
           rel="noreferrer"
-          className="font-medium text-blueprint hover:underline"
+          className="font-medium text-emerald hover:underline"
         >
           Instálala aquí
         </a>

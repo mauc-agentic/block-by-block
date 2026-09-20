@@ -8,7 +8,7 @@ export function DonateCauseCard({ cause }: { cause: VerifiedCause }) {
   return (
     <article className="flex flex-col gap-3 rounded-xl border border-line bg-paper-raised p-5">
       <div>
-        <span className="rounded-full bg-moss px-2.5 py-1 text-xs font-medium text-paper">
+        <span className="rounded-full bg-emerald px-2.5 py-1 text-xs font-medium text-paper-raised">
           Verificada
         </span>
         <h3 className="mt-2 font-display text-lg font-semibold text-ink">
