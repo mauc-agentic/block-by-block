@@ -19,9 +19,9 @@ class Settings(BaseSettings):
     # Server
     port: int = int(os.getenv("PORT", 8000))
     
-    # Blockchain
-    hsk_rpc_url: str = os.getenv("HSK_RPC_URL", "https://testnet-rpc.hskchain.io")
-    hsk_chain_id: int = int(os.getenv("HSK_CHAIN_ID", 8082))
+    # Blockchain (HSK Chain testnet)
+    hsk_rpc_url: str = os.getenv("HSK_RPC_URL", "https://testnet.hsk.xyz")
+    hsk_chain_id: int = int(os.getenv("HSK_CHAIN_ID", 133))
     cause_vault_address: str = os.getenv("CAUSE_VAULT_ADDRESS", "0x")
     agent_address: str = os.getenv("AGENT_ADDRESS", "0x")
     agent_private_key: str = os.getenv("AGENT_PRIVATE_KEY", "0x")

@@ -1,7 +1,7 @@
 # Block by Block — Contexto del proyecto
 
 Plataforma de donaciones peer-to-peer descentralizada (donantes ↔ receptores verificados por IA, dinero directo
-on-chain en USDT). Hackathon Ethereum Builders Tour Cali, 19–20 sep 2026. Red: HSK Chain testnet (chain id 8082).
+on-chain en USDT). Hackathon Ethereum Builders Tour Cali, 19–20 sep 2026. Red: **HSK Chain testnet** (chain id 133).
 
 **Stack:** Solidity ^0.8.24 + Foundry (`CauseVault.sol`) · Python/FastAPI + SQLAlchemy · Agente Python (OpenRouter +
 web3.py) · Next.js sobre Scaffold-ETH.
@@ -83,9 +83,18 @@ docs/        artefactos AIUP
 
 - El backend **nunca** custodia fondos ni firma transacciones de usuarios (C-009). Solo el agente firma `verifyCause`.
 - Comisión de plataforma 0 % (NFR-005). USDT con 6 decimales (`amount * 1e6`).
-- Secretos (`AGENT_PRIVATE_KEY`, `OPENROUTER_API_KEY`, `SECRET_KEY`) solo por variables de entorno; **jamás** en el repo
-  ni en `z.txt` (NFR-008). `z.txt` está en `.gitignore`.
+- Secretos (`AGENT_PRIVATE_KEY`, `OPENROUTER_API_KEY`, `SECRET_KEY`, credenciales Supabase) solo por variables de
+  entorno; **jamás** en el repo (NFR-008). Usa `.env.local` para desarrollo.
 - Solo causas `Verified` reciben donaciones y permiten retiros.
+
+## Red y explorador
+
+| Concepto | Valor |
+|----------|-------|
+| **RPC** | https://testnet.hsk.xyz |
+| **Chain ID** | 133 |
+| **Explorer** | https://testnet-explorer.hskchain.net/ |
+| **Faucet HSK** | https://hskchain.net/faucet |
 
 ## Decisiones abiertas (ver `docs/vision.md` → Riesgos)
 

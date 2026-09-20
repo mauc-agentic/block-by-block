@@ -5,11 +5,15 @@ import "forge-std/Script.sol";
 import "../src/CauseVault.sol";
 
 /**
- * @dev Script de deploy para CauseVault en HSK Chain testnet.
+ * @dev Script de deploy para CauseVault en HSK Chain testnet (chain id 133).
+ *
+ * RPC: https://testnet.hsk.xyz
+ * Explorer: https://testnet-explorer.hskchain.net/
+ * Faucet: https://hskchain.net/faucet
  *
  * Uso:
  * forge script script/Deploy.s.sol:Deploy \
- *   --rpc-url https://testnet-rpc.hskchain.io \
+ *   --rpc-url https://testnet.hsk.xyz \
  *   --broadcast
  */
 contract Deploy is Script {
