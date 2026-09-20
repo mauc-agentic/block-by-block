@@ -1,0 +1,35 @@
+# Constantes globales
+
+# Roles de usuario
+ROLE_DONOR = "donor"
+ROLE_RECIPIENT = "recipient"
+VALID_ROLES = {ROLE_DONOR, ROLE_RECIPIENT}
+
+# Estados de causa
+CAUSE_STATUS_PENDING = "Pending"
+CAUSE_STATUS_VERIFIED = "Verified"
+CAUSE_STATUS_REJECTED = "Rejected"
+CAUSE_STATUS_COMPLETED = "Completed"
+
+CAUSE_STATUSES = {
+    CAUSE_STATUS_PENDING,
+    CAUSE_STATUS_VERIFIED,
+    CAUSE_STATUS_REJECTED,
+    CAUSE_STATUS_COMPLETED,
+}
+
+# Tamaño máximo de imagen
+MAX_IMAGE_SIZE_MB = 5
+MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024
+
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png"}
+
+# Blockchain
+USDT_DECIMALS = 6
+
+# IA
+AI_CONFIDENCE_THRESHOLD = 0.80
+AI_MODEL = "anthropic/claude-3-5-sonnet"
+
+# Tokens
+JWT_ALGORITHM = "HS256"
