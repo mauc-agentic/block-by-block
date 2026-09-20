@@ -70,7 +70,7 @@ Prefijo de la API: `/api/v1`. Estado por capa en `docs/traceability.md`; brechas
 |--------|-------------------------------|----------------------------------------------------------------|------------------------------------------|------------------------------------------|-----------------------------------|-------------|
 | UC-001 | Registrar cuenta              | `POST /auth/signup`, `POST /auth/google/signup` (A3)           | —                                        | `/auth/signup`                           | FR-001, NFR-006, NFR-007          | Implemented |
 | UC-002 | Iniciar sesión                | `POST /auth/login`, `POST /auth/google/login` (A3)             | —                                        | `/auth/login`                            | FR-002, NFR-006, NFR-007          | Implemented |
-| UC-003 | Vincular wallet               | `POST /auth/wallet/link`                                       | —                                        | `WalletConnect` (pendiente)              | FR-003                            | Implemented |
+| UC-003 | Vincular wallet               | `POST /auth/wallet/link`                                       | —                                        | `/wallet` (conecta Rabby/EIP-1193, cambia a HSK Chain, firma) | FR-003                            | Implemented |
 | UC-004 | Crear causa                   | `POST /causes` (publicación on-chain: UC-013)                  | `createCause`                            | `/cause/create` (pendiente)              | FR-004, FR-019                    | Approved    |
 | UC-005 | Subir evidencia              | `POST /causes/{id}/upload-image`, `GET /causes/{id}/evidence`  | —                                        | `/cause/create`, `/dashboard/recipient`  | FR-005, FR-006, FR-021            | Implemented |
 | UC-006 | Verificar causa con IA        | `services/agent.py` (`verify_cause_with_ai`, `sign_verification_tx`, `verify_cause_task`), `tasks.py` | `verifyCause` (`onlyAgent`) | —                                        | FR-006, FR-007, FR-019, FR-021, FR-022, NFR-003/004/008 | Implemented |
@@ -127,7 +127,8 @@ render.yaml · DEPLOYMENT.md · TESTING_STATUS.md
 
 - Enlazar `cause_id` (BD) con `causeId` (on-chain) mediante `onchain_cause_id` → resuelto con UC-013 (FR-019).
 - `withdrawFunds` pone `collected = 0`: definir cómo conservar el total histórico recaudado.
-- ~~Validar la firma de wallet con web3.py~~ → resuelto (UC-003 BR-001). Pendiente: mensaje de un solo uso (BR-003).
+- ~~Validar la firma de wallet con web3.py~~ → resuelto (UC-003 BR-001). ~~Conectar la wallet desde el frontend~~ → resuelto
+  (`/wallet`, Rabby/EIP-1193; sin prueba de frontend todavía, GAP-027). Pendiente: mensaje de un solo uso (BR-003).
 - Umbral de confianza del agente: 0.80 (UC-006 BR-002).
 - Modelo IA: **DeepSeek v4.1 Flash** via OpenRouter (antes Claude 3.5 Sonnet).
 - OpenRouter endpoint: `https://openrouter.ai/api/v1/chat/completions` (formato OpenAI-compatible; `/messages` devuelve formato Anthropic y rompe el parseo).

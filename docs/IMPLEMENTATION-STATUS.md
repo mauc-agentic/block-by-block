@@ -17,8 +17,8 @@
 | Contrato `CauseVault` | Desplegado en HSK testnet. Foundry: **7/9 pruebas pasan, 2 fallan**. Cobertura de líneas 88.5 %   |
 | Backend FastAPI       | 11 endpoints (+`POST /auth/google/signup`, `POST /auth/google/login`). Unit: **23/23 pasan** (verificado 2026-09-20); suite de integración no se corrió esta sesión (bloqueada por allowlist de IP de Supabase desde esta máquina) |
 | Agente IA (UC-006)    | Flujo IA + firma on-chain escrito; **no cierra el ciclo** (ver GAP-001..003)                      |
-| Frontend Next.js      | Landing, FAQ, términos y **auth (signup/login, email y Google) conectados al backend**; sin wallet ni causas |
-| Despliegue            | `Dockerfile`, `render.yaml`, `DEPLOYMENT.md` listos; **Render aún no desplegado**                 |
+| Frontend Next.js      | Landing, FAQ, términos, **auth (signup/login, email y Google)**, **dashboard (`/dashboard`, causas propias + verificadas)** y **vinculación de wallet (`/wallet`, Rabby/EIP-1193)** conectados al backend; faltan las rutas de causas (crear, detalle, donar/retirar) — GAP-026 |
+| Despliegue            | `Dockerfile`, `render.yaml`, `DEPLOYMENT.md` listos; **desplegado**: backend en Render, frontend en Vercel |
 
 ### Direcciones en HSK testnet
 
@@ -38,7 +38,7 @@ Leyenda de prueba: **A** = automatizada, **P** = parcial, **—** = ninguna.
 |--------|-------------|------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
 | UC-001 | Implemented | `POST /api/v1/auth/signup`, `POST /api/v1/auth/google/signup` (A3)     | P: `test_signup_persists_to_supabase`, `test_uc001_a3_google_signup_creates_user`, `test_uc001_a3_google_signup_rejects_duplicate_identity` (no corridas esta sesión, ver nota de allowlist arriba) | A1 (duplicados) y BR-002 sin prueba tras retirar SQLite; A3 (Google) implementado, sin ejecutar en Supabase real todavía |
 | UC-002 | Implemented | `POST /api/v1/auth/login`, `POST /api/v1/auth/google/login` (A3, A4)   | P: `test_login_queries_supabase`, `test_uc002_a3_google_login_existing_user`, `test_uc002_a4_google_login_unregistered_identity` (no corridas esta sesión) | A1 (credenciales inválidas) sin prueba; A3/A4 (Google) implementado, sin ejecutar en Supabase real todavía |
-| UC-003 | Implemented | `POST /api/v1/auth/wallet/link` + `verify_wallet_signature`            | A: 5 tests de firma (`test_helpers`, `test_wallet`); endpoint sin prueba                  | BR-003 (mensaje de un solo uso) **no aplicado**; A2 sin prueba                         |
+| UC-003 | Implemented | `POST /api/v1/auth/wallet/link` + `verify_wallet_signature`; frontend `app/wallet/page.tsx`, `lib/wallet.ts` (conecta con Rabby/EIP-1193, cambia a HSK Chain testnet, firma) | A: 5 tests de firma (`test_helpers`, `test_wallet`); endpoint y frontend sin prueba automatizada (GAP-027) | BR-003 (mensaje de un solo uso) **no aplicado**; A2 sin prueba; frontend implementado pero sin confirmación de que el flujo completo (conectar → agregar red → firmar) esté verificado en producción |
 | UC-004 | Implemented | `POST /api/v1/causes` (exige wallet, A2); pasos 7-8 en UC-013                | A: `test_uc004_uc009_authenticated_flow` (A2, BR-001), `scripts/e2e_*.py`                  | Falta que el frontend firme `createCause` con la wallet (el backend ya entrega la instrucción) |
 | UC-005 | Implemented | `POST /api/v1/causes/{id}/upload-image`, `GET /causes/{id}/evidence`   | A: `TestEvidenceUC005` (A1, A3, BR-001, BR-003, tamaño, firma del archivo)                 | Imagen guardada en tabla `evidences` (Postgres); A2 con otro usuario autenticado sin prueba |
 | UC-006 | Implemented | `services/agent.py`, `tasks.py`                                        | A: `test_agent.py` (20) + `TestAgentCycleUC006` (7) + E2E real en HSK/OpenRouter           | BR-004: huella SHA-256, no CID IPFS. Sin RPC de respaldo (spec ajustada)               |
@@ -81,16 +81,16 @@ Leyenda de prueba: **A** = automatizada, **P** = parcial, **—** = ninguna.
 | GAP-013 | Media     | `Base.metadata.create_all` al arrancar y `migrations/` vacío                                                                                        | NFR-013     |
 | GAP-014 | Media     | Sin logging estructurado ni middleware global (`utils/logger.py`, `exceptions.py` a 0 % de cobertura)                                              | NFR-012     |
 | GAP-015 | Resuelta  | `get_current_user` devolvía la función `get_db` en vez de una sesión: todo endpoint autenticado respondía 500 en `main`. Corregido con `_db_session` (import diferido) y cubierto por `test_uc004_uc009_authenticated_flow` | UC-004..009 |
-| GAP-016 | Media     | Frontend sin integración con el resto de la API: `lib/causes.ts` usa datos de muestra en la landing; sin wallet, sin rutas de UC-004, UC-008, UC-009. Auth (UC-001, UC-002) ya conecta a `/auth/*`; `/dashboard` (UC-011) ya conecta a `GET /users/me/dashboard` y `GET /causes` | C-006       |
+| GAP-016 | Media     | Frontend sin integración con el resto de la API: `lib/causes.ts` usa datos de muestra en la landing; sin rutas de UC-004, UC-008, UC-009. Auth (UC-001, UC-002) ya conecta a `/auth/*`; `/dashboard` (UC-011) ya conecta a `GET /users/me/dashboard` y `GET /causes`; wallet (UC-003) ya conecta a `/auth/wallet/link` | C-006       |
 | GAP-020 | Media     | El SQL Editor / conexión directa de Supabase rechaza la IP de esta máquina de desarrollo (`EADDRNOTALLOWED`); los tests de integración no se pueden correr localmente hasta agregarla al allowlist del proyecto en Supabase | NFR-001 |
-| GAP-021 | Baja      | `Base.metadata.create_all` no altera columnas existentes: `auth_provider`/`external_id`/`hashed_password NULL` (y el `DROP COLUMN user_type`, ver decisión abajo) en `users` requieren correr `backend/migrations/manual/2026-09-20_google_auth.sql` a mano en Supabase antes de desplegar | UC-001, UC-002, UC-004 |
+| GAP-021 | Resuelta  | `Base.metadata.create_all` no altera columnas existentes: `auth_provider`/`external_id`/`hashed_password NULL` (y el `DROP COLUMN user_type`, ver decisión abajo) en `users` requerían correr `backend/migrations/manual/2026-09-20_google_auth.sql` a mano en Supabase. Ya ejecutada en la BD compartida; sigue pendiente automatizarla con Alembic (GAP-013) | UC-001, UC-002, UC-004 |
 | GAP-017 | Media     | `SECRET_KEY` real subido a `main` en el commit de configuración de Render (ya eliminado del árbol, sigue en el historial). Rotar.                   | NFR-008     |
 | GAP-018 | Baja      | `venv/` había sido versionado por un `git add -A`; se retira del índice y se agrega a `.gitignore`                                                | C-008       |
 | GAP-022 | Media     | El contrato acepta donaciones a causas `Completed` (solo exige `verified`), contradiciendo UC-009 A4; el backend ya no emite la instrucción, pero un cliente puede llamar al contrato directamente | UC-009 A4 |
 | GAP-023 | Media     | El RPC de HSK es un balanceador con nodos desfasados: `confirm` puede responder 400 "not confirmed" justo tras firmar; el cliente debe reintentar | UC-014 A4 |
-| GAP-024 | Alta      | El frontend no tiene wallet: no puede vincularla (UC-003) ni firmar `createCause`, `approve`, `donate` ni `withdrawFunds` | FR-024      |
+| GAP-024 | Alta      | El frontend ya vincula wallet (UC-003, `/wallet`, Rabby/EIP-1193) pero todavía no puede firmar `createCause`, `approve`, `donate` ni `withdrawFunds` | FR-024      |
 | GAP-025 | Media     | `frontend/lib/causes.ts` usa datos de muestra con otra forma (camelCase, números); la API entrega snake_case y strings decimales (ver `api_contract.md` §4) | C-006       |
-| GAP-026 | Alta      | Faltan las rutas del frontend de UC-004, 005, 008, 009, 011, 013 y 014 (`/cause/create`, `/cause/[id]`, `/dashboard/*`)       | FR-004..013 |
+| GAP-026 | Alta      | Faltan las rutas del frontend de UC-004, 005, 008, 009, 013 y 014 (`/cause/create`, `/cause/[id]`); UC-011 (`/dashboard`) y UC-003 (`/wallet`) ya están conectados | FR-004..013 |
 | GAP-027 | Media     | El frontend no tiene pruebas ni una convención `describe('UC-###')`                                                            | NFR-017     |
 | GAP-028 | Resuelta  | La columna `users.user_type` desapareció de Supabase: no era un error, sino la decisión de producto "sin rol fijo por cuenta" (commit `70745d2`, migración manual). El código, las pruebas y los docs se alinearon al modelo sin rol | FR-001      |
 | GAP-019 | Baja      | `on_event("shutdown")`, `from_orm` y `datetime.utcnow` están deprecados                                                                            | —           |
@@ -118,13 +118,12 @@ Hecho y verificado en HSK testnet con `backend/scripts/e2e_verification.py` y `e
 crear causa → publicar on-chain → evidencia → IA → veredicto on-chain → listado → donar (`approve` + `donate`)
 → registrar donación → dashboards → retirar.
 
-1. **GAP-016**: conectar el frontend (lista, detalle, wallet que firma `createCause`, `approve`, `donate`, `withdrawFunds`, y reintento de `confirm`).
+1. **GAP-024/GAP-026**: conectar el resto del frontend — crear/publicar causa, detalle, donar, retirar (`createCause`, `approve`, `donate`, `withdrawFunds`, y reintento de `confirm`). La vinculación de wallet (UC-003, `/wallet`) y el dashboard (UC-011, `/dashboard`) ya están conectados.
 2. **GAP-006**: corregir las dos pruebas de Foundry y cerrar GAP-022 (bloquear donaciones a `Completed` en el contrato).
 3. **GAP-007/008**: cerrar el 85 % de cobertura (auth, seguridad) y **GAP-009** (mensaje de wallet de un solo uso).
-4. **GAP-013/014**: Alembic y logging estructurado; **reintento de verificación** si Render reinicia a mitad.
+4. **GAP-013/014**: Alembic (incluye automatizar la migración manual ya aplicada, ver GAP-021) y logging estructurado; **reintento de verificación** si Render reinicia a mitad.
 5. **GAP-017**: rotar `SECRET_KEY` (hecho por el equipo) y actualizar `OPENROUTER_URL` en Render.
 6. **GAP-020**: agregar la IP de cada desarrollador al allowlist de Supabase para correr `pytest` de integración en local.
-7. **GAP-021**: ejecutar `backend/migrations/manual/2026-09-20_google_auth.sql` contra Supabase antes de desplegar (ya aplicado en la BD compartida; falta automatizarlo con Alembic, GAP-013).
 
 ## 6. Decisiones vigentes
 
@@ -138,4 +137,4 @@ crear causa → publicar on-chain → evidencia → IA → veredicto on-chain �
   (`GOOGLE_CLIENT_ID` como audience); sin NextAuth ni flujo de redirect/código OAuth.
 - Cambio de producto (2026-09-20): se retira el rol fijo por cuenta (`user_type`). Cualquier cuenta puede donar
   y publicar causas; UC-001 BR-001 y UC-004 BR-001 se eliminaron (columna `users.user_type` se elimina via
-  `backend/migrations/manual/2026-09-20_google_auth.sql`, pendiente de ejecutar en Supabase).
+  `backend/migrations/manual/2026-09-20_google_auth.sql`, ya ejecutada en Supabase).

@@ -65,7 +65,7 @@ Vocabulario de estado FR: `Open → In Progress → Implemented → Verified`. `
 | C-003 | Token                 | Las donaciones deben usar una stablecoin ERC-20 de 6 decimales (USDT). En testnet se usa `MockUSDT` (ver C-012). | Technical | High | Implemented  |
 | C-004 | Backend               | El backend debe usar Python con FastAPI y SQLAlchemy.                                   | Technical | High     | Implemented  |
 | C-005 | Proveedor de IA       | La verificación debe usar modelos con visión a través de OpenRouter (DeepSeek v4.1 Flash). | Technical | High   | Implemented  |
-| C-006 | Frontend              | El frontend debe usar Next.js sobre Scaffold-ETH. Estado real: Next.js 16 sin Scaffold-ETH ni librería de wallet; tiene landing, FAQ, términos y autenticación (correo y Google); el listado usa datos de muestra. | Technical | High | Deferred     |
+| C-006 | Frontend              | El frontend debe usar Next.js sobre Scaffold-ETH. Estado real: Next.js 16 sin Scaffold-ETH ni librería de wallet (wagmi/RainbowKit); tiene landing, FAQ, términos, autenticación (correo y Google), dashboard con causas reales y vinculación de wallet (Rabby vía EIP-1193 directo); la landing sigue usando datos de muestra. | Technical | High | Deferred     |
 | C-007 | Plazo                 | El MVP debe estar entregado al cierre del hackathon (20 de septiembre de 2026).         | Schedule  | High     | In Progress  |
 | C-008 | Repositorio público   | El código debe estar en un repositorio público de GitHub con README y documentación.    | Business  | High     | Implemented  |
 | C-009 | Sin custodia          | El backend no debe custodiar fondos ni firmar transacciones de donantes o receptores.   | Business  | High     | Implemented  |
