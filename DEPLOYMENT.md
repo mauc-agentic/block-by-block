@@ -66,8 +66,25 @@ CAUSE_VAULT_ADDRESS = 0x591723edf457032ad341366f4654a973fbd0daa9
 
 ### CORS
 ```
-ALLOWED_ORIGINS = https://block-by-block-backend.onrender.com,http://localhost:3000
+ALLOWED_ORIGINS = https://blockbyblock-8wk2.onrender.com,http://localhost:3000
 ```
+
+---
+
+## Step 3.5: Allowlist Render's Outbound IPs in Supabase
+
+Render (plan Starter) usa IPs salientes estáticas para este servicio. Si el proyecto de Supabase tiene
+**Network Restrictions** activas, hay que agregarlas o la conexión a `SUPABASE_DB_URL` será rechazada:
+
+```
+74.220.48.0/24
+74.220.56.0/24
+```
+
+1. En el dashboard de Render: **Settings** → **Outbound** (confirma que estos son los rangos vigentes; Render
+   puede rotarlos).
+2. En Supabase: **Project Settings** → **Database** → **Network Restrictions** → agrega ambos rangos CIDR.
+3. Verifica conexión: `curl https://blockbyblock-8wk2.onrender.com/docs` debe responder sin error 500 de DB.
 
 ---
 
@@ -88,14 +105,14 @@ Check logs in Render dashboard if there are issues.
 
 ```bash
 # Check health
-curl https://block-by-block-backend.onrender.com/docs
+curl https://blockbyblock-8wk2.onrender.com/docs
 
 # Should return Swagger API documentation
 ```
 
 Your backend is now live at:
 ```
-https://block-by-block-backend.onrender.com
+https://blockbyblock-8wk2.onrender.com
 ```
 
 ---
