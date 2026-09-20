@@ -128,6 +128,7 @@ Requisitos aún no terminados:
 **Frontend**
 - Landing con causas verificadas reales, FAQ, términos, autenticación (correo y Google), vinculación de wallet con Rabby verificada en vivo, dashboard protegido con alerta de wallet.
 - **Crear causa** (`/cause/create`): formulario, subida de foto y publicación on-chain firmando `createCause` con la wallet, con confirmación por reintentos (UC-004, UC-005, UC-013; Andres, PR #8).
+- **Motivo del veredicto de IA** (UC-006): `CauseResponse`/`DashboardCause` ahora exponen `verification_reason` y `verification_confidence` (tabla `verifications`, antes solo en Postgres); el dashboard (`MyCauseRow`) muestra un botón "Ver por qué se rechazó"/"Ver motivo de la IA" que abre un modal (`components/Modal.tsx`) con el motivo y la confianza del modelo.
 
 **Verificado en real (HSK testnet)**
 - Causa rechazada por la IA real (motivo coherente) y verificada con veredicto simulado; donación de 3 USDT con `approve` + `donate` desde una wallet distinta, registro,

@@ -161,6 +161,8 @@ Datos que la API **nunca** expone de terceros: correo, hash de contraseña y `ex
 | `target_amount` | decimal (string) | sí |
 | `status` | string | sí |
 | `verification_hash` | string | null | no |
+| `verification_reason` | string | null | no |
+| `verification_confidence` | decimal (string) | null | no |
 | `created_at` | datetime (ISO 8601, UTC) | sí |
 | `recipient_name` | string | null | no |
 | `image_url` | string | null | no |
@@ -180,6 +182,8 @@ Datos que la API **nunca** expone de terceros: correo, hash de contraseña y `ex
 | `target_amount` | decimal (string) | sí |
 | `status` | string | sí |
 | `verification_hash` | string | null | no |
+| `verification_reason` | string | null | no |
+| `verification_confidence` | decimal (string) | null | no |
 | `created_at` | datetime (ISO 8601, UTC) | sí |
 | `recipient_name` | string | null | no |
 | `image_url` | string | null | no |

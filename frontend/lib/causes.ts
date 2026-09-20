@@ -35,6 +35,8 @@ export type CauseResponse = {
   target_amount: string | number;
   status: "Pending" | "Verified" | "Rejected" | "Completed";
   verification_hash: string | null;
+  verification_reason: string | null; // UC-006: motivo del veredicto del agente IA
+  verification_confidence: string | number | null; // UC-006: confianza del veredicto (0.0-1.0)
   created_at: string;
   recipient_name: string | null;
   image_url: string | null;

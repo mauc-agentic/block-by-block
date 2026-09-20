@@ -85,6 +85,8 @@ class CauseResponse(BaseModel):
     target_amount: Decimal
     status: str
     verification_hash: Optional[str] = None
+    verification_reason: Optional[str] = None  # UC-006: motivo del veredicto del agente IA (Verified o Rejected)
+    verification_confidence: Optional[Decimal] = None  # UC-006: confianza del veredicto (0.0-1.0)
     created_at: datetime
     recipient_name: Optional[str] = None  # Nombre de usuario del receptor (público)
     image_url: Optional[str] = None  # Ruta relativa a la Base URL de la API; None mientras la causa está Pending
