@@ -103,9 +103,17 @@ async function ensureHskNetwork(provider: EthereumProvider) {
       WALLET_PROMPT_TIMEOUT_MS,
       WALLET_TIMEOUT_MESSAGE
     );
-  } catch (err) {
-    // 4902: la wallet no tiene la red agregada todavía.
-    if (isRpcError(err, 4902)) {
+  } catch (switchErr) {
+    if (isRpcError(switchErr, 4001)) {
+      throw new WalletRejectedError("Cancelaste el cambio de red en tu wallet.");
+    }
+
+    // La wallet no tiene la red agregada. El código EIP-3326 (4902) para este
+    // caso no es consistente entre wallets (Rabby a veces lanza un error sin
+    // ese código, p.ej. "Unrecognized chain ID"), así que cualquier fallo que
+    // no sea un rechazo explícito del usuario se trata igual: intentar
+    // agregar la red.
+    try {
       await withTimeout(
         provider.request({
           method: "wallet_addEthereumChain",
@@ -114,10 +122,35 @@ async function ensureHskNetwork(provider: EthereumProvider) {
         WALLET_PROMPT_TIMEOUT_MS,
         WALLET_TIMEOUT_MESSAGE
       );
-    } else if (isRpcError(err, 4001)) {
-      throw new WalletRejectedError("Cancelaste el cambio de red en tu wallet.");
-    } else {
-      throw err;
+    } catch (addErr) {
+      if (isRpcError(addErr, 4001)) {
+        throw new WalletRejectedError("Cancelaste el cambio de red en tu wallet.");
+      }
+      throw addErr;
+    }
+
+    // Algunas wallets agregan la red sin activarla automáticamente.
+    const chainIdAfterAdd = await withTimeout(
+      provider.request({ method: "eth_chainId" }),
+      WALLET_PROMPT_TIMEOUT_MS,
+      WALLET_TIMEOUT_MESSAGE
+    );
+    if (chainIdAfterAdd !== HSK_CHAIN_ID_HEX) {
+      try {
+        await withTimeout(
+          provider.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: HSK_CHAIN_ID_HEX }],
+          }),
+          WALLET_PROMPT_TIMEOUT_MS,
+          WALLET_TIMEOUT_MESSAGE
+        );
+      } catch (finalSwitchErr) {
+        if (isRpcError(finalSwitchErr, 4001)) {
+          throw new WalletRejectedError("Cancelaste el cambio de red en tu wallet.");
+        }
+        throw finalSwitchErr;
+      }
     }
   }
 }
