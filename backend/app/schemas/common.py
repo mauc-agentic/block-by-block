@@ -98,6 +98,18 @@ class CauseListResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class PublishInstruction(BaseModel):
+    """UC-013: Instrucción de firma para publicar la causa en el contrato (C-009)."""
+    status: str = "sign_required"
+    contract: str
+    function: str = "createCause"
+    params: list
+    message: str
+
+class PublishConfirmRequest(BaseModel):
+    """UC-013: Referencia de la transacción `createCause` firmada por el receptor."""
+    tx_hash: str = Field(..., pattern="^0x[a-fA-F0-9]{64}$")
+
 # ============================================================================
 # DONATION SCHEMAS (UC-009, UC-011)
 # ============================================================================

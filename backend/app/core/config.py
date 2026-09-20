@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     openrouter_api_key: str = os.getenv("OPENROUTER_API_KEY", "sk-")
     openrouter_url: str = os.getenv(
         "OPENROUTER_URL",
-        "https://openrouter.ai/api/v1/messages"
+        "https://openrouter.ai/api/v1/chat/completions"
     )
 
     # CORS

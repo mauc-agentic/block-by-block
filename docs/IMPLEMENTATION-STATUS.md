@@ -38,16 +38,16 @@ Leyenda de prueba: **A** = automatizada, **P** = parcial, **—** = ninguna.
 | UC-001 | Implemented | `POST /api/v1/auth/signup`, `POST /api/v1/auth/google/signup` (A3)     | P: `test_signup_persists_to_supabase`, `test_uc001_a3_google_signup_creates_user`, `test_uc001_a3_google_signup_rejects_duplicate_identity` (no corridas esta sesión, ver nota de allowlist arriba) | A1 (duplicados) y BR-002 sin prueba tras retirar SQLite; A3 (Google) implementado, sin ejecutar en Supabase real todavía |
 | UC-002 | Implemented | `POST /api/v1/auth/login`, `POST /api/v1/auth/google/login` (A3, A4)   | P: `test_login_queries_supabase`, `test_uc002_a3_google_login_existing_user`, `test_uc002_a4_google_login_unregistered_identity` (no corridas esta sesión) | A1 (credenciales inválidas) sin prueba; A3/A4 (Google) implementado, sin ejecutar en Supabase real todavía |
 | UC-003 | Implemented | `POST /api/v1/auth/wallet/link` + `verify_wallet_signature`            | A: 5 tests de firma (`test_helpers`, `test_wallet`); endpoint sin prueba                  | BR-003 (mensaje de un solo uso) **no aplicado**; A2 sin prueba                         |
-| UC-004 | Approved    | `POST /api/v1/causes` (solo BD)                                        | P: `test_uc004_uc009_authenticated_flow`                                                                                       | Contrato `createCause` existe pero nada lo llama ni asigna `onchain_cause_id` (UC-013) |
-| UC-005 | Approved    | `POST /api/v1/causes/{id}/upload-image`                                | —                                                                                         | Guarda solo un hash de 10 hex; la imagen no se almacena (FR-021)                       |
-| UC-006 | Approved    | `services/agent.py`, `tasks.py`                                        | P: solo lectura de configuración/ABI HSK; lógica del agente 17 % de cobertura             | GAP-001..003                                                                           |
-| UC-007 | Approved    | `GET /api/v1/causes` (filtra `Verified`)                               | P: `test_list_causes_from_supabase` (lista vacía)                                         | Nada marca `Verified`; no devuelve monto recaudado (BR-002)                            |
+| UC-004 | Approved    | `POST /api/v1/causes`; publicación on-chain en UC-013                  | P: `test_uc004_uc009_authenticated_flow`, `scripts/e2e_verification.py`                    | Falta que el frontend firme `createCause` con la wallet (el backend ya entrega la instrucción) |
+| UC-005 | Implemented | `POST /api/v1/causes/{id}/upload-image`, `GET /causes/{id}/evidence`   | A: `TestEvidenceUC005` (A1, A3, BR-001, BR-003, tamaño, firma del archivo)                 | Imagen guardada en tabla `evidences` (Postgres); A2 con otro usuario autenticado sin prueba |
+| UC-006 | Implemented | `services/agent.py`, `tasks.py`                                        | A: `test_agent.py` (20) + `TestAgentCycleUC006` (7) + E2E real en HSK/OpenRouter           | BR-004: huella SHA-256, no CID IPFS. Sin RPC de respaldo (spec ajustada)               |
+| UC-007 | Approved    | `GET /api/v1/causes` (filtra `Verified`)                               | A: lista solo causas Verified (`test_uc006_br005…`, `test_uc006_a1…`)                      | No devuelve monto recaudado (BR-002) hasta UC-014                                      |
 | UC-008 | Approved    | `GET /api/v1/causes/{id}`                                              | P: `test_uc004_uc009_authenticated_flow`                                                                                       | Devuelve causas no verificadas sin marcarlo; sin donaciones ni avance                  |
 | UC-009 | Approved    | `POST /api/v1/causes/{id}/donate` (instrucción de firma) + `donate`    | Foundry: `test_TC001_HappyPath`, `test_UC009_DonateWithZeroAmount`                        | El backend no registra la donación (UC-014); sin prueba del endpoint                   |
 | UC-010 | Implemented | `CauseVault.withdrawFunds` (sin endpoint, por diseño)                  | Foundry: `test_TC001_HappyPath`, `test_UC010_OnlyRecipientCanWithdraw`                    | `test_TC002_RejectedCauseBlocksFunds` falla (ver GAP-006)                              |
 | UC-011 | Approved    | **No existe** `GET /users/{id}` (el router solo monta auth/causes/donations) | —                                                                                   | FR-012/013 abiertos; el documento previo lo marcaba implementado por error             |
 | UC-012 | Implemented | `CauseVault.pause/unpause/setAgent`                                    | Foundry: `test_UC006_OnlyAgentCanVerify` (indirecto)                                      | Sin pruebas de pausa ni de rotación de agente                                          |
-| UC-013 | Draft       | —                                                                      | —                                                                                         | Nuevo. Requiere revisión antes de implementar (regla 2)                                |
+| UC-013 | Implemented | `POST /causes/{id}/publish`, `POST /causes/{id}/publish/confirm`, `services/chain.py` | A: `TestPublishUC013` (A2..A6, BR-002) + E2E real con `createCause` en HSK                | A1 (firma rechazada) es del frontend; el frontend aún no firma                        |
 | UC-014 | Draft       | —                                                                      | —                                                                                         | Nuevo. Requiere revisión antes de implementar (regla 2)                                |
 
 ### Test cases
@@ -65,18 +65,18 @@ Leyenda de prueba: **A** = automatizada, **P** = parcial, **—** = ninguna.
 
 | ID      | Severidad | Brecha                                                                                                                                             | Requisito   |
 |---------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------------|-------------|
-| GAP-001 | Crítica   | `verify_cause_task` guarda `Verification` pero **nunca actualiza `Cause.status`**: ninguna causa llega a `Verified`, el listado siempre queda vacío | FR-022      |
-| GAP-002 | Crítica   | El agente evalúa una imagen **PNG de 1×1 píxel fija**; la foto del receptor no se guarda ni se lee                                                  | FR-021      |
-| GAP-003 | Crítica   | `createCause` on-chain no se invoca; `onchain_cause_id` queda nulo, por lo que `verifyCause(cause_id)` usa el id de la BD, no el del contrato       | FR-019      |
+| GAP-001 | Resuelta  | `verify_cause_task` guarda `Verification` pero **nunca actualiza `Cause.status`**: ninguna causa llega a `Verified`, el listado siempre queda vacío | FR-022      |
+| GAP-002 | Resuelta  | El agente evalúa una imagen **PNG de 1×1 píxel fija**; la foto del receptor no se guarda ni se lee                                                  | FR-021      |
+| GAP-003 | Resuelta  | `createCause` on-chain no se invoca; `onchain_cause_id` queda nulo, por lo que `verifyCause(cause_id)` usa el id de la BD, no el del contrato       | FR-019      |
 | GAP-004 | Alta      | No hay endpoint de dashboard (`GET /users/{id}`)                                                                                                   | FR-012/013  |
 | GAP-005 | Alta      | Ningún código escribe filas en `donations`                                                                                                         | FR-020      |
 | GAP-006 | Alta      | Foundry: `test_TC002_RejectedCauseBlocksFunds` espera "no funds to withdraw" pero el contrato revierte con "cause not verified" (correcto según UC-010 A3); `test_GetRecipientCauses` falla por índice fuera de rango | NFR-001 |
 | GAP-007 | Alta      | Cobertura backend 66 % (`agent.py` 17 %, `tasks.py` 48 %; `causes.py` y `donations.py` cubiertos solo parcialmente)                                                                         | NFR-001     |
 | GAP-008 | Media     | Se eliminaron las pruebas de integración SQLite (duplicados, credenciales inválidas, link wallet) sin sustituirlas por equivalentes contra Supabase | UC-001..003 |
 | GAP-009 | Media     | UC-003 BR-003 (mensaje de un solo uso) no se aplica: la misma firma puede reutilizarse                                                              | FR-003      |
-| GAP-010 | Media     | Reintento A5 de UC-006 ("RPC de respaldo") no existe; solo un RPC configurado                                                                      | FR-007      |
-| GAP-011 | Media     | `Verification.cause_id` es `unique`; el modelo lógico permite varias evaluaciones y UC-006 A2/A4 implican reintentos                                | FR-006      |
-| GAP-012 | Media     | `verification_hash` simulado (`Qm`+sha256[:10]); no es un CID IPFS real                                                                             | UC-006 BR-004 |
+| GAP-010 | Resuelta  | Reintento A5 de UC-006 ("RPC de respaldo") no existe; solo un RPC configurado                                                                      | FR-007      |
+| GAP-011 | Resuelta  | `Verification.cause_id` es `unique`; el modelo lógico permite varias evaluaciones y UC-006 A2/A4 implican reintentos                                | FR-006      |
+| GAP-012 | Resuelta  | `verification_hash` simulado (`Qm`+sha256[:10]); no es un CID IPFS real                                                                             | UC-006 BR-004 |
 | GAP-013 | Media     | `Base.metadata.create_all` al arrancar y `migrations/` vacío                                                                                        | NFR-013     |
 | GAP-014 | Media     | Sin logging estructurado ni middleware global (`utils/logger.py`, `exceptions.py` a 0 % de cobertura)                                              | NFR-012     |
 | GAP-015 | Resuelta  | `get_current_user` devolvía la función `get_db` en vez de una sesión: todo endpoint autenticado respondía 500 en `main`. Corregido con `_db_session` (import diferido) y cubierto por `test_uc004_uc009_authenticated_flow` | UC-004..009 |
@@ -93,14 +93,14 @@ Leyenda de prueba: **A** = automatizada, **P** = parcial, **—** = ninguna.
 
 | Métrica                       | Medido 2026-09-20                  | Meta        |
 |-------------------------------|-------------------------------------|-------------|
-| `pytest`                      | 35 pasan, 3 skip, 0 fallan          | —           |
-| Cobertura backend             | 66 % (551 líneas, 190 sin cubrir)   | ≥ 85 %      |
+| `pytest`                      | 81 pasan, 3 skip, 0 fallan          | —           |
+| Cobertura backend             | 71 % (825 líneas, 239 sin cubrir)   | ≥ 85 %      |
 | `forge test`                  | 7 pasan, 2 fallan                   | 100 %       |
 | Cobertura contrato (líneas)   | 88.52 % (54/61)                     | ≥ 85 %      |
-| UC en `Implemented`           | 5 de 14 (UC-001,002,003,010,012)    | 14          |
-| UC en `Approved`              | 7 (UC-004..009, UC-011)             | —           |
-| UC en `Draft`                 | 2 (UC-013, UC-014)                  | —           |
-| FR `Implemented`              | 5 de 22 (FR-001, 002, 003, 011, 018) | 17 (sin Deferred) |
+| UC en `Implemented`           | 8 de 14 (UC-001,002,003,005,006,010,012,013) | 14 |
+| UC en `Approved`              | 5 (UC-004, 007, 008, 009, 011)      | —           |
+| UC en `Draft`                 | 1 (UC-014)                          | —           |
+| FR Implemented o Verified     | 12 de 22 (Verified: FR-005, 006, 007, 019, 021, 022) | 17 (sin Deferred) |
 
 ---
 

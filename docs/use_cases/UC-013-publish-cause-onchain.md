@@ -7,7 +7,7 @@
 **Primary Actor:** Receptor  
 **Secondary Actors:** Agente Verificador  
 **Goal:** Registrar la causa en el contrato y enlazar su identificador con el registro de la plataforma  
-**Status:** Draft
+**Status:** Implemented
 
 **Requirements:** [FR-004, FR-019, C-009](../requirements.md)
 
@@ -23,7 +23,7 @@
 3. Receptor firma y envía la transacción desde su wallet.
 4. Contrato registra la causa y devuelve su identificador on-chain.
 5. Sistema asocia el identificador on-chain con la causa de la plataforma.
-6. Sistema habilita la verificación de la causa (UC-006).
+6. Sistema habilita la verificación de la causa (UC-006) si ya tiene evidencia; si aún no la tiene, la habilita al recibirla (UC-005).
 
 ## Alternative Flows
 
@@ -57,6 +57,22 @@
 **Flow:**
 
 1. Sistema rechaza la solicitud.
+2. Use case ends.
+
+### A5: Transacción de otra wallet
+
+**Trigger:** La transacción confirmada no fue enviada desde la wallet vinculada del receptor o no corresponde al título y monto de la causa (step 4)  
+**Flow:**
+
+1. Sistema rechaza el enlace y conserva la causa sin identificador on-chain.
+2. Use case ends.
+
+### A6: Receptor sin wallet
+
+**Trigger:** El receptor no tiene wallet vinculada (step 1)  
+**Flow:**
+
+1. Sistema solicita vincular la wallet (UC-003).
 2. Use case ends.
 
 ## Postconditions

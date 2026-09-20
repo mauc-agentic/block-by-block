@@ -18,7 +18,7 @@ services:
       - key: ACCESS_TOKEN_EXPIRE_HOURS
         value: "24"
       - key: OPENROUTER_URL
-        value: https://openrouter.ai/api/v1/messages
+        value: https://openrouter.ai/api/v1/chat/completions
       - key: ALLOWED_ORIGINS
         value: http://localhost:3000,https://block-by-block-olive.vercel.app
       - key: SUPABASE_DB_URL

@@ -1,343 +1,217 @@
 # agent.py
-# Agente de verificación (UC-006)
-# Verifica causas con OpenRouter + firma resultado en el contrato
+# Agente de verificación (UC-006): evalúa la evidencia con IA (OpenRouter),
+# registra el veredicto en CauseVault y sincroniza el estado de la causa.
+
+import asyncio
+import base64
+import hashlib
+import json
+import logging
+import re
+from typing import Optional
 
 import httpx
-import json
-import base64
-import asyncio
-import os
-import hashlib
-from typing import Optional
-from web3 import Web3
-from web3.contract import Contract
+
 from app.core import get_settings
+from app.core.constants import AI_CONFIDENCE_THRESHOLD, AI_MODEL
 from app.db import SessionLocal
-from app.db.models import Cause, Verification, CauseStatus
-from sqlalchemy.orm import Session
-import logging
+from app.db.models import Cause, CauseStatus, Evidence, Verification
+from app.services.chain import get_contract, get_w3
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-# ============================================================================
-# VERIFICACIÓN CON IA (OpenRouter)
-# ============================================================================
+MAX_AI_ATTEMPTS = 3      # NFR-004
+AI_TIMEOUT_SECONDS = 30  # NFR-004
+TX_RECEIPT_TIMEOUT = 60  # NFR-003
+MAX_TX_ATTEMPTS = 3      # UC-006 A5
 
-async def verify_cause_with_ai(
-    cause_id: int,
-    image_base64: str,
-    description: str,
-    db: Session
-) -> dict:
-    """
-    UC-006: Verifica una causa con visión de IA via OpenRouter.
-    
-    Workflow:
-    1. Llama a OpenRouter con imagen + descripción
-    2. Recibe veredicto (verified, confidence, reason)
-    3. Guarda resultado en BD
-    4. Firma el resultado on-chain (verifyCause)
-    
-    Business Rules:
-    - BR-001: Solo el agente (AGENT_ADDRESS)
-    - BR-002: Umbral de confianza >= 0.80
-    - BR-003: IPFS hash del análisis para auditoría
-    - BR-004: Llave privada solo en variables de entorno
-    
-    Args:
-        cause_id: ID de la causa a verificar
-        image_base64: Imagen en base64
-        description: Descripción de la causa
-        db: Sesión de BD
-    
-    Returns:
-        {"verified": bool, "confidence": float, "reason": str}
-    """
-    
-    cause = db.query(Cause).filter(Cause.id == cause_id).first()
-    if not cause:
-        raise ValueError(f"Cause {cause_id} not found")
-    
-    # Prompt para el modelo
-    prompt = f"""Eres un verificador de causas de ayuda comunitaria.
+
+class VerificationUnavailable(Exception):
+    """El proveedor de IA no entregó un veredicto válido (UC-006 A3/A4)."""
+
+
+def _build_prompt(description: str) -> str:
+    return f"""Eres un verificador de causas de ayuda comunitaria.
 
 Descripción de la causa:
 {description}
 
-Analiza la imagen adjunta. Responde SOLO en JSON válido (sin markdown, sin código):
-{{
-    "verified": true o false,
-    "confidence": 0.0 a 1.0,
-    "reason": "explicación breve (máx 100 caracteres)"
-}}
+Analiza la imagen adjunta y responde SOLO con JSON válido (sin markdown):
+{{"verified": true o false, "confidence": número entre 0.0 y 1.0, "reason": "explicación breve (máx 100 caracteres)"}}
 
 Preguntas a responder:
-1. ¿Hay evidencia visual real del problema/necesidad?
+1. ¿Hay evidencia visual real del problema o la necesidad?
 2. ¿La imagen corresponde a la descripción?
-3. ¿Parece una solicitud legítima o potencialmente fraudulenta?
+3. ¿Parece una solicitud legítima o potencialmente fraudulenta?"""
 
-Responde SOLO el JSON."""
 
-    headers = {
-        "Authorization": f"Bearer {settings.openrouter_api_key}",
-        "Content-Type": "application/json"
+def _parse_verdict(content: str) -> dict:
+    """Extrae y valida el veredicto JSON de la respuesta del modelo (UC-006 A4)."""
+    text = content.strip()
+    fenced = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
+    if fenced:
+        text = fenced.group(1)
+    elif not text.startswith("{"):
+        braces = re.search(r"\{.*\}", text, re.DOTALL)
+        text = braces.group(0) if braces else text
+    try:
+        verdict = json.loads(text)
+        verified = verdict["verified"]
+        confidence = float(verdict["confidence"])
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+        raise VerificationUnavailable(f"invalid verdict: {exc}") from exc
+    if not isinstance(verified, bool) or not 0.0 <= confidence <= 1.0:
+        raise VerificationUnavailable("verdict out of range")
+    return {
+        "verified": verified,
+        "confidence": confidence,
+        "reason": str(verdict.get("reason", ""))[:500],
     }
-    
+
+
+async def verify_cause_with_ai(image_bytes: bytes, content_type: str, description: str) -> dict:
+    """
+    UC-006: Evalúa la evidencia con el modelo de visión.
+
+    BR-002: verified solo si el modelo lo afirma y la confianza >= 0.80.
+    Lanza VerificationUnavailable si el proveedor falla o responde algo ilegible
+    tras 3 intentos; en ese caso la causa debe permanecer Pending (no se rechaza).
+    """
+    data_url = f"data:{content_type};base64,{base64.b64encode(image_bytes).decode()}"
     payload = {
-        "model": "deepseek/deepseek-v4.1-flash",
-        "messages": [
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": "image/jpeg",
-                            "data": image_base64
-                        }
-                    },
-                    {
-                        "type": "text",
-                        "text": prompt
-                    }
-                ]
-            }
-        ],
-        "temperature": 0  # Determinístico para verificación
+        "model": AI_MODEL,
+        "temperature": 0,
+        "messages": [{
+            "role": "user",
+            "content": [
+                {"type": "image_url", "image_url": {"url": data_url}},
+                {"type": "text", "text": _build_prompt(description)},
+            ],
+        }],
     }
-    
-    max_retries = 3
-    for attempt in range(max_retries):
+    headers = {"Authorization": f"Bearer {settings.openrouter_api_key}"}
+
+    last_error: Exception = VerificationUnavailable("no attempts")
+    for attempt in range(MAX_AI_ATTEMPTS):
         try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.post(
-                    settings.openrouter_url,
-                    json=payload,
-                    headers=headers
-                )
-                response.raise_for_status()
-                result = response.json()
-                break
-        except httpx.TimeoutException:
-            if attempt == max_retries - 1:
-                logger.error(f"OpenRouter timeout after {max_retries} retries for cause {cause_id}")
-                return {
-                    "verified": False,
-                    "confidence": 0.0,
-                    "reason": "Verification service timeout"
-                }
-            await asyncio.sleep(2 ** attempt)  # Backoff exponencial
-        except Exception as e:
-            if attempt == max_retries - 1:
-                logger.error(f"OpenRouter error: {str(e)}")
-                return {
-                    "verified": False,
-                    "confidence": 0.0,
-                    "reason": f"Verification error: {str(e)}"
-                }
-            await asyncio.sleep(2 ** attempt)
-    
-    # Parsear respuesta
-    try:
-        content = result['choices'][0]['message']['content']
-        verification = json.loads(content)
-    except (json.JSONDecodeError, KeyError) as e:
-        logger.error(f"Failed to parse OpenRouter response: {str(e)}")
-        return {
-            "verified": False,
-            "confidence": 0.0,
-            "reason": "Invalid response from verification service"
-        }
-    
-    # Validar estructura
-    if not isinstance(verification, dict) or "verified" not in verification:
-        logger.error(f"Invalid verification structure: {verification}")
-        return {
-            "verified": False,
-            "confidence": 0.0,
-            "reason": "Invalid verification response format"
-        }
-    
-    # Aplicar umbral (BR-002)
-    confidence = float(verification.get("confidence", 0.0))
-    if confidence < 0.80:
-        verification["verified"] = False
-    
-    return verification
+            async with httpx.AsyncClient(timeout=AI_TIMEOUT_SECONDS) as client:
+                response = await client.post(settings.openrouter_url, json=payload, headers=headers)
+            response.raise_for_status()
+            verdict = _parse_verdict(response.json()["choices"][0]["message"]["content"])
+            if verdict["confidence"] < AI_CONFIDENCE_THRESHOLD:
+                verdict["verified"] = False
+            return verdict
+        except (httpx.HTTPError, KeyError, IndexError, ValueError, VerificationUnavailable) as exc:
+            last_error = exc
+            logger.warning("UC-006: AI attempt %s/%s failed: %s", attempt + 1, MAX_AI_ATTEMPTS, exc)
+            if attempt < MAX_AI_ATTEMPTS - 1:
+                await asyncio.sleep(2 ** attempt)
+    raise VerificationUnavailable(str(last_error))
 
-# ============================================================================
-# FIRMA ON-CHAIN (verifyCause)
-# ============================================================================
 
-def sign_verification_tx(
-    cause_id: int,
-    verified: bool,
-    verification_hash: str,
-    db: Session
-) -> Optional[str]:
+def compute_verification_hash(verdict: dict) -> str:
+    """Huella SHA-256 del análisis, registrada on-chain para auditoría (UC-006 BR-004)."""
+    canonical = json.dumps(verdict, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode()).hexdigest()
+
+
+def sign_verification_tx(onchain_cause_id: int, verified: bool, verification_hash: str) -> Optional[str]:
     """
-    UC-006: Firma la transacción verifyCause en el contrato.
-    
-    Business Rules:
-    - BR-001: Solo el agente firmante
-    - BR-003: Hash IPFS del análisis
-    - BR-004: Llave privada solo en variables de entorno
-    
-    Args:
-        cause_id: ID de la causa
-        verified: Resultado de la verificación
-        verification_hash: Hash IPFS del análisis
-        db: Sesión de BD
-    
-    Returns:
-        tx_hash: Hash de la transacción on-chain
+    UC-006: Firma y envía `verifyCause` con la llave del agente (BR-001, BR-003).
+
+    Devuelve el hash de la tx solo si el recibo confirma éxito; None en cualquier otro caso.
     """
-    
     try:
-        # Conectar a la red
-        w3 = Web3(Web3.HTTPProvider(settings.hsk_rpc_url))
-        
+        w3 = get_w3()
         if not w3.is_connected():
-            logger.error(f"Failed to connect to HSK RPC: {settings.hsk_rpc_url}")
+            logger.error("UC-006: HSK RPC not reachable")
             return None
-        
-        # Cargar ABI del contrato
-        abi_path = "abi/CauseVault.json"
-        if not os.path.exists(abi_path):
-            logger.error(f"ABI file not found: {abi_path}")
+
+        contract = get_contract(w3)
+        account = w3.eth.account.from_key(settings.agent_private_key)
+        if account.address.lower() != settings.agent_address.lower():
+            logger.error("UC-006: AGENT_PRIVATE_KEY does not match AGENT_ADDRESS")
             return None
-        
-        with open(abi_path) as f:
-            abi = json.load(f)
-        
-        # Instanciar contrato
-        contract = w3.eth.contract(
-            address=w3.to_checksum_address(settings.cause_vault_address),
-            abi=abi
-        )
-        
-        # Preparar firma
-        agent_address = w3.to_checksum_address(settings.agent_address)
-        agent_pk = settings.agent_private_key
-        
-        account = w3.eth.account.from_key(agent_pk)
-        assert account.address.lower() == agent_address.lower()
-        
-        # Construir tx
-        nonce = w3.eth.get_transaction_count(agent_address)
-        gas_price = w3.eth.gas_price
-        
+
         tx = contract.functions.verifyCause(
-            cause_id,
-            verified,
-            verification_hash
+            onchain_cause_id, verified, verification_hash
         ).build_transaction({
-            'from': agent_address,
-            'nonce': nonce,
-            'gasPrice': gas_price,
-            'gas': 200000,
-            'chainId': settings.hsk_chain_id
+            "from": account.address,
+            "nonce": w3.eth.get_transaction_count(account.address),
+            "gasPrice": w3.eth.gas_price,
+            "gas": 200000,
+            "chainId": settings.hsk_chain_id,
         })
-        
-        # Firmar y enviar
-        signed_tx = w3.eth.account.sign_transaction(tx, agent_pk)
-        tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
-        
-        # Esperar confirmación (max 30 segundos)
-        try:
-            receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=30)
-            logger.info(f"UC-006: verifyCause confirmed for cause {cause_id}, tx: {tx_hash.hex()}")
-            return tx_hash.hex()
-        except Exception as e:
-            logger.warning(f"UC-006: tx sent but not confirmed in time: {tx_hash.hex()}, error: {str(e)}")
-            return tx_hash.hex()  # Retornar hash aunque no esté confirmado
-    
-    except Exception as e:
-        logger.error(f"UC-006: Failed to sign verification tx: {str(e)}")
+        signed = w3.eth.account.sign_transaction(tx, settings.agent_private_key)
+        tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+        receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=TX_RECEIPT_TIMEOUT)
+        if receipt.status != 1:
+            logger.error("UC-006: verifyCause reverted, tx %s", w3.to_hex(tx_hash))
+            return None
+        return w3.to_hex(tx_hash)
+    except Exception as exc:
+        logger.error("UC-006: verifyCause failed: %s", exc)
         return None
 
-# ============================================================================
-# BACKGROUND TASK (encolable con Celery)
-# ============================================================================
 
-async def verify_cause_task(cause_id: int):
+async def verify_cause_task(cause_id: int) -> None:
     """
-    Tarea encolable que:
-    1. Obtiene la imagen y descripción de la causa
-    2. Verifica con IA (UC-006)
-    3. Registra resultado on-chain
-    
-    Uso (con Celery):
-        from tasks import verify_cause_task
-        verify_cause_task.delay(cause_id)
+    UC-006: Verifica una causa y sincroniza su estado.
+
+    BR-005: la causa pasa a Verified/Rejected en la plataforma solo después de que el
+    veredicto quedó confirmado on-chain. Cualquier fallo previo la deja Pending.
     """
-    
     db = SessionLocal()
     try:
         cause = db.query(Cause).filter(Cause.id == cause_id).first()
-        
-        if not cause:
-            logger.error(f"UC-006: Cause {cause_id} not found")
+        if cause is None or cause.status != CauseStatus.Pending.value:
+            logger.info("UC-006: cause %s missing or not Pending, skipping", cause_id)
             return
-        
-        if not cause.image_hash:
-            logger.error(f"UC-006: Cause {cause_id} has no image")
+        if cause.onchain_cause_id is None:
+            logger.info("UC-006: cause %s not published on-chain yet, skipping", cause_id)
             return
-        
-        # TODO: Obtener imagen desde IPFS o almacenamiento
-        # image_base64 = get_image_from_ipfs(cause.image_hash)
-        
-        # Simular (en prod, obtener de IPFS)
-        logger.info(f"UC-006: Verifying cause {cause_id} with description: {cause.description[:50]}...")
-        image_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
-        
-        # Verificar con IA
-        verification = await verify_cause_with_ai(cause_id, image_base64, cause.description, db)
-        
-        # Calcular hash IPFS del análisis (simulado)
-        analysis_json = json.dumps(verification)
-        verification_hash = "Qm" + hashlib.sha256(analysis_json.encode()).hexdigest()[:10]
-        
-        # Guardar resultado en BD
-        db_verification = Verification(
-            cause_id=cause_id,
-            verified=verification.get("verified", False),
-            confidence=verification.get("confidence", 0.0),
-            reason=verification.get("reason", ""),
-        )
-        db.add(db_verification)
+        evidence = db.query(Evidence).filter(Evidence.cause_id == cause_id).first()
+        if evidence is None:
+            logger.info("UC-006 BR-006: cause %s has no evidence, skipping", cause_id)
+            return
+
+        try:
+            verdict = await verify_cause_with_ai(evidence.data, evidence.content_type, cause.description)
+        except VerificationUnavailable as exc:
+            logger.error("UC-006 A3: cause %s stays Pending, AI unavailable: %s", cause_id, exc)
+            return
+
+        verification_hash = compute_verification_hash(verdict)
+        record = db.query(Verification).filter(Verification.cause_id == cause_id).first()
+        if record is None:
+            record = Verification(cause_id=cause_id)
+            db.add(record)
+        record.verified = verdict["verified"]
+        record.confidence = verdict["confidence"]
+        record.reason = verdict["reason"]
+        record.tx_hash = None
         db.commit()
-        
-        # Firmar on-chain
-        tx_hash = sign_verification_tx(
-            cause_id,
-            verification.get("verified", False),
-            verification_hash,
-            db
-        )
-        
-        if tx_hash:
-            db_verification.tx_hash = tx_hash
-            db.commit()
-            logger.info(f"UC-006: Cause {cause_id} verified and registered on-chain: {tx_hash}")
-        else:
-            logger.error(f"UC-006: Failed to register verification on-chain for cause {cause_id}")
-    
-    except Exception as e:
-        logger.error(f"UC-006: Error verifying cause {cause_id}: {str(e)}")
+
+        tx_hash = None
+        for attempt in range(MAX_TX_ATTEMPTS):
+            tx_hash = await asyncio.to_thread(
+                sign_verification_tx, cause.onchain_cause_id, verdict["verified"], verification_hash
+            )
+            if tx_hash:
+                break
+            await asyncio.sleep(2 ** attempt)
+        if not tx_hash:
+            logger.error("UC-006 A5: cause %s stays Pending, on-chain registration failed", cause_id)
+            return
+
+        record.tx_hash = tx_hash
+        cause.verification_hash = verification_hash
+        cause.status = CauseStatus.Verified.value if verdict["verified"] else CauseStatus.Rejected.value
+        db.commit()
+        logger.info("UC-006: cause %s -> %s (tx %s)", cause_id, cause.status, tx_hash)
+    except Exception as exc:
+        db.rollback()
+        logger.error("UC-006: unexpected error verifying cause %s: %s", cause_id, exc)
     finally:
         db.close()
-
-# ============================================================================
-# CLI (para testing)
-# ============================================================================
-
-if __name__ == "__main__":
-    import asyncio
-    
-    # Test: python -m backend.agent
-    # asyncio.run(verify_cause_task(1))
-    
-    print("Agent module loaded. Use verify_cause_task(cause_id) to verify causes.")
