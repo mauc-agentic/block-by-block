@@ -21,7 +21,9 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(100), unique=True, nullable=False, index=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
-    hashed_password = Column(String(255), nullable=False)
+    hashed_password = Column(String(255), nullable=True)  # Null si auth_provider != "local"
+    auth_provider = Column(String(20), nullable=False, default="local", server_default="local")
+    external_id = Column(String(255), unique=True, nullable=True, index=True)  # UC-001 A3, UC-002 A3
     wallet_address = Column(String(42), unique=True, nullable=True, index=True)
     user_type = Column(String(20), nullable=False)  # "donor" o "recipient"
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

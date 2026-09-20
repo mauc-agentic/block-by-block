@@ -26,15 +26,25 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+class GoogleSignupRequest(BaseModel):
+    """UC-001 A3: Registro con proveedor externo (Google)."""
+    id_token: str
+    user_type: str = Field(..., pattern="^(donor|recipient)$")
+
+class GoogleLoginRequest(BaseModel):
+    """UC-002 A3: Inicio de sesión con proveedor externo (Google)."""
+    id_token: str
+
 class UserResponse(BaseModel):
     """Respuesta de usuario (sin contraseña)."""
     id: int
     username: str
     email: str
     user_type: str
+    auth_provider: str = "local"
     wallet_address: Optional[str] = None
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 

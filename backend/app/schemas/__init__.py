@@ -1,6 +1,8 @@
 from app.schemas.common import (
     UserCreate,
     UserLogin,
+    GoogleSignupRequest,
+    GoogleLoginRequest,
     UserResponse,
     TokenResponse,
     WalletLinkRequest,

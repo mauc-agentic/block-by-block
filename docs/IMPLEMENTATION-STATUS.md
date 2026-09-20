@@ -14,9 +14,9 @@
 |-----------------------|---------------------------------------------------------------------------------------------------|
 | Documentación AIUP    | Vision, 22 FR, 15 NFR, 12 C, 14 UC, 4 TC, diagrama de casos de uso actualizado                   |
 | Contrato `CauseVault` | Desplegado en HSK testnet. Foundry: **7/9 pruebas pasan, 2 fallan**. Cobertura de líneas 88.5 %   |
-| Backend FastAPI       | 12 endpoints. `pytest`: **81 pasan, 3 skip**. Cobertura **71 %** (meta 85 %)                       |
-| Agente IA (UC-006)    | **Ciclo cerrado y probado en real**: IA → veredicto on-chain → estado Verified/Rejected           |
-| Frontend Next.js      | Landing, FAQ y términos con datos de muestra; **sin llamadas al backend ni wallet**               |
+| Backend FastAPI       | 11 endpoints (+`POST /auth/google/signup`, `POST /auth/google/login`). Unit: **23/23 pasan** (verificado 2026-09-20); suite de integración no se corrió esta sesión (bloqueada por allowlist de IP de Supabase desde esta máquina) |
+| Agente IA (UC-006)    | Flujo IA + firma on-chain escrito; **no cierra el ciclo** (ver GAP-001..003)                      |
+| Frontend Next.js      | Landing, FAQ, términos y **auth (signup/login, email y Google) conectados al backend**; sin wallet ni causas |
 | Despliegue            | `Dockerfile`, `render.yaml`, `DEPLOYMENT.md` listos; **Render aún no desplegado**                 |
 
 ### Direcciones en HSK testnet
@@ -35,15 +35,15 @@ Leyenda de prueba: **A** = automatizada, **P** = parcial, **—** = ninguna.
 
 | UC     | Status doc  | Implementación                                                        | Pruebas                                                                                   | Estado real / faltante                                                                 |
 |--------|-------------|------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
-| UC-001 | Implemented | `POST /api/v1/auth/signup`                                             | P: `test_signup_persists_to_supabase`                                                     | A1 (duplicados) y BR-002 sin prueba tras retirar SQLite; A3 (OAuth) no implementado    |
-| UC-002 | Implemented | `POST /api/v1/auth/login`                                              | P: `test_login_queries_supabase`                                                          | A1 (credenciales inválidas) sin prueba                                                 |
+| UC-001 | Implemented | `POST /api/v1/auth/signup`, `POST /api/v1/auth/google/signup` (A3)     | P: `test_signup_persists_to_supabase`, `test_uc001_a3_google_signup_creates_user`, `test_uc001_a3_google_signup_rejects_duplicate_identity` (no corridas esta sesión, ver nota de allowlist arriba) | A1 (duplicados) y BR-002 sin prueba tras retirar SQLite; A3 (Google) implementado, sin ejecutar en Supabase real todavía |
+| UC-002 | Implemented | `POST /api/v1/auth/login`, `POST /api/v1/auth/google/login` (A3, A4)   | P: `test_login_queries_supabase`, `test_uc002_a3_google_login_existing_user`, `test_uc002_a4_google_login_unregistered_identity` (no corridas esta sesión) | A1 (credenciales inválidas) sin prueba; A3/A4 (Google) implementado, sin ejecutar en Supabase real todavía |
 | UC-003 | Implemented | `POST /api/v1/auth/wallet/link` + `verify_wallet_signature`            | A: 5 tests de firma (`test_helpers`, `test_wallet`); endpoint sin prueba                  | BR-003 (mensaje de un solo uso) **no aplicado**; A2 sin prueba                         |
 | UC-004 | Implemented | `POST /api/v1/causes` (exige wallet, A2); pasos 7-8 en UC-013                | A: `test_uc004_uc009_authenticated_flow` (A2, BR-001), `scripts/e2e_*.py`                  | Falta que el frontend firme `createCause` con la wallet (el backend ya entrega la instrucción) |
 | UC-005 | Implemented | `POST /api/v1/causes/{id}/upload-image`, `GET /causes/{id}/evidence`   | A: `TestEvidenceUC005` (A1, A3, BR-001, BR-003, tamaño, firma del archivo)                 | Imagen guardada en tabla `evidences` (Postgres); A2 con otro usuario autenticado sin prueba |
 | UC-006 | Implemented | `services/agent.py`, `tasks.py`                                        | A: `test_agent.py` (20) + `TestAgentCycleUC006` (7) + E2E real en HSK/OpenRouter           | BR-004: huella SHA-256, no CID IPFS. Sin RPC de respaldo (spec ajustada)               |
 | UC-007 | Implemented | `GET /api/v1/causes` (filtra `Verified`, con `collected`)               | A: `test_uc014_registers_donation_and_updates_progress`, `test_uc006_*` (listado)         | Monto recaudado = suma de donaciones confirmadas (UC-014 BR-005)                        |
 | UC-008 | Implemented | `GET /api/v1/causes/{id}` (avance y donaciones con wallet del donante) | A: `test_uc014_registers_donation_and_updates_progress`, `test_uc004_uc009_authenticated_flow` | A2/A3 (causa no verificada/completada) devuelven el detalle con su estado                |
-| UC-009 | Implemented | `POST /causes/{id}/donate` (instrucción `approve` + `donate` con id on-chain) | A: `TestDonateInstructionUC009` (BR-001, A1, A4, A5, wallet) + E2E real (`e2e_donation.py`) | El contrato acepta donaciones sobre la meta (Completed); ver GAP-020                    |
+| UC-009 | Implemented | `POST /causes/{id}/donate` (instrucción `approve` + `donate` con id on-chain) | A: `TestDonateInstructionUC009` (BR-001, A1, A4, A5, wallet) + E2E real (`e2e_donation.py`) | El contrato acepta donaciones sobre la meta (Completed); ver GAP-022                    |
 | UC-010 | Implemented | `CauseVault.withdrawFunds` (sin endpoint, por diseño)                  | Foundry: `test_TC001_HappyPath`, `test_UC010_OnlyRecipientCanWithdraw`; E2E real (`e2e_donation.py`) | `test_TC002_RejectedCauseBlocksFunds` falla (ver GAP-006)                              |
 | UC-011 | Implemented | `GET /api/v1/users/{id}` (`users.py`)                                   | A: `TestDashboardUC011` (A1, A2, A3, BR-001, BR-002) + E2E real                            | El saldo retirable se lee del contrato por causa (best effort)                          |
 | UC-012 | Implemented | `CauseVault.pause/unpause/setAgent`                                    | Foundry: `test_UC006_OnlyAgentCanVerify` (indirecto)                                      | Sin pruebas de pausa ni de rotación de agente                                          |
@@ -80,11 +80,13 @@ Leyenda de prueba: **A** = automatizada, **P** = parcial, **—** = ninguna.
 | GAP-013 | Media     | `Base.metadata.create_all` al arrancar y `migrations/` vacío                                                                                        | NFR-013     |
 | GAP-014 | Media     | Sin logging estructurado ni middleware global (`utils/logger.py`, `exceptions.py` a 0 % de cobertura)                                              | NFR-012     |
 | GAP-015 | Resuelta  | `get_current_user` devolvía la función `get_db` en vez de una sesión: todo endpoint autenticado respondía 500 en `main`. Corregido con `_db_session` (import diferido) y cubierto por `test_uc004_uc009_authenticated_flow` | UC-004..009 |
-| GAP-016 | Media     | Frontend sin integración: `lib/causes.ts` usa datos de muestra; sin wallet, sin rutas de UC-004..011                                              | C-006       |
+| GAP-016 | Media     | Frontend sin integración con el resto de la API: `lib/causes.ts` usa datos de muestra; sin wallet, sin rutas de UC-004..011. Auth (UC-001, UC-002) ya conecta a `/auth/*` | C-006       |
+| GAP-020 | Media     | El SQL Editor / conexión directa de Supabase rechaza la IP de esta máquina de desarrollo (`EADDRNOTALLOWED`); los tests de integración no se pueden correr localmente hasta agregarla al allowlist del proyecto en Supabase | NFR-001 |
+| GAP-021 | Baja      | `Base.metadata.create_all` no altera columnas existentes: `auth_provider`/`external_id`/`hashed_password NULL` en `users` requieren correr `backend/migrations/manual/2026-09-20_google_auth.sql` a mano en Supabase antes de desplegar | UC-001, UC-002 |
 | GAP-017 | Media     | `SECRET_KEY` real subido a `main` en el commit de configuración de Render (ya eliminado del árbol, sigue en el historial). Rotar.                   | NFR-008     |
 | GAP-018 | Baja      | `venv/` había sido versionado por un `git add -A`; se retira del índice y se agrega a `.gitignore`                                                | C-008       |
-| GAP-020 | Media     | El contrato acepta donaciones a causas `Completed` (solo exige `verified`), contradiciendo UC-009 A4; el backend ya no emite la instrucción, pero un cliente puede llamar al contrato directamente | UC-009 A4 |
-| GAP-021 | Media     | El RPC de HSK es un balanceador con nodos desfasados: `confirm` puede responder 400 "not confirmed" justo tras firmar; el cliente debe reintentar | UC-014 A4 |
+| GAP-022 | Media     | El contrato acepta donaciones a causas `Completed` (solo exige `verified`), contradiciendo UC-009 A4; el backend ya no emite la instrucción, pero un cliente puede llamar al contrato directamente | UC-009 A4 |
+| GAP-023 | Media     | El RPC de HSK es un balanceador con nodos desfasados: `confirm` puede responder 400 "not confirmed" justo tras firmar; el cliente debe reintentar | UC-014 A4 |
 | GAP-019 | Baja      | `on_event("shutdown")`, `from_orm` y `datetime.utcnow` están deprecados                                                                            | —           |
 
 ---
@@ -111,10 +113,12 @@ crear causa → publicar on-chain → evidencia → IA → veredicto on-chain �
 → registrar donación → dashboards → retirar.
 
 1. **GAP-016**: conectar el frontend (lista, detalle, wallet que firma `createCause`, `approve`, `donate`, `withdrawFunds`, y reintento de `confirm`).
-2. **GAP-006**: corregir las dos pruebas de Foundry y cerrar GAP-020 (bloquear donaciones a `Completed` en el contrato).
+2. **GAP-006**: corregir las dos pruebas de Foundry y cerrar GAP-022 (bloquear donaciones a `Completed` en el contrato).
 3. **GAP-007/008**: cerrar el 85 % de cobertura (auth, seguridad) y **GAP-009** (mensaje de wallet de un solo uso).
 4. **GAP-013/014**: Alembic y logging estructurado; **reintento de verificación** si Render reinicia a mitad.
 5. **GAP-017**: rotar `SECRET_KEY` (hecho por el equipo) y actualizar `OPENROUTER_URL` en Render.
+6. **GAP-020**: agregar la IP de cada desarrollador al allowlist de Supabase para correr `pytest` de integración en local.
+7. **GAP-021**: ejecutar `backend/migrations/manual/2026-09-20_google_auth.sql` contra Supabase antes de desplegar (ya aplicado en la BD compartida; falta automatizarlo con Alembic, GAP-013).
 
 ## 6. Decisiones vigentes
 
@@ -124,3 +128,5 @@ crear causa → publicar on-chain → evidencia → IA → veredicto on-chain �
 - IA: `deepseek/deepseek-v4.1-flash` vía OpenRouter, umbral 0.80.
 - Tareas de fondo: `ThreadPoolExecutor` (MVP); ruta de migración a Celery en `backend/TASKS.md`.
 - Despliegue: Render con Docker (`render.yaml`).
+- Login/registro con Google: Google Identity Services (ID token) verificado en el backend con `google-auth`
+  (`GOOGLE_CLIENT_ID` como audience); sin NextAuth ni flujo de redirect/código OAuth.
