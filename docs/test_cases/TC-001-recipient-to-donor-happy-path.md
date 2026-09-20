@@ -5,7 +5,7 @@
 **ID:** TC-001  
 **Goal:** Un receptor publica una causa que la IA verifica, un donante la financia y el receptor retira los fondos  
 **Priority:** Critical  
-**Status:** Draft
+**Status:** Implemented
 
 ## Roles
 
@@ -50,3 +50,12 @@
 
 - Existen un receptor, un donante y una causa Verified con una donación registrada
 - Los fondos disponibles de la causa son cero tras el retiro
+
+## Automation
+
+Automatizado como journey real en HSK testnet (Supabase + OpenRouter + cadena) por dos scripts que limpian la BD al terminar:
+
+- `backend/scripts/e2e_verification.py`: pasos 1-2, 3, 3.1, 4, 5 y 6 (registro, wallet, causa, publicación on-chain, evidencia, veredicto on-chain, estado). La IA real evalúa una imagen sintética (rechazo); el camino Verified usa un veredicto simulado con la cadena real.
+- `backend/scripts/e2e_donation.py`: pasos 7-13 (donante con wallet propia, `approve` + `donate`, registro 11.1, dashboards, retiro).
+
+Pruebas de integración equivalentes: `TestPublishUC013`, `TestAgentCycleUC006`, `TestRegisterDonationUC014`, `TestDashboardUC011`. Contrato: `test_TC001_HappyPath` (Foundry).

@@ -67,6 +67,13 @@ class CauseCreate(BaseModel):
     description: str = Field(..., min_length=20, max_length=2000)
     target_amount: Decimal = Field(..., gt=0, decimal_places=6, max_digits=18)
 
+class DonationItem(BaseModel):
+    """UC-008/UC-014: Donación confirmada visible en el detalle de una causa."""
+    amount: Decimal
+    tx_hash: str
+    donor_wallet: Optional[str] = None
+    created_at: datetime
+
 class CauseResponse(BaseModel):
     """UC-007, UC-008, UC-011: Detalle de causa."""
     id: int
@@ -79,7 +86,11 @@ class CauseResponse(BaseModel):
     status: str
     verification_hash: Optional[str] = None
     created_at: datetime
-    
+    recipient_name: Optional[str] = None  # Nombre de usuario del receptor (público)
+    image_url: Optional[str] = None  # Ruta relativa a la Base URL de la API; None mientras la causa está Pending
+    collected: Decimal = Decimal("0")  # Suma de donaciones confirmadas (UC-014 BR-005)
+    donations: list[DonationItem] = []
+
     class Config:
         from_attributes = True
 
@@ -89,8 +100,9 @@ class CauseListResponse(BaseModel):
     title: str
     description: str
     image_hash: Optional[str] = None
+    image_url: Optional[str] = None  # Ruta relativa a la Base URL de la API (GET /causes/{id}/evidence)
     target_amount: Decimal
-    collected: Decimal = Decimal("0")  # Se calcula del contrato
+    collected: Decimal = Decimal("0")  # Suma de donaciones confirmadas (UC-014 BR-005)
     status: str
     
     class Config:
@@ -123,6 +135,20 @@ class DonationResponse(BaseModel):
     function: str = "donate"
     params: list
     message: str
+    approve: Optional[dict] = None  # Instrucción previa: approve del token a CauseVault
+
+class DonationConfirmRequest(BaseModel):
+    """UC-014: Referencia de la transacción `donate` firmada por el donante."""
+    tx_hash: str = Field(..., pattern="^0x[a-fA-F0-9]{64}$")
+
+class DonationRecordResponse(BaseModel):
+    """UC-014: Donación registrada en la plataforma."""
+    id: int
+    cause_id: int
+    amount: Decimal
+    tx_hash: str
+    created_at: datetime
+    cause_status: str
 
 # ============================================================================
 # DASHBOARD SCHEMAS (UC-011)

@@ -261,8 +261,18 @@ class TestSupabaseIntegration:
             assert real_test_client.post("/api/v1/causes", json={
                 "title": "Causa sin sesión", "description": "descripción de prueba sin autenticación", "target_amount": 10}).status_code in (401, 403)
 
-            created = real_test_client.post("/api/v1/causes", headers=headers, json={
-                "title": "Causa e2e", "description": "descripción de prueba para flujo autenticado", "target_amount": 10})
+            body = {"title": "Causa e2e", "description": "descripción de prueba para flujo autenticado", "target_amount": 10}
+            # UC-004 A2: sin wallet vinculada no se puede crear la causa
+            assert real_test_client.post("/api/v1/causes", headers=headers, json=body).status_code == 400
+            from eth_account import Account
+            from eth_account.messages import encode_defunct
+            wallet = Account.create()
+            sig = wallet.sign_message(encode_defunct(text=f"Link {tag}")).signature.hex()
+            assert real_test_client.post("/api/v1/auth/wallet/link", headers=headers, json={
+                "wallet_address": wallet.address, "signature": "0x" + sig.removeprefix("0x"),
+                "message": f"Link {tag}"}).status_code == 200
+
+            created = real_test_client.post("/api/v1/causes", headers=headers, json=body)
             assert created.status_code == 200
             cause_id = created.json()["id"]
             assert created.json()["status"] == "Pending"

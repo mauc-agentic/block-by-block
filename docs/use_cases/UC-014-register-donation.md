@@ -7,7 +7,7 @@
 **Primary Actor:** Donante  
 **Secondary Actors:** —  
 **Goal:** Reflejar en la plataforma una donación confirmada en el contrato  
-**Status:** Draft
+**Status:** Implemented
 
 **Requirements:** [FR-020, FR-009, FR-012, NFR-011](../requirements.md)
 
@@ -23,6 +23,7 @@
 3. Sistema verifica que la transacción es una donación a la causa indicada desde la wallet del donante.
 4. Sistema guarda la donación con causa, donante, monto y referencia de la transacción.
 5. Sistema actualiza el avance de la causa y el dashboard del donante.
+6. Sistema consulta el estado de la causa en el contrato y, si alcanzó su meta, la marca como Completed.
 
 ## Alternative Flows
 
@@ -64,6 +65,7 @@
 
 - Existe una donación espejo con hash único ligada a la causa y al donante
 - El avance de la causa y el dashboard reflejan el monto
+- Si el contrato marcó la causa como Completed, la plataforma también
 
 ### Failure Postconditions
 
@@ -82,3 +84,11 @@ Cada hash de transacción se registra una sola vez.
 ### BR-003: Sin custodia del backend
 
 El registro es de solo lectura sobre la red; el backend no firma ni mueve fondos.
+
+### BR-004: Meta alcanzada
+
+El estado Completed lo decide el contrato al alcanzar la meta; la plataforma solo lo refleja.
+
+### BR-005: Monto recaudado
+
+El monto recaudado que muestra la plataforma es la suma de las donaciones confirmadas, no el saldo retirable del contrato.
