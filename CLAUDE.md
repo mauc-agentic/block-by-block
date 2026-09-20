@@ -12,10 +12,30 @@ Todo el trabajo de este proyecto sigue AIUP (plugin `aiup-core`). Antes de tomar
 arquitectura, lee:
 
 - `docs/vision.md`
+- `docs/glossary.md` (lenguaje común: usar SIEMPRE estos términos, en interfaz y en código)
+- `docs/api_contract.md` (contrato único front/back/contrato; el bloque de endpoints y esquemas se genera desde el código)
+- `docs/traceability.md` (estado por capa de cada UC y definición de terminado)
 - `docs/requirements.md` (FR-*, NFR-*, C-*)
 - `docs/entity_model.md`
 - `docs/use_cases.puml` y los `docs/use_cases/UC-*.md` relevantes
 - los `docs/test_cases/TC-*.md` relevantes
+
+## Una sola pieza: frontend + backend + contrato
+
+Las tres capas son **un único producto** que habla el mismo idioma y avanza junto:
+
+1. **Un cambio empieza en el UC** (o en `requirements.md`), luego se refleja en `api_contract.md` y `glossary.md`, y después en las capas.
+2. **Cambio de API:** se edita el código y se regenera el contrato con `cd backend && python -m scripts.generate_api_contract`.
+   La prueba `test_api_contract_doc` falla si `docs/api_contract.md` no coincide con la API real. Avisar al frontend del cambio.
+3. **Vocabulario:** solo términos de `glossary.md`. Estados de causa idénticos en API, BD, contrato y TypeScript
+   (`Pending`, `Verified`, `Rejected`, `Completed`); la traducción ocurre solo al mostrarlos.
+4. **Montos** viajan como string decimal de 6 decimales; **JSON en snake_case**; el frontend adapta a camelCase en su cliente.
+5. **Un UC está terminado** solo si cumple la definición de `traceability.md` §4 (spec, contrato, back con pruebas,
+   contrato inteligente, front con `// UC-###` y `describe('UC-###')`, verificación real en HSK testnet).
+6. **El frontend no firma con el backend ni el backend por el usuario** (C-009): el backend entrega instrucciones de firma y
+   confirma leyendo la cadena; el frontend firma con la wallet y reintenta la confirmación (RPC con nodos desfasados).
+7. **Base de datos compartida (Supabase):** todo cambio de esquema es un script versionado en `backend/migrations/manual/`
+   avisado al equipo; nadie altera tablas a mano. Las IP de cada desarrollador y de Render deben estar en *Network Restrictions*.
 
 ### Flujo y skills
 
@@ -44,7 +64,7 @@ Inception          Elaboration                             Construction
 
 ## Mapa de rutas: UC → implementación
 
-Prefijo de la API: `/api/v1`. Estado real y brechas en `docs/IMPLEMENTATION-STATUS.md`.
+Prefijo de la API: `/api/v1`. Estado por capa en `docs/traceability.md`; brechas en `docs/IMPLEMENTATION-STATUS.md`.
 
 | UC     | Caso de uso                   | Backend (FastAPI)                                              | Contrato `CauseVault`                    | Frontend (ruta)                          | Requisitos                        | Status      |
 |--------|-------------------------------|----------------------------------------------------------------|------------------------------------------|------------------------------------------|-----------------------------------|-------------|
@@ -54,14 +74,14 @@ Prefijo de la API: `/api/v1`. Estado real y brechas en `docs/IMPLEMENTATION-STAT
 | UC-004 | Crear causa                   | `POST /causes` (publicación on-chain: UC-013)                  | `createCause`                            | `/cause/create` (pendiente)              | FR-004, FR-019                    | Approved    |
 | UC-005 | Subir evidencia              | `POST /causes/{id}/upload-image`, `GET /causes/{id}/evidence`  | —                                        | `/cause/create`, `/dashboard/recipient`  | FR-005, FR-006, FR-021            | Implemented |
 | UC-006 | Verificar causa con IA        | `services/agent.py` (`verify_cause_with_ai`, `sign_verification_tx`, `verify_cause_task`), `tasks.py` | `verifyCause` (`onlyAgent`) | —                                        | FR-006, FR-007, FR-019, FR-021, FR-022, NFR-003/004/008 | Implemented |
-| UC-007 | Explorar causas verificadas   | `GET /causes`                                                  | `getCause`, `getCausesCount`             | `/dashboard/donor`; landing con datos de muestra | FR-008, NFR-002          | Approved    |
+| UC-007 | Explorar causas verificadas   | `GET /causes`                                                  | `getCause`, `getCausesCount`             | `/dashboard` (real); landing con datos de muestra | FR-008, NFR-002          | Approved    |
 | UC-008 | Ver detalle de causa          | `GET /causes/{id}`                                             | `getCause`, `getDonationsForCause`       | `/cause/[id]` (pendiente)                | FR-009, NFR-011                   | Approved    |
 | UC-009 | Donar                         | `POST /causes/{id}/donate` (instrucción de firma)              | `donate` (+ `approve` del USDT)          | `/cause/[id]` (pendiente)                | FR-010, FR-020, NFR-005/009/011   | Approved    |
 | UC-010 | Retirar fondos                | — (solo on-chain)                                              | `withdrawFunds`                          | `/dashboard/recipient` (pendiente)       | FR-011, NFR-005/009/011           | Implemented |
-| UC-011 | Ver dashboard                 | **No implementado** (previsto `GET /users/{id}`)               | `getRecipientCauses`, `getDonationsForCause` | `/dashboard/donor`, `/dashboard/recipient` | FR-012, FR-013, FR-020      | Approved    |
+| UC-011 | Ver dashboard                 | `GET /users/me/dashboard` (causas propias + `wallet_address`)  | `getRecipientCauses`, `getDonationsForCause` | `/dashboard` (ruta protegida por JWT en localStorage) | FR-012, FR-013, FR-020      | Approved    |
 | UC-012 | Administrar contrato          | —                                                              | `pause`, `unpause`, `setAgent` (`onlyOwner`) | —                                    | FR-018, NFR-008, NFR-009          | Implemented |
 | UC-013 | Publicar causa on-chain       | `POST /causes/{id}/publish`, `POST /causes/{id}/publish/confirm` (`services/chain.py`) | `createCause`, evento `CauseCreated` | `/cause/create` (firma pendiente)        | FR-004, FR-019, C-009             | Implemented |
-| UC-014 | Registrar donación            | Por definir (validar tx en la red, guardar `Donation`)         | evento `DonationReceived`                | `/cause/[id]`                            | FR-020, FR-009, FR-012, NFR-011   | Draft       |
+| UC-014 | Registrar donación            | `POST /causes/{id}/donations/confirm`                          | evento `DonationReceived`                | `/cause/[id]`                            | FR-020, FR-009, FR-012, NFR-011   | Implemented |
 
 Test cases (journeys end-to-end): **TC-001** flujo feliz receptor→donante→retiro (UC-001,003,004,013,005,006,007,008,009,014,011,010) ·
 **TC-002** causa rechazada bloquea fondos (UC-004,005,006,007,009,010) · **TC-003** fallo del proveedor de IA deja la causa Pending
@@ -116,5 +136,5 @@ render.yaml · DEPLOYMENT.md · TESTING_STATUS.md
 ## Verificación
 
 Tras implementar, ejecutar y reportar: `forge test` + `forge coverage` (contrato), `pytest --cov=app` desde `backend/` (backend),
-lint/build del frontend. Cobertura mínima combinada 85 % (NFR-001); medido 2026-09-20: contrato 88.5 %, backend 71 %. Prueba real de punta a punta: `cd backend && python -m scripts.e2e_verification`.
+lint/build del frontend. Cobertura mínima combinada 85 % (NFR-001); medido 2026-09-20: contrato 88.5 %, backend 71 %. Pruebas reales de punta a punta (gastan HSK testnet): `cd backend && python -m scripts.e2e_verification` y `python -m scripts.e2e_donation`.
 Reportar cualquier verificación que no se pudo completar. Las pruebas de backend corren contra Supabase real (sin SQLite).

@@ -23,7 +23,7 @@ export default function LoginPage() {
     try {
       const token = await login({ email, password });
       storeSession(token);
-      router.push("/");
+      router.push("/dashboard");
     } catch (err) {
       // BR-001: mensaje genérico, sin indicar cuál dato falló
       setError(err instanceof AuthError ? err.message : "Credenciales inválidas.");
@@ -38,7 +38,7 @@ export default function LoginPage() {
     try {
       const token = await googleLogin({ id_token: idToken });
       storeSession(token);
-      router.push("/");
+      router.push("/dashboard");
     } catch (err) {
       setError(
         err instanceof AuthError

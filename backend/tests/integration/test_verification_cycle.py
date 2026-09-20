@@ -33,7 +33,7 @@ def recipient(real_test_client, real_db_session):
     tag = uuid.uuid4().hex[:8]
     signup = real_test_client.post("/api/v1/auth/signup", json={
         "username": f"e2e_v_{tag}", "email": f"e2e_v_{tag}@block-by-block.com",
-        "password": "Pass123!", "user_type": "recipient",
+        "password": "Pass123!",
     })
     assert signup.status_code == 200
     headers = {"Authorization": f"Bearer {signup.json()['access_token']}"}

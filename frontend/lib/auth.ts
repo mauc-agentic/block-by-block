@@ -64,6 +64,19 @@ export function googleLogin(input: { id_token: string }) {
 const TOKEN_KEY = "bbb_token";
 const USER_KEY = "bbb_user";
 
+// Evento local para que componentes como el Header reaccionen al login/logout
+// sin recargar la página (el "storage" nativo del navegador no se dispara en
+// la misma pestaña que hizo el cambio).
+export const AUTH_CHANGE_EVENT = "bbb-auth-change";
+
+function notifyAuthChange() {
+  try {
+    window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
+  } catch {
+    // no-op (SSR o entorno sin window)
+  }
+}
+
 export function storeSession(token: TokenResponse) {
   try {
     localStorage.setItem(TOKEN_KEY, token.access_token);
@@ -72,6 +85,7 @@ export function storeSession(token: TokenResponse) {
     // localStorage puede no estar disponible (modo privado); la sesión no persiste
     // entre recargas, pero el flujo de autenticación en curso sigue funcionando.
   }
+  notifyAuthChange();
 }
 
 export function getStoredUser(): AuthUser | null {
@@ -106,4 +120,52 @@ export function clearSession() {
   } catch {
     // no-op
   }
+  notifyAuthChange();
 }
+
+// Distingue "sesión inválida/expirada" (debe redirigir a login) de cualquier
+// otro fallo (red caída, 500, etc.), que solo debe mostrarse como error.
+export class SessionExpiredError extends AuthError {}
+
+async function authorizedGet<T>(path: string, token: string): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch {
+    throw new AuthError("No se pudo conectar con el servidor. Intenta de nuevo.");
+  }
+
+  if (res.status === 401 || res.status === 403) {
+    clearSession();
+    throw new SessionExpiredError("Tu sesión expiró, inicia sesión de nuevo.");
+  }
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new AuthError(data?.detail ?? "Ocurrió un error, intenta de nuevo.");
+  }
+
+  return res.json();
+}
+
+// UC-011: dashboard del usuario autenticado (causas propias + estado de wallet)
+export function getMyDashboard(token: string) {
+  return authorizedGet<{ user: AuthUser; causes: DashboardCause[] }>(
+    "/users/me/dashboard",
+    token
+  );
+}
+
+export type DashboardCause = {
+  id: number;
+  recipient_id: number;
+  onchain_cause_id: number | null;
+  title: string;
+  description: string;
+  image_hash: string | null;
+  target_amount: string | number;
+  status: "Pending" | "Verified" | "Rejected" | "Completed";
+  verification_hash: string | null;
+  created_at: string;
+};

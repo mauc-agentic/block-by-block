@@ -6,7 +6,7 @@
 **Use Case Name:** Browse Verified Causes  
 **Primary Actor:** Visitante o Donante  
 **Goal:** Descubrir causas verificadas a las que se puede donar  
-**Status:** Approved
+**Status:** Implemented
 
 **Requirements:** [FR-008, NFR-002](../requirements.md)
 
@@ -18,7 +18,7 @@
 
 1. Visitante o donante abre el listado de causas.
 2. Sistema consulta las causas en estado Verified.
-3. Sistema muestra cada causa con título, foto, monto objetivo y monto recaudado.
+3. Sistema muestra cada causa con título, descripción, nombre del receptor, foto, monto objetivo y monto recaudado.
 4. Visitante o donante recorre el listado.
 5. Visitante o donante elige una causa.
 6. Sistema abre el detalle de la causa (UC-008).

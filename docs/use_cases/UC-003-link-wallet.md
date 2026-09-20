@@ -4,8 +4,8 @@
 
 **Use Case ID:** UC-003  
 **Use Case Name:** Link Wallet  
-**Primary Actor:** Donante  
-**Secondary Actors:** Receptor  
+**Primary Actor:** Usuario  
+**Secondary Actors:** —  
 **Goal:** Asociar una wallet a la cuenta demostrando que el usuario la controla  
 **Status:** Implemented
 

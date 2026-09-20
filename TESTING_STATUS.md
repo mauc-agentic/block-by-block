@@ -8,9 +8,9 @@ Requiere que tu IP esté en *Supabase → Settings → Database → Network Rest
 
 | Suite                         | Resultado                       | Notas                                                                    |
 |-------------------------------|---------------------------------|--------------------------------------------------------------------------|
-| `backend/tests/unit`          | 39 pasan                        | Firma de wallet, conversiones, agente (IA simulada, reintentos, veredicto) |
-| `backend/tests/integration`   | 42 pasan, 3 skip                | Supabase, ciclo de verificación (UC-005/006/013), HSK RPC/ABI            |
-| **pytest total**              | **81 pasan, 3 skip, 0 fallan**  | Cobertura de líneas **71 %** (meta 85 %); `agent.py` 94 %, `causes.py` 94 % |
+| `backend/tests/unit`          | 53 pasan                        | Firma de wallet, conversiones, agente, lectura de la cadena, contrato de API |
+| `backend/tests/integration`   | 67 pasan, 3 skip                | Supabase, verificación, donaciones y dashboards (UC-005..014), HSK RPC/ABI |
+| **pytest total**              | **120 pasan, 3 skip, 0 fallan** | Cobertura de líneas **91 %** (meta 85 %); `agent.py` 94 %, `causes.py` 96 %, `chain.py` 100 % |
 | `contracts/test` (Foundry)    | 7 pasan, **2 fallan**           | `test_TC002_RejectedCauseBlocksFunds`, `test_GetRecipientCauses`         |
 | Cobertura del contrato        | 88.5 % líneas, 69.7 % ramas     | `forge coverage`                                                         |
 | **E2E real** (`scripts/e2e_verification.py`) | OK                | Supabase + `createCause`/`verifyCause` en HSK testnet + OpenRouter real  |
@@ -19,7 +19,7 @@ Requiere que tu IP esté en *Supabase → Settings → Database → Network Rest
 
 ```bash
 cd backend && source ../venv/bin/activate
-pytest tests/ -v --cov=app --cov-report=term-missing        # ~3 min contra Supabase
+pytest tests/ -v --cov=app --cov-report=term-missing        # ~5 min contra Supabase
 python -m scripts.e2e_verification                          # gasta ~0.005 HSK y unos centavos de OpenRouter
 cd ../contracts && forge test -vv && forge coverage --report summary
 ```
@@ -28,6 +28,7 @@ Las pruebas crean usuarios `e2e_*` en Supabase y los eliminan al terminar. El E2
 
 ## Brechas de prueba (ver `docs/IMPLEMENTATION-STATUS.md`)
 
-- Sin prueba: UC-001 A1/BR-002 (duplicados), UC-002 A1, UC-003 endpoint y A2, UC-009 endpoint, `chain.py` (42 %, lo cubre el E2E).
+- Sin prueba explícita: UC-003 A2 (wallet ya vinculada) y endpoint de vincular wallet; UC-001/002 A1 solo por rama `auth`.
+- Frontend: sin pruebas (NFR-017).
 - Foundry: corregir `test_TC002` (el error correcto es "cause not verified", UC-010 A3) y `test_GetRecipientCauses`; faltan pruebas de pausa y `setAgent` (UC-012, TC-004).
 - Skip intencional: firma de tx del agente y requisitos HSK informativos.

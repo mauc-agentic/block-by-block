@@ -1,203 +1,111 @@
-# Block by Block Backend
+# Block by Block — Backend
 
-Plataforma de donaciones descentralizada peer-to-peer.
+API de la plataforma de donaciones peer-to-peer (donantes ↔ receptores verificados por IA, USDT on-chain en HSK testnet).
+El backend **nunca custodia fondos ni firma transacciones de usuarios** (C-009): entrega instrucciones de firma y lee la
+cadena para confirmar. Solo el agente verificador firma `verifyCause`.
+
+Estado detallado, brechas y trazabilidad UC → código → pruebas: [`../docs/IMPLEMENTATION-STATUS.md`](../docs/IMPLEMENTATION-STATUS.md).
 
 ## Stack
 
-- **Framework**: FastAPI
-- **BD**: Supabase (PostgreSQL)
-- **Auth**: JWT + bcrypt
-- **IA**: OpenRouter (Claude 3.5 Sonnet)
-- **Blockchain**: web3.py + Solidity (HSK Chain testnet)
+- **Framework:** FastAPI + SQLAlchemy 2
+- **BD:** Supabase PostgreSQL (session pooler)
+- **Auth:** JWT (HS256, 24 h) + argon2id
+- **IA:** OpenRouter, `deepseek/deepseek-v4.1-flash` (visión), endpoint `/chat/completions`
+- **Blockchain:** web3.py 8 sobre HSK Chain testnet (chain id 133), contrato `CauseVault`
 
-## Estructura del proyecto
+## Estructura
 
 ```
 app/
-├── main.py                  # Punto de entrada FastAPI
-├── core/                    # Configuración y seguridad
-│   ├── config.py           # Settings (.env)
-│   ├── security.py         # JWT, bcrypt, autenticación
-│   └── constants.py        # Constantes globales
-├── api/v1/                 # API v1
-│   ├── endpoints/
-│   │   ├── auth.py         # UC-001, UC-002, UC-003
-│   │   ├── causes.py       # UC-004, UC-007, UC-008, UC-011
-│   │   └── donations.py    # UC-005, UC-009
-│   └── router.py           # Agregador de rutas
-├── db/                     # Base de datos
-│   ├── models/             # SQLAlchemy models
-│   └── session.py          # SessionLocal, get_db()
-├── schemas/                # Pydantic models (validación)
-├── services/               # Lógica de negocio
-│   ├── auth.py
-│   ├── cause.py
-│   ├── donation.py
-│   └── agent.py            # UC-006 (OpenRouter)
-├── utils/                  # Utilidades
-│   ├── logger.py
-│   ├── exceptions.py       # Custom exceptions
-│   └── helpers.py
-└── middleware/             # Middleware global
-    └── error_handler.py
-
-tests/                      # Tests
-├── conftest.py             # Fixtures pytest
-├── unit/                   # Unit tests
-└── integration/            # Integration tests
-
-migrations/                 # Alembic migrations
-requirements.txt            # Dependencias
-requirements-dev.txt        # Dev dependencies
-.env.example                # Template de .env
-Dockerfile
-docker-compose.yml
-pyproject.toml              # Config de herramientas (black, flake8, etc.)
+├── main.py                   # App FastAPI (crea tablas al arrancar; ver NFR-013)
+├── core/                     # config.py (.env), security.py (JWT, argon2), constants.py
+├── api/v1/endpoints/
+│   ├── auth.py               # UC-001, UC-002, UC-003
+│   ├── causes.py             # UC-004, UC-005, UC-007, UC-008, UC-013
+│   ├── donations.py          # UC-009, UC-014
+│   └── users.py              # UC-011
+├── db/models/base.py         # User, Cause, Donation, Verification, Evidence
+├── schemas/common.py         # Modelos Pydantic
+├── services/
+│   ├── agent.py              # UC-006: IA → veredicto on-chain → estado de la causa
+│   └── chain.py              # Lectura de la cadena (eventos de CauseVault, estado, token)
+├── tasks.py                  # Cola de verificación (ThreadPoolExecutor; ruta a Celery en TASKS.md)
+└── utils/helpers.py          # Firma de wallet, conversiones USDT
+abi/CauseVault.json           # ABI del contrato
+scripts/                      # Pruebas reales de punta a punta (gastan HSK testnet)
+tests/{unit,integration}/     # Pruebas (integración contra Supabase real)
 ```
 
-## Instalación
+## Instalación y ejecución
 
 ```bash
-# 1. Clonar repo
-git clone https://github.com/mauc-agentic/block-by-block.git
-cd block-by-block/backend
-
-# 2. Crear venv
-python -m venv venv
-source venv/bin/activate  # macOS/Linux
-# o: venv\Scripts\activate  # Windows
-
-# 3. Instalar dependencias
-pip install -r requirements.txt
-pip install -r requirements-dev.txt  # Para dev
-
-# 4. Configurar .env
-cp .env.example .env
-# Editar .env con tus valores de Supabase, OpenRouter, blockchain, etc.
-
-# 5. Crear BD
-alembic upgrade head
-
-# 6. Ejecutar
-python -m app.main
-# o: uvicorn app.main:app --reload
+cd backend
+python3.12 -m venv ../venv && source ../venv/bin/activate
+pip install -r requirements.txt -r requirements-dev.txt
+cp .env.example .env            # completar con tus valores
+uvicorn app.main:app --reload   # http://localhost:8000/docs
 ```
 
-## Desarrollo
+Requisitos externos:
+- **Supabase:** usar el *session pooler*. Si activaste *Network Restrictions*, agrega tu IP y las de Render
+  (`74.220.48.0/24`, `74.220.56.0/24`); si no, la conexión falla con `address not in tenant allow_list`.
+- **OpenRouter:** `OPENROUTER_URL=https://openrouter.ai/api/v1/chat/completions` (el endpoint `/messages` responde en formato
+  Anthropic y rompe el parseo).
+- **HSK:** wallet del agente con HSK de prueba (faucet: https://hskchain.net/faucet) y `CAUSE_VAULT_ADDRESS` desplegado.
+
+## Endpoints (`/api/v1`)
+
+| Método | Ruta | UC | Descripción |
+|--------|------|----|-------------|
+| GET | `/health` | — | Health check |
+| POST | `/auth/signup`, `/auth/login` | UC-001, UC-002 | Registro e inicio de sesión |
+| POST | `/auth/wallet/link` | UC-003 | Vincula wallet con firma de propiedad |
+| POST | `/causes` | UC-004 | Crea causa (cualquier usuario con wallet vinculada) |
+| POST | `/causes/{id}/publish` | UC-013 | Instrucción de firma de `createCause` |
+| POST | `/causes/{id}/publish/confirm` | UC-013 | Enlaza el id on-chain leyendo `CauseCreated` |
+| POST | `/causes/{id}/upload-image` | UC-005 | Guarda la evidencia; encola la verificación si ya está publicada |
+| GET | `/causes/{id}/evidence` | FR-021 | Imagen de la causa (oculta mientras está Pending) |
+| GET | `/causes` | UC-007 | Causas Verified con monto recaudado |
+| GET | `/causes/{id}` | UC-008 | Detalle, avance y donaciones |
+| POST | `/causes/{id}/donate` | UC-009 | Instrucciones `approve` + `donate` (el donante firma) |
+| POST | `/causes/{id}/donations/confirm` | UC-014 | Registra la donación leyendo `DonationReceived` |
+| GET | `/users/{id}` | UC-011 | Dashboard del propio usuario: sus donaciones y sus causas |
+
+`withdrawFunds` (UC-010) es solo on-chain: el receptor firma directo en el contrato.
+
+### Flujo completo
+
+```
+signup → wallet/link → POST /causes → publish (firma createCause) → publish/confirm
+      → upload-image → [agente: IA + verifyCause on-chain → causa Verified/Rejected]
+      → GET /causes → donate (firma approve + donate) → donations/confirm → GET /users/{id}
+      → withdrawFunds (on-chain)
+```
+
+Si el RPC de HSK aún no ve la transacción, `publish/confirm` y `donations/confirm` responden 400 *not confirmed*:
+el cliente debe reintentar unos segundos después (los nodos del RPC se desfasan).
+
+## Pruebas
 
 ```bash
-# Ejecutar con hot reload
-uvicorn app.main:app --reload
+pytest tests/ -v --cov=app --cov-report=term-missing   # ~5 min, usa Supabase real
+pytest tests/unit -q                                   # sin red, ~1 s
 
-# Tests
-pytest
-pytest --cov=app --cov-report=html  # Coverage
-
-# Linting & formato
-black app tests
-flake8 app tests
-mypy app
-
-# Crear nueva migración
-alembic revision --autogenerate -m "Descripción"
-alembic upgrade head
+# Pruebas reales de punta a punta (Supabase + HSK testnet + OpenRouter); limpian la BD al terminar
+python -m scripts.e2e_verification   # publicar → IA → veredicto on-chain (Rejected y Verified)
+python -m scripts.e2e_donation       # donar (approve+donate), registrar, dashboards, retirar
 ```
 
-## Docker
+Las pruebas de integración crean usuarios `e2e_*` en Supabase y los eliminan. Ver `../TESTING_STATUS.md`.
 
-```bash
-# Build
-docker build -t block-by-block-backend .
+## Despliegue
 
-# Run
-docker run -p 8000:8000 --env-file .env block-by-block-backend
+Render (Python 3.12.4, ver `../render.yaml` y `../DEPLOYMENT.md`). Start command:
+`uvicorn app.main:app --host 0.0.0.0 --port $PORT`. Secretos solo por variables de entorno, nunca en el repositorio.
 
-# Con docker-compose
-docker-compose up -d
-```
+## Metodología
 
-## API Documentation
-
-- OpenAPI (Swagger): http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
-
-## Endpoints
-
-### Auth (UC-001, UC-002, UC-003)
-- `POST /api/v1/auth/signup` — Registrar cuenta
-- `POST /api/v1/auth/login` — Iniciar sesión
-- `POST /api/v1/auth/wallet/link` — Vincular wallet
-
-### Causas (UC-004, UC-007, UC-008, UC-011)
-- `POST /api/v1/causes` — Crear causa
-- `GET /api/v1/causes` — Listar causas verificadas
-- `GET /api/v1/causes/{id}` — Detalle de causa
-- `GET /api/v1/users/{id}` — Perfil (dashboard)
-
-### Donaciones (UC-005, UC-009)
-- `POST /api/v1/causes/{id}/upload-image` — Subir evidencia
-- `POST /api/v1/causes/{id}/donate` — Donar (instrucción de firma)
-
-## Variables de entorno
-
-Ver `.env.example` para referencia completa.
-
-```
-# Supabase
-SUPABASE_DB_URL=postgresql://...
-
-# Auth
-SECRET_KEY=...
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_HOURS=24
-
-# Blockchain
-HSK_RPC_URL=https://testnet.hsk.xyz
-HSK_CHAIN_ID=133
-CAUSE_VAULT_ADDRESS=0x...
-AGENT_ADDRESS=0x...
-AGENT_PRIVATE_KEY=0x...
-
-# OpenRouter
-OPENROUTER_API_KEY=sk-or-v1-...
-OPENROUTER_URL=https://openrouter.ai/api/v1/messages
-```
-
-## Testing
-
-```bash
-# Todos los tests
-pytest
-
-# Unit tests solo
-pytest tests/unit/
-
-# Integration tests solo
-pytest tests/integration/
-
-# Con coverage
-pytest --cov=app --cov-report=html
-```
-
-## Mapeo AIUP
-
-Ver `../CLAUDE.md` para:
-- Casos de uso (UC-001..011)
-- Requerimientos (FR, NFR, C)
-- Entidad model
-- Traceability (UC → código)
-
-## Contribuir
-
-1. Crear rama desde `backend`
-2. Implementar cambios
-3. Agregar tests
-4. Hacer PR con descripción de cambios
-
-## Licencia
-
-MIT
-
-## Contacto
-
-Miguel Uribe - migueluribe.ing@gmail.com
+El proyecto sigue AIUP: ver [`../CLAUDE.md`](../CLAUDE.md) (mapa UC → código, reglas) y `../docs/` (visión, requisitos,
+modelo de entidades, casos de uso, casos de prueba). Cada UC y BR debe tener al menos una prueba (convención
+`test_ucNNN_brNNN_*`).

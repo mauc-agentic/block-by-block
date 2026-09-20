@@ -4,8 +4,8 @@
 
 **Use Case ID:** UC-002  
 **Use Case Name:** Log In  
-**Primary Actor:** Donante  
-**Secondary Actors:** Receptor  
+**Primary Actor:** Usuario  
+**Secondary Actors:** —  
 **Goal:** Iniciar sesión para acceder a las funciones de la plataforma  
 **Status:** Implemented
 

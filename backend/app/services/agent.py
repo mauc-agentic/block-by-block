@@ -8,6 +8,7 @@ import hashlib
 import json
 import logging
 import re
+import threading
 from typing import Optional
 
 import httpx
@@ -25,6 +26,9 @@ MAX_AI_ATTEMPTS = 3      # NFR-004
 AI_TIMEOUT_SECONDS = 30  # NFR-004
 TX_RECEIPT_TIMEOUT = 60  # NFR-003
 MAX_TX_ATTEMPTS = 3      # UC-006 A5
+
+# Serializa nonce+envío: varias verificaciones simultáneas (pool de hilos) usan la misma cuenta del agente
+_tx_lock = threading.Lock()
 
 
 class VerificationUnavailable(Exception):
@@ -134,17 +138,18 @@ def sign_verification_tx(onchain_cause_id: int, verified: bool, verification_has
             logger.error("UC-006: AGENT_PRIVATE_KEY does not match AGENT_ADDRESS")
             return None
 
-        tx = contract.functions.verifyCause(
-            onchain_cause_id, verified, verification_hash
-        ).build_transaction({
-            "from": account.address,
-            "nonce": w3.eth.get_transaction_count(account.address),
-            "gasPrice": w3.eth.gas_price,
-            "gas": 200000,
-            "chainId": settings.hsk_chain_id,
-        })
-        signed = w3.eth.account.sign_transaction(tx, settings.agent_private_key)
-        tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+        with _tx_lock:
+            tx = contract.functions.verifyCause(
+                onchain_cause_id, verified, verification_hash
+            ).build_transaction({
+                "from": account.address,
+                "nonce": w3.eth.get_transaction_count(account.address, "pending"),
+                "gasPrice": w3.eth.gas_price,
+                "gas": 200000,
+                "chainId": settings.hsk_chain_id,
+            })
+            signed = w3.eth.account.sign_transaction(tx, settings.agent_private_key)
+            tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
         receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=TX_RECEIPT_TIMEOUT)
         if receipt.status != 1:
             logger.error("UC-006: verifyCause reverted, tx %s", w3.to_hex(tx_hash))

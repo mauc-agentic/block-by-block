@@ -5,7 +5,7 @@
 **ID:** TC-002  
 **Goal:** Una causa que la IA rechaza no aparece para donantes, no recibe donaciones y no permite retiros  
 **Priority:** High  
-**Status:** Draft
+**Status:** Implemented
 
 ## Roles
 
@@ -40,3 +40,8 @@
 ## Postconditions
 
 - Existe una causa Rejected sin donaciones ni retiros
+
+## Automation
+
+- Backend: `test_uc006_a1_rejected_verdict_updates_status` (estado Rejected, fuera del listado), `test_uc009_br001_a4_a5_only_verified_causes` (donar rechazado) y el escenario A de `scripts/e2e_verification.py` (IA real, veredicto negativo confirmado on-chain).
+- Contrato: `test_TC002_RejectedCauseBlocksFunds` (Foundry) **falla** porque espera "no funds to withdraw" y el contrato revierte con "cause not verified" (correcto según UC-010 A3); pendiente corregir la expectativa (GAP-006).

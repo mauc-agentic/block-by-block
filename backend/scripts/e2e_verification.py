@@ -36,7 +36,7 @@ def png(w=96, h=96, rgb=(120, 120, 120)):
 
 def send_create_cause(params):
     tx = vault.functions.createCause(*params).build_transaction({
-        "from": wallet.address, "nonce": w3.eth.get_transaction_count(wallet.address),
+        "from": wallet.address, "nonce": w3.eth.get_transaction_count(wallet.address, "pending"),
         "gasPrice": w3.eth.gas_price, "gas": 400000, "chainId": s.hsk_chain_id})
     signed = w3.eth.account.sign_transaction(tx, s.agent_private_key)
     h = w3.eth.send_raw_transaction(signed.raw_transaction)
@@ -63,7 +63,7 @@ def onchain(onchain_id):
 tag = uuid.uuid4().hex[:8]
 client = TestClient(app)
 signup = client.post("/api/v1/auth/signup", json={"username": f"e2e_real_{tag}", "email": f"e2e_real_{tag}@block-by-block.com",
-                                                   "password": "Pass123!", "user_type": "recipient"}).json()
+                                                   "password": "Pass123!"}).json()
 headers, user_id = {"Authorization": f"Bearer {signup['access_token']}"}, signup["user"]["id"]
 db = SessionLocal()
 try:

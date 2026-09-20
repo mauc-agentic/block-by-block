@@ -120,7 +120,8 @@ class _FakeEth:
         )
         self.gas_price = 1
 
-    def get_transaction_count(self, a):
+    def get_transaction_count(self, a, block=None):
+        assert block == "pending"
         return 7
 
     def send_raw_transaction(self, raw):
