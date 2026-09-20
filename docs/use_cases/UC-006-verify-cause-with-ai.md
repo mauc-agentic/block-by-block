@@ -7,7 +7,7 @@
 **Primary Actor:** Agente Verificador  
 **Secondary Actors:** Receptor  
 **Goal:** Evaluar foto y descripción de una causa y registrar el resultado on-chain  
-**Status:** Approved
+**Status:** Implemented
 
 **Requirements:** [FR-006, FR-007, NFR-003, NFR-004, NFR-008, FR-019, FR-021, FR-022](../requirements.md)
 
@@ -66,8 +66,9 @@
 **Trigger:** La transacción de verificación falla o se agota el tiempo de red (step 6)  
 **Flow:**
 
-1. Agente reintenta con el RPC de respaldo.
-2. Use case continues at step 6.
+1. Agente reintenta hasta 3 veces con espera creciente.
+2. Si los reintentos se agotan, la causa permanece Pending y el fallo queda registrado.
+3. Use case ends.
 
 ## Postconditions
 

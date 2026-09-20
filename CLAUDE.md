@@ -51,16 +51,16 @@ Prefijo de la API: `/api/v1`. Estado real y brechas en `docs/IMPLEMENTATION-STAT
 | UC-001 | Registrar cuenta              | `POST /auth/signup`                                            | —                                        | `/auth/signup` (pendiente)               | FR-001, NFR-006, NFR-007          | Implemented |
 | UC-002 | Iniciar sesión                | `POST /auth/login`                                             | —                                        | `/auth/login` (pendiente)                | FR-002, NFR-006, NFR-007          | Implemented |
 | UC-003 | Vincular wallet               | `POST /auth/wallet/link`                                       | —                                        | `WalletConnect` (pendiente)              | FR-003                            | Implemented |
-| UC-004 | Crear causa                   | `POST /causes`                                                 | `createCause` (sin invocar, ver UC-013)  | `/cause/create` (pendiente)              | FR-004, FR-019                    | Approved    |
-| UC-005 | Subir evidencia               | `POST /causes/{id}/upload-image`                               | —                                        | `/cause/create`, `/dashboard/recipient`  | FR-005, FR-006, FR-021            | Approved    |
-| UC-006 | Verificar causa con IA        | `services/agent.py` (`verify_cause_with_ai`, `sign_verification_tx`), `tasks.py` | `verifyCause` (`onlyAgent`)  | —                                        | FR-006, FR-007, FR-019, FR-021, FR-022, NFR-003/004/008 | Approved |
+| UC-004 | Crear causa                   | `POST /causes` (publicación on-chain: UC-013)                  | `createCause`                            | `/cause/create` (pendiente)              | FR-004, FR-019                    | Approved    |
+| UC-005 | Subir evidencia              | `POST /causes/{id}/upload-image`, `GET /causes/{id}/evidence`  | —                                        | `/cause/create`, `/dashboard/recipient`  | FR-005, FR-006, FR-021            | Implemented |
+| UC-006 | Verificar causa con IA        | `services/agent.py` (`verify_cause_with_ai`, `sign_verification_tx`, `verify_cause_task`), `tasks.py` | `verifyCause` (`onlyAgent`) | —                                        | FR-006, FR-007, FR-019, FR-021, FR-022, NFR-003/004/008 | Implemented |
 | UC-007 | Explorar causas verificadas   | `GET /causes`                                                  | `getCause`, `getCausesCount`             | `/dashboard/donor`; landing con datos de muestra | FR-008, NFR-002          | Approved    |
 | UC-008 | Ver detalle de causa          | `GET /causes/{id}`                                             | `getCause`, `getDonationsForCause`       | `/cause/[id]` (pendiente)                | FR-009, NFR-011                   | Approved    |
 | UC-009 | Donar                         | `POST /causes/{id}/donate` (instrucción de firma)              | `donate` (+ `approve` del USDT)          | `/cause/[id]` (pendiente)                | FR-010, FR-020, NFR-005/009/011   | Approved    |
 | UC-010 | Retirar fondos                | — (solo on-chain)                                              | `withdrawFunds`                          | `/dashboard/recipient` (pendiente)       | FR-011, NFR-005/009/011           | Implemented |
 | UC-011 | Ver dashboard                 | **No implementado** (previsto `GET /users/{id}`)               | `getRecipientCauses`, `getDonationsForCause` | `/dashboard/donor`, `/dashboard/recipient` | FR-012, FR-013, FR-020      | Approved    |
 | UC-012 | Administrar contrato          | —                                                              | `pause`, `unpause`, `setAgent` (`onlyOwner`) | —                                    | FR-018, NFR-008, NFR-009          | Implemented |
-| UC-013 | Publicar causa on-chain       | Por definir (instrucción de firma + enlace `onchain_cause_id`) | `createCause`, evento `CauseCreated`     | `/cause/create`                          | FR-004, FR-019, C-009             | Draft       |
+| UC-013 | Publicar causa on-chain       | `POST /causes/{id}/publish`, `POST /causes/{id}/publish/confirm` (`services/chain.py`) | `createCause`, evento `CauseCreated` | `/cause/create` (firma pendiente)        | FR-004, FR-019, C-009             | Implemented |
 | UC-014 | Registrar donación            | Por definir (validar tx en la red, guardar `Donation`)         | evento `DonationReceived`                | `/cause/[id]`                            | FR-020, FR-009, FR-012, NFR-011   | Draft       |
 
 Test cases (journeys end-to-end): **TC-001** flujo feliz receptor→donante→retiro (UC-001,003,004,013,005,006,007,008,009,014,011,010) ·
@@ -105,16 +105,16 @@ render.yaml · DEPLOYMENT.md · TESTING_STATUS.md
 
 ## Decisiones abiertas (ver `docs/vision.md` → Riesgos)
 
-- Enlazar `cause_id` (BD) con `causeId` (on-chain) mediante `onchain_cause_id` → UC-013 (FR-019), sin implementar.
+- Enlazar `cause_id` (BD) con `causeId` (on-chain) mediante `onchain_cause_id` → resuelto con UC-013 (FR-019).
 - `withdrawFunds` pone `collected = 0`: definir cómo conservar el total histórico recaudado.
 - ~~Validar la firma de wallet con web3.py~~ → resuelto (UC-003 BR-001). Pendiente: mensaje de un solo uso (BR-003).
 - Umbral de confianza del agente: 0.80 (UC-006 BR-002).
 - Modelo IA: **DeepSeek v4.1 Flash** via OpenRouter (antes Claude 3.5 Sonnet).
-- OpenRouter endpoint: `https://openrouter.ai/api/v1/messages` con formato OpenAI-compatible.
+- OpenRouter endpoint: `https://openrouter.ai/api/v1/chat/completions` (formato OpenAI-compatible; `/messages` devuelve formato Anthropic y rompe el parseo).
 - Hash de contraseñas: argon2id (antes bcrypt; NFR-006). BD: Supabase por session pooler (C-010). Token de prueba: `MockUSDT` (C-012).
 
 ## Verificación
 
 Tras implementar, ejecutar y reportar: `forge test` + `forge coverage` (contrato), `pytest --cov=app` desde `backend/` (backend),
-lint/build del frontend. Cobertura mínima combinada 85 % (NFR-001); medido 2026-09-20: contrato 88.5 %, backend 66 %.
+lint/build del frontend. Cobertura mínima combinada 85 % (NFR-001); medido 2026-09-20: contrato 88.5 %, backend 71 %. Prueba real de punta a punta: `cd backend && python -m scripts.e2e_verification`.
 Reportar cualquier verificación que no se pudo completar. Las pruebas de backend corren contra Supabase real (sin SQLite).

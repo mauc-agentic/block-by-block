@@ -1,6 +1,6 @@
 # Requirements Catalog: Block by Block
 
-Derivado de [vision.md](vision.md). Estado auditado contra el código el 2026-09-20 (ver [IMPLEMENTATION-STATUS.md](IMPLEMENTATION-STATUS.md)).
+Derivado de [vision.md](vision.md). Estado auditado contra el código el 2026-09-20; actualizado tras el ciclo de verificación real (ver [IMPLEMENTATION-STATUS.md](IMPLEMENTATION-STATUS.md)).
 
 Vocabulario de estado FR: `Open → In Progress → Implemented → Verified`. `Deferred` = fuera del MVP.
 "Implemented" significa código + al menos una prueba automatizada; "Verified" significa además probado en HSK testnet extremo a extremo.
@@ -12,10 +12,10 @@ Vocabulario de estado FR: `Open → In Progress → Implemented → Verified`. `
 | FR-001 | Registro de cuenta         | As a visitante, I want registrarme como donante o receptor so that puedo usar la plataforma según mi rol.                                       | High     | Implemented  |
 | FR-002 | Inicio de sesión           | As a usuario registrado, I want iniciar sesión so that accedo a mi dashboard y acciones.                                                        | High     | Implemented  |
 | FR-003 | Vincular wallet            | As a usuario, I want vincular mi wallet demostrando que la controlo so that puedo donar o recibir fondos con mi dirección.                      | High     | Implemented  |
-| FR-004 | Crear causa                | As a receptor, I want describir mi necesidad con título, descripción y monto objetivo so that los donantes puedan conocerla.                    | High     | In Progress  |
-| FR-005 | Subir evidencia            | As a receptor, I want subir una foto de mi necesidad so that el agente pueda verificarla.                                                       | High     | In Progress  |
-| FR-006 | Verificación por IA        | As a receptor, I want que mi causa sea evaluada automáticamente por IA so that pueda recibir donaciones sin esperar a un revisor humano.        | High     | In Progress  |
-| FR-007 | Registro on-chain          | As a donante, I want que el resultado de la verificación quede registrado on-chain so that pueda confiar en que la causa fue validada.          | High     | In Progress  |
+| FR-004 | Crear causa                | As a receptor, I want describir mi necesidad con título, descripción y monto objetivo so that los donantes puedan conocerla.                    | High     | Implemented  |
+| FR-005 | Subir evidencia            | As a receptor, I want subir una foto de mi necesidad so that el agente pueda verificarla.                                                       | High     | Verified  |
+| FR-006 | Verificación por IA        | As a receptor, I want que mi causa sea evaluada automáticamente por IA so that pueda recibir donaciones sin esperar a un revisor humano.        | High     | Verified  |
+| FR-007 | Registro on-chain          | As a donante, I want que el resultado de la verificación quede registrado on-chain so that pueda confiar en que la causa fue validada.          | High     | Verified  |
 | FR-008 | Explorar causas            | As a donante, I want listar solo causas verificadas so that no dono a solicitudes sin validar.                                                  | High     | In Progress  |
 | FR-009 | Detalle de causa           | As a donante, I want ver el detalle, avance y donaciones de una causa so that decido cuánto donar con transparencia.                            | Medium   | In Progress  |
 | FR-010 | Donar                      | As a donante, I want donar stablecoins a una causa verificada so that el dinero llegue directo al receptor sin intermediarios.                  | High     | In Progress  |
@@ -27,16 +27,16 @@ Vocabulario de estado FR: `Open → In Progress → Implemented → Verified`. `
 | FR-016 | Reputación on-chain        | As a donante, I want ver el historial on-chain de un receptor so that evalúo su confiabilidad.                                                  | Low      | Deferred     |
 | FR-017 | Rampa de pesos             | As a donante, I want convertir pesos colombianos a stablecoin (Bre-B) so that pueda donar sin conocimientos cripto.                             | Low      | Deferred     |
 | FR-018 | Administración del contrato | As a administrador de la plataforma, I want pausar y reanudar el contrato y rotar la dirección del agente so that puedo reaccionar ante un incidente o una llave comprometida. | Medium | Implemented |
-| FR-019 | Publicar causa on-chain    | As a receptor, I want que mi causa quede registrada en el contrato y enlazada con su registro en la plataforma so that la verificación y las donaciones apunten a la misma causa. | High | Open |
+| FR-019 | Publicar causa on-chain    | As a receptor, I want que mi causa quede registrada en el contrato y enlazada con su registro en la plataforma so that la verificación y las donaciones apunten a la misma causa. | High | Verified |
 | FR-020 | Registrar donación         | As a donante, I want que mi donación confirmada quede reflejada en la plataforma so that aparezca en mi dashboard y en el avance de la causa. | High | Open |
-| FR-021 | Almacenar evidencia        | As a receptor, I want que mi foto se conserve de forma consultable so that el agente la evalúe con la imagen real y la evidencia sea auditable. | High | Open |
-| FR-022 | Sincronizar estado de causa | As a donante, I want que el estado de la causa en la plataforma refleje el veredicto registrado on-chain so that el listado solo muestre causas realmente verificadas. | High | Open |
+| FR-021 | Almacenar evidencia        | As a receptor, I want que mi foto se conserve de forma consultable so that el agente la evalúe con la imagen real y la evidencia sea auditable. | High | Verified |
+| FR-022 | Sincronizar estado de causa | As a donante, I want que el estado de la causa en la plataforma refleje el veredicto registrado on-chain so that el listado solo muestre causas realmente verificadas. | High | Verified |
 
 ## Non-Functional Requirements
 
 | ID      | Title                        | Requirement                                                                                                           | Category        | Priority | Status       |
 |---------|------------------------------|-----------------------------------------------------------------------------------------------------------------------|-----------------|----------|--------------|
-| NFR-001 | Cobertura de pruebas         | La cobertura de líneas combinada de contrato y backend debe ser de al menos 85 %. Medido 2026-09-20: contrato 88.5 %, backend 60 %. | Maintainability | High     | In Progress  |
+| NFR-001 | Cobertura de pruebas         | La cobertura de líneas combinada de contrato y backend debe ser de al menos 85 %. Medido 2026-09-20: contrato 88.5 %, backend 71 %. | Maintainability | High     | In Progress  |
 | NFR-002 | Latencia de listado          | `GET /causes` debe responder en menos de 2 s con hasta 500 causas. Sin medición todavía.                              | Performance     | Medium   | In Progress  |
 | NFR-003 | Tiempo de verificación       | El agente debe completar la verificación y publicar la tx en menos de 60 s (p95), sin contar la confirmación de bloque. Sin medición todavía. | Performance | High | In Progress  |
 | NFR-004 | Reintentos de OpenRouter     | Las llamadas a OpenRouter deben reintentarse hasta 3 veces con backoff exponencial y timeout de 30 s por intento.     | Reliability     | Medium   | Implemented  |
@@ -76,3 +76,4 @@ Vocabulario de estado FR: `Open → In Progress → Implemented → Verified`. `
 | 2026-09-20 | NFR-006: bcrypt → argon2id. Motivo: `passlib 1.7.4` es incompatible con `bcrypt 5.x` y bcrypt trunca a 72 bytes.                                             |
 | 2026-09-20 | Estados de FR-004..FR-013 rebajados tras auditoría: el backend no actualiza `Cause.status`, no expone dashboard, no guarda la imagen y no registra donaciones. |
 | 2026-09-20 | Nuevos: FR-018..FR-022, NFR-012..NFR-015, C-010..C-012 (derivados del código y despliegue existentes).                                                       |
+| 2026-09-20 | FR-004..007, FR-019, FR-021, FR-022: Implemented/Verified tras prueba real (Supabase + HSK testnet + OpenRouter) con `scripts/e2e_verification.py`. |

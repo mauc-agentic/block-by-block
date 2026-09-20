@@ -9,6 +9,8 @@ from app.schemas.common import (
     CauseListResponse,
     DonateRequest,
     DonationResponse,
+    PublishInstruction,
+    PublishConfirmRequest,
 )
 
 __all__ = [
@@ -22,4 +24,6 @@ __all__ = [
     "CauseListResponse",
     "DonateRequest",
     "DonationResponse",
+    "PublishInstruction",
+    "PublishConfirmRequest",
 ]
