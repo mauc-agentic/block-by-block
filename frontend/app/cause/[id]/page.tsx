@@ -10,13 +10,11 @@ import { useCallback, useEffect, useState } from "react";
 import { CauseProgress } from "@/components/CauseProgress";
 import { CauseStatusBadge } from "@/components/dashboard/CauseStatusBadge";
 import { DonateBlock } from "@/components/DonateBlock";
-import { ExplorerLink } from "@/components/ExplorerLink";
+import { DonationsTable } from "@/components/cause/DonationsTable";
 import { RetryVerification } from "@/components/RetryVerification";
-import { UsdtAmount } from "@/components/UsdtAmount";
 import { ApiError, getCause, imageSrc, type CauseDetail } from "@/lib/api";
 import type { AuthUser } from "@/lib/auth";
 import { useSessionUser } from "@/lib/useSession";
-import { formatDate, shortAddress } from "@/lib/format";
 
 const POLL_MS = 5_000;
 
@@ -179,22 +177,9 @@ export default function CauseDetailPage() {
 
       <div className="mt-12">
         <h2 className="font-display text-xl font-semibold text-ink">Donaciones</h2>
-        {cause.donations.length === 0 ? (
-          <p className="mt-2 text-sm text-ink-soft">Aún no hay donaciones.</p>
-        ) : (
-          <ul className="mt-3 divide-y divide-line border border-line">
-            {cause.donations.map((d) => (
-              <li key={d.tx_hash} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm">
-                <UsdtAmount value={d.amount} />
-                <span className="font-mono text-xs text-ink-soft">
-                  {d.donor_wallet ? shortAddress(d.donor_wallet) : "—"}
-                </span>
-                <span className="text-xs text-ink-soft">{formatDate(d.created_at)}</span>
-                <ExplorerLink hash={d.tx_hash} label="Ver transacción" />
-              </li>
-            ))}
-          </ul>
-        )}
+        <div className="mt-3">
+          <DonationsTable donations={cause.donations} />
+        </div>
       </div>
     </section>
   );

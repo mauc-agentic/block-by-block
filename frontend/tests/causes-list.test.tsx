@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it, vi } from "vitest";
 import CausesPage from "@/app/causes/page";
@@ -54,5 +55,21 @@ describe("UC-007 Explorar causas verificadas (S1)", () => {
     server.use(http.get(`${API}/causes`, () => HttpResponse.json({ detail: "boom" }, { status: 500 })));
     render(<CausesPage />);
     expect(await screen.findByRole("button", { name: "Reintentar" })).toBeInTheDocument();
+  });
+
+  it("UC-007 filtra por nombre de título o receptor, sin acentos", async () => {
+    server.use(
+      http.get(`${API}/causes`, () =>
+        HttpResponse.json([listItem(), listItem({ id: 8, title: "Ayuda médica", recipient_name: "Ana" })])
+      )
+    );
+    render(<CausesPage />);
+    await screen.findByText("Ayuda médica");
+    await userEvent.type(screen.getByLabelText("Buscar causa por nombre"), "medica");
+    expect(screen.queryByText("Techo del comedor comunitario")).not.toBeInTheDocument();
+    expect(screen.getByText("Ayuda médica")).toBeInTheDocument();
+    await userEvent.clear(screen.getByLabelText("Buscar causa por nombre"));
+    await userEvent.type(screen.getByLabelText("Buscar causa por nombre"), "zzz");
+    expect(screen.getByText("Ninguna causa coincide con tu búsqueda.")).toBeInTheDocument();
   });
 });
