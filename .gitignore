@@ -20,3 +20,8 @@ broadcast/
 
 # OS
 .DS_Store
+
+# Foundry
+cache/
+out/
+broadcast/
