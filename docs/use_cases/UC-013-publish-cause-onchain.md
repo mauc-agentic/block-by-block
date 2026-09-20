@@ -7,7 +7,7 @@
 **Primary Actor:** Receptor  
 **Secondary Actors:** Agente Verificador  
 **Goal:** Registrar la causa en el contrato y enlazar su identificador con el registro de la plataforma  
-**Status:** Approved
+**Status:** Implemented
 
 **Requirements:** [FR-004, FR-019, C-009, FR-024](../requirements.md)
 
