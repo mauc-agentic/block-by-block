@@ -1,7 +1,7 @@
 # models.py
 # Entity model (UC-001..011): USER, CAUSE, DONATION, VERIFICATION
 
-from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, ForeignKey, Text, Numeric, Enum
+from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, ForeignKey, Text, Numeric, Enum, LargeBinary
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
@@ -52,6 +52,7 @@ class Cause(Base):
     recipient = relationship("User", back_populates="causes")
     donations = relationship("Donation", back_populates="cause")
     verification = relationship("Verification", back_populates="cause", uselist=False)
+    evidence = relationship("Evidence", back_populates="cause", uselist=False)
     
     def __repr__(self):
         return f"<Cause {self.id} {self.title} ({self.status})>"
@@ -91,3 +92,20 @@ class Verification(Base):
     
     def __repr__(self):
         return f"<Verification cause={self.cause_id} verified={self.verified} confidence={self.confidence}>"
+
+
+class Evidence(Base):
+    """UC-005: Imagen de evidencia de una causa (FR-021)."""
+    __tablename__ = "evidences"
+
+    id = Column(Integer, primary_key=True, index=True)
+    cause_id = Column(Integer, ForeignKey("causes.id"), nullable=False, unique=True, index=True)
+    content_type = Column(String(20), nullable=False)
+    sha256 = Column(String(64), nullable=False)
+    data = Column(LargeBinary, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    cause = relationship("Cause", back_populates="evidence")
+
+    def __repr__(self):
+        return f"<Evidence cause={self.cause_id} {self.content_type} {self.sha256[:10]}>"

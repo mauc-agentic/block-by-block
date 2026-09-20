@@ -6,7 +6,7 @@
 **Use Case Name:** Upload Cause Evidence  
 **Primary Actor:** Receptor  
 **Goal:** Adjuntar una foto que respalde la necesidad y disparar su verificación  
-**Status:** Approved
+**Status:** Implemented
 
 **Requirements:** [FR-005, FR-006, FR-021](../requirements.md)
 

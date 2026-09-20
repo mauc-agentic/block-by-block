@@ -52,7 +52,7 @@ SECRET_KEY = <generar-con-secrets.token_urlsafe(32)>
 ### AI Verification (OpenRouter)
 ```
 OPENROUTER_API_KEY = sk-or-v1-[YOUR_KEY_HERE]
-OPENROUTER_URL = https://openrouter.ai/api/v1/messages
+OPENROUTER_URL = https://openrouter.ai/api/v1/chat/completions
 ```
 
 ### Blockchain (HSK Testnet)
