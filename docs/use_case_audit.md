@@ -10,10 +10,10 @@ en las pruebas reales. Una regla "sin prueba" puede estar implementada: la cober
 
 ## 1. Resumen
 
-- **Cobertura de especificación: 44 % → 75 %** (82 de 108 flujos y reglas con prueba por trazabilidad; ver §2). Subió al poner los IDs en pruebas que ya existían, contar las de Foundry y agregar las que faltaban (auth, evidencia ajena, datos inválidos, reglas de firma). Lo que queda sin prueba es casi todo **de frontend** y de **UC-012**.
+- **Cobertura de especificación: 44 % → 78 %** (98 de 125 flujos y reglas con prueba por trazabilidad; ver §2). Subió al poner los IDs en pruebas que ya existían, contar las de Foundry y agregar las que faltaban (auth, evidencia ajena, datos inválidos, reglas de firma). Lo que queda sin prueba es casi todo **de frontend** y de **UC-012**.
 - **Especificación y código coinciden en lo esencial**, con **9 decisiones** (§4): 7 aplicadas por defecto el 2026-09-20 a la especificación y al código, y 2 que siguen abiertas (D4, D8) que la spec no resuelve o que el producto contradice.
-- **Sin pruebas de frontend:** todo flujo de interfaz (A3 y A4 de UC-003, A1 y A3 de UC-004, A1..A3 de UC-009, etc.) está sin prueba automatizada (NFR-017).
-- **Faltan 3 casos de uso** de comportamiento que ya existe o que necesitamos (§5): cerrar sesión, reconciliar donaciones y recuperar una donación pendiente.
+- **Pruebas de frontend:** ya existen (69 con Vitest + MSW, `describe('UC-###')` / `it('S#-#')`, NFR-017) y cubren S1..S5 y los idiomas; el medidor de esta tabla solo cuenta backend y Foundry por convención de nombres, así que las A* de interfaz aparecen como pendientes aunque tengan prueba de pantalla.
+- **Los 3 casos de uso que faltaban ya existen** (§5): cerrar sesión (UC-015), reconciliar donaciones (UC-016, Implemented) y recuperar una donación pendiente (UC-014 A5).
 
 ## 2. Cobertura de especificación (generada)
 

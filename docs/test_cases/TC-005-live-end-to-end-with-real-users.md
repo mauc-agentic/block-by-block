@@ -7,7 +7,7 @@
 **ID:** TC-005  
 **Goal:** Con cuentas y wallets reales, un usuario publica una causa que la IA aprueba, otro usuario la financia, el primero recibe el dinero y la causa refleja el avance, todo desde la interfaz desplegada  
 **Priority:** Critical  
-**Status:** Draft
+**Status:** Approved
 
 ## Roles
 
@@ -50,3 +50,9 @@
 ## Postconditions
 
 - Existe una causa Completed (o con avance parcial), con una donación registrada y sus fondos retirados
+
+## Execution log
+
+| Fecha | Estado | Notas |
+|-------|--------|-------|
+| 2026-09-20 | Verificación previa OK, ejecución en curso | API y Vercel responden; CORS permite el dominio de Vercel; contrato sin pausa; Carlos 100 USDT y 0.098 HSK, Miguel 0.053 HSK, agente 0.053 HSK. Punto de partida: causa #352 Verificada con 40 010 USDT recaudados (10 + 40 000 de Miguel). La evidencia (hashes y saldos) se registra durante la corrida. |

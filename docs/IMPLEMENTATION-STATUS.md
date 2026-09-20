@@ -13,10 +13,11 @@ La sección 2 se **genera** de los propios documentos (`cd backend && python -m 
 
 - **Backend y contrato están completos para el flujo principal** y verificados de punta a punta en HSK testnet con dinero de prueba real:
   crear causa → publicar on-chain → evidencia → IA → veredicto on-chain → listado → donar → registrar → dashboard → retirar.
-- **El frontend tiene** landing con causas reales, autenticación (correo y Google), vinculación de wallet con Rabby (verificada en vivo), dashboard y **crear causa**
-  (formulario, subida de foto y firma de `createCause` con la wallet, UC-004/005/013). **Le faltan** el detalle de causa, donar (`approve` + `donate`) y retirar. Es lo que hoy
-  impide correr el flujo completo desde la interfaz (TC-005).
-- **Calidad:** 177 pruebas automatizadas de backend (3 omitidas a propósito), cobertura de líneas **92 %** (meta 85 %); contrato **88.5 %** con 2 pruebas Foundry fallando.
+- **El frontend tiene** landing con causas reales, autenticación (correo y Google), vinculación de wallet con Rabby, crear causa, listado, **detalle de causa** (con sondeo del veredicto y reintento),
+  **donar** (`approve` + `donate` con recuperación de donaciones pendientes), dashboard con **retirar** y mis donaciones, el design system EAG × ETH × HSK y los idiomas ES/EN. Falta **ejecutar TC-005
+  en vivo** con dos personas y sus wallets para darlo por verificado.
+- **Calidad:** backend 119 pruebas unitarias + 109 de integración contra Supabase (3 omitidas a propósito), cobertura de líneas **92 %** (meta 85 %); contrato **17/17** pruebas Foundry con 100 % de líneas;
+  frontend **69** pruebas Vitest, con lint y build en verde.
 - **Riesgos abiertos principales:** ejecutar TC-005 en vivo con las pantallas nuevas del frontend, wallet del agente = wallet personal (GAP-032),
   secreto rotado que sigue en el historial de `main` (GAP-017).
 
@@ -54,7 +55,7 @@ La sección 2 se **genera** de los propios documentos (`cd backend && python -m 
 | TC-002 | Rejected Cause Blocks Funds | Implemented |
 | TC-003 | AI Provider Failure Keeps Cause Pending | Implemented |
 | TC-004 | Contract Pause And Agent Rotation | Implemented |
-| TC-005 | Live End-to-End With Real Users | Draft |
+| TC-005 | Live End-to-End With Real Users | Approved |
 
 ### Requisitos por estado
 
