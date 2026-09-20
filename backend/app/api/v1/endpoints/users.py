@@ -56,7 +56,7 @@ def dashboard(
             if state is not None:
                 available = convert_wei_to_usdt(state["collected"])
         items.append(RecipientCauseItem(
-            id=c.id, title=c.title, status=c.status, target_amount=c.target_amount,
+            id=c.id, onchain_cause_id=c.onchain_cause_id, title=c.title, status=c.status, target_amount=c.target_amount,
             collected=collected.get(c.id, Decimal("0")), available_to_withdraw=available,
         ))
 

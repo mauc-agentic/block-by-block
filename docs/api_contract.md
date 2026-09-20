@@ -266,6 +266,7 @@ Datos que la API **nunca** expone de terceros: correo, hash de contraseña y `ex
 | Campo | Tipo | Requerido |
 |---|---|---|
 | `id` | integer | sí |
+| `onchain_cause_id` | integer | null | no |
 | `title` | string | sí |
 | `status` | string | sí |
 | `target_amount` | decimal (string) | sí |

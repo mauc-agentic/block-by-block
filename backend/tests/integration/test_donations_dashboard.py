@@ -223,6 +223,7 @@ class TestDashboardUC011:
         monkeypatch.setattr(users_ep, "read_cause_state", lambda i: {"status": 1, "collected": 10_000_000})
         item = real_test_client.get(f"/api/v1/users/{owner.id}", headers=owner.headers).json()["recipient"]["causes"][0]
         assert item["id"] == cause_id and item["status"] == "Verified"
+        assert item["onchain_cause_id"] == onchain  # el receptor lo usa para firmar withdrawFunds
         assert Decimal(item["collected"]) == Decimal("10") and Decimal(item["available_to_withdraw"]) == Decimal("10")
 
     def test_uc011_available_is_none_when_chain_unreachable_or_not_verified(self, real_test_client, real_db_session, monkeypatch, make_user):

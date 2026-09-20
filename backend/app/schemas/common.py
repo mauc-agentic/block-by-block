@@ -168,6 +168,7 @@ class DonorDashboard(BaseModel):
 
 class RecipientCauseItem(BaseModel):
     id: int
+    onchain_cause_id: Optional[int] = None  # Id que el receptor pasa a `withdrawFunds`; None si aún no se publicó
     title: str
     status: str
     target_amount: Decimal
