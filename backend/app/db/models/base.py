@@ -5,7 +5,7 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Foreig
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
-from database import Base
+from app.db.session import Base
 
 class CauseStatus(str, enum.Enum):
     """Estados de una causa (UC-004, UC-005, UC-006)."""
