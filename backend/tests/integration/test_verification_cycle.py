@@ -293,6 +293,22 @@ class TestAgentCycleUC006:
         rows = real_db_session.query(Verification).filter(Verification.cause_id == self.cause_id).all()
         assert len(rows) == 1 and rows[0].reason == "nuevo"
 
+    def test_uc006_br009_verdict_reason_and_confidence_are_visible_in_detail_and_dashboard(self, real_test_client, real_db_session, monkeypatch, recipient):
+        self.cause_id = self._prepare(real_test_client, real_db_session, recipient, monkeypatch)
+        before = real_test_client.get(f"/api/v1/causes/{self.cause_id}").json()
+        assert before["verification_reason"] is None and before["verification_confidence"] is None  # sin veredicto no se muestra nada
+
+        self._run(self.cause_id, monkeypatch, {"verified": False, "confidence": 0.9, "reason": "no coincide con la descripción"})
+        detail = real_test_client.get(f"/api/v1/causes/{self.cause_id}").json()
+        assert detail["status"] == "Rejected"
+        assert detail["verification_reason"] == "no coincide con la descripción"
+        assert float(detail["verification_confidence"]) == pytest.approx(0.9)
+
+        mine = real_test_client.get("/api/v1/users/me/dashboard", headers=recipient.headers).json()["causes"]
+        item = next(c for c in mine if c["id"] == self.cause_id)
+        assert item["verification_reason"] == "no coincide con la descripción"
+        assert float(item["verification_confidence"]) == pytest.approx(0.9)
+
 
 class TestRetryVerificationUC006:
     """UC-006 A6, A7, A8, BR-007, BR-008."""

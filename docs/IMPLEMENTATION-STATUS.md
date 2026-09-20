@@ -86,7 +86,7 @@ Requisitos aún no terminados:
 
 | Crítica | Alta | Media | Baja | Abiertas | Resueltas | Total |
 |---------|------|-------|------|----------|-----------|-------|
-| 0 | 3 | 14 | 3 | 20 | 17 | 37 |
+| 0 | 3 | 13 | 3 | 19 | 18 | 37 |
 <!-- END SUMMARY -->
 
 ---
@@ -151,7 +151,7 @@ Requisitos aún no terminados:
 | 6 | **Crear la causa de la demo con una necesidad genuina y ensayar su foto** con `try_ai_verdict` (3 de 3 aprobadas): la IA ya rechazó una petición sin necesidad real (#348), y una causa Rechazada no se puede reintentar | Miguel | GAP-033 |
 | 7 | ~~**Redesplegar Render** con el último `main`~~ **Hecho** (`/verify`, `/donate`, `/donations/confirm` y `/users/me/dashboard` desplegados); falta despertar el servicio antes de la demo | Miguel / Andres | GAP-035 |
 | 8 | **Ejecutar TC-005 en vivo** y guardar la evidencia (hashes y capturas); depende de 3, 4 y 5 y de una causa Verified | Todos | — |
-| 8b | **Exponer el veredicto** (`verification`: `verified`, `confidence`, `reason`, `tx_hash`) en `GET /causes/{id}` y en el dashboard, para que la interfaz explique un rechazo | Backend | GAP-037 |
+| 8b | ~~**Exponer el veredicto** en la API y mostrarlo en el dashboard~~ **Hecho** (Andres, `de02450`: `verification_reason` y `verification_confidence` + modal "Ver por qué se rechazó"; prueba `test_uc006_br009_*`). No se expone el hash de la tx del veredicto | Backend / Frontend | GAP-037 |
 
 ### P1 — Antes de dar el MVP por cerrado
 
@@ -195,7 +195,6 @@ Severidad: **Crítica** bloquea el MVP, **Alta** bloquea el flujo demostrable, *
 | GAP-032 | Media | La wallet del agente es la wallet personal de Miguel y la dueña del contrato; su llave privada vive en las variables de Render | NFR-008 |
 | GAP-033 | Media | Si la IA rechaza una foto legítima no hay revisión humana ni forma de forzar el veredicto (FR-014 diferido); mitigación: ensayar con `try_ai_verdict` | FR-014 |
 | GAP-034 | Media | Si el cliente no llama a `donations/confirm`, la donación existe on-chain pero no en la plataforma ni en el dashboard; falta una reconciliación por eventos | FR-020 |
-| GAP-037 | Media | La API no expone el veredicto (motivo, confianza, hash de la tx) en el detalle ni en el dashboard: una causa Rechazada aparece sin explicación para su titular | FR-009, FR-013 |
 | GAP-035 | Baja | El plan gratuito de Render duerme y tarda ~50 s en despertar | NFR-015 |
 | GAP-036 | Baja | iCloud Drive sincroniza el Escritorio y crea copias de archivos con sufijo ` 2`, ` 3` que pueden pisar código | — |
 | GAP-019 | Baja | `on_event`, `from_orm` y `datetime.utcnow` están deprecados | — |
@@ -220,6 +219,7 @@ Severidad: **Crítica** bloquea el MVP, **Alta** bloquea el flujo demostrable, *
 | GAP-020 | Resuelta | Supabase rechazaba la IP local (`address not in tenant allow_list`); cada desarrollador agrega su IP en *Network Restrictions* (ver `DEPLOYMENT.md`) | NFR-015 |
 | GAP-021 | Resuelta | `create_all` no altera columnas; la migración de Google se aplicó como script manual versionado | NFR-013 |
 | GAP-028 | Resuelta | La columna `users.user_type` desapareció por la decisión de producto "sin rol fijo por cuenta"; código, pruebas y documentos se alinearon | FR-001 |
+| GAP-037 | Resuelta | La API no exponía el motivo del veredicto: una causa Rechazada aparecía sin explicación para su titular; ahora `verification_reason` y `verification_confidence` viajan en el detalle y el dashboard, y la interfaz los muestra en un modal (UC-006 BR-009) | FR-009, FR-013 |
 | GAP-029 | Resuelta | Si Render reiniciaba a mitad de una verificación, la causa quedaba Pending; hay barrido al arrancar, reintento del titular y control de duplicados | UC-006 |
 
 ---

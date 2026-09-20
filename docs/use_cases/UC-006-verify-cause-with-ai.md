@@ -141,3 +141,7 @@ Para una misma causa solo puede haber una verificación en curso; solicitar otra
 ### BR-008: Reintento solo del titular
 
 Solo el titular de la causa puede solicitar el reintento, y solo mientras la causa esté Pending.
+
+### BR-009: Veredicto visible
+
+El motivo y la confianza del veredicto se muestran en el detalle de la causa y en el dashboard de su titular, tanto si fue aprobada como rechazada, para que el titular entienda el resultado. Mientras no haya veredicto no se muestra nada.

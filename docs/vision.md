@@ -85,7 +85,7 @@ Frontend, backend y contrato inteligente son **un único producto**: comparten e
 | Nonce del agente con verificaciones simultáneas | Media       | ✅ Nonce `pending` y bloqueo de envío en `sign_verification_tx` |
 | Secreto versionado por error                   | Media        | 🟡 `SECRET_KEY` rotado; el historial de `main` volvió a contenerlo por un merge (GAP-017) |
 | Token real vs MockUSDT                         | Media        | 🟡 Testnet usa `MockUSDT` (C-012); configurar USDT real por constructor en mainnet |
-| La IA rechaza una foto legítima o una petición sin necesidad real | Media | 🟡 Ocurrió en vivo (causa #348, confianza 0.90): sin revisión humana y sin reintento tras un rechazo; ensayar con `scripts/try_ai_verdict.py` y explicar el motivo en la interfaz (GAP-033, GAP-037) |
+| La IA rechaza una foto legítima o una petición sin necesidad real | Media | 🟡 Ocurrió en vivo (causa #348, confianza 0.90): sin revisión humana y sin reintento tras un rechazo; ensayar con `scripts/try_ai_verdict.py`; la interfaz ya muestra el motivo del rechazo (GAP-033) |
 | Donación on-chain sin registro en la plataforma | Media       | 🟡 Depende de que el cliente llame a `donations/confirm`; falta reconciliar por eventos (GAP-034) |
 | Frontend sin firma de transacciones            | Alta         | 🔲 Impide correr el flujo completo desde la interfaz (TC-005); pantallas y firma pendientes (GAP-024, GAP-026) |
 | Cambio de esquema en la base compartida        | Media        | ✅ Todo cambio es un script versionado en `backend/migrations/manual/` con aviso al equipo (regla de CLAUDE.md) |

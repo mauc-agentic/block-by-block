@@ -37,7 +37,7 @@ Leyenda de estado por capa: **Done** (código + prueba), **Impl** (código, prue
 | UC-003 | `test_helpers.py`, `test_wallet.py` (firma) | — | Ninguna |
 | UC-004, UC-013 | `TestPublishUC013`, `test_uc004_uc009_authenticated_flow`, `scripts/e2e_verification.py` | `test_UC004_CreateCauseWithZeroAmount` | Ninguna (falta `describe('UC-004 …')` / `describe('UC-013 …')`, GAP-027) |
 | UC-005 | `TestEvidenceUC005` | — | Ninguna (GAP-027) |
-| UC-006 | `test_agent.py`, `TestAgentCycleUC006`, `scripts/e2e_verification.py` | `test_UC006_OnlyAgentCanVerify` | n/a |
+| UC-006 | `test_agent.py`, `test_uc006_br009_*` (motivo visible), `TestAgentCycleUC006`, `scripts/e2e_verification.py` | `test_UC006_OnlyAgentCanVerify` | n/a |
 | UC-007, UC-008 | `test_uc014_registers_donation_and_updates_progress` | `test_GetCausesCount` | Ninguna (GAP-027) |
 | UC-009, UC-014 | `TestDonateInstructionUC009`, `TestRegisterDonationUC014`, `test_chain.py`, `scripts/e2e_donation.py` | `test_TC001_HappyPath`, `test_UC009_DonateWithZeroAmount` | Ninguna |
 | UC-010 | `scripts/e2e_donation.py` (retiro real) | `test_UC010_OnlyRecipientCanWithdraw` | Ninguna |
