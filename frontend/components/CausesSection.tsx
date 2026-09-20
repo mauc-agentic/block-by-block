@@ -1,21 +1,9 @@
 import Link from "next/link";
-import { fetchVerifiedCauses, featuredCauses, toDisplayCause, type Cause } from "@/lib/causes";
+import { loadDisplayCauses } from "@/lib/causes";
 import { CauseCard } from "./CauseCard";
 
-// UC-007: causas verificadas reales; mientras no exista ninguna, se muestran
-// las causas de muestra (featuredCauses) para no dejar la sección vacía.
-async function loadCauses(): Promise<Cause[]> {
-  try {
-    const verified = await fetchVerifiedCauses();
-    if (verified.length > 0) return verified.map(toDisplayCause);
-  } catch {
-    // Backend no disponible: se cae al listado de muestra.
-  }
-  return featuredCauses;
-}
-
 export async function CausesSection() {
-  const causes = await loadCauses();
+  const causes = await loadDisplayCauses();
 
   return (
     <section id="causas" className="border-t border-line bg-paper">

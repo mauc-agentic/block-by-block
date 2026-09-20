@@ -252,6 +252,19 @@ export async function uploadCauseImage(
   return parseCauseResponse(res, "No se pudo subir la evidencia.");
 }
 
+// UC-007: causas verificadas reales; mientras no exista ninguna, se muestran
+// las causas de muestra (featuredCauses) para no dejar la sección vacía.
+// Compartida por la landing (#causas) y /causes.
+export async function loadDisplayCauses(): Promise<Cause[]> {
+  try {
+    const verified = await fetchVerifiedCauses();
+    if (verified.length > 0) return verified.map(toDisplayCause);
+  } catch {
+    // Backend no disponible: se cae al listado de muestra.
+  }
+  return featuredCauses;
+}
+
 export const featuredCauses: Cause[] = [
   {
     id: 1,
