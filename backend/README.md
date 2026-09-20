@@ -100,6 +100,10 @@ python -m scripts.e2e_donation       # donar (approve+donate), registrar, dashbo
 # Ensayar una foto real contra la IA antes de la demostración (no toca BD ni cadena; cuesta centavos)
 python -m scripts.try_ai_verdict foto.jpg --description "Descripción exacta de la causa" --runs 3
 
+# Donar a una causa Verified con la wallet local (solo demostración en testnet, mientras la UI no tenga la pantalla de donar);
+# imprime el fragmento para registrar la donación con la sesión del usuario en la consola del navegador
+python -m scripts.donate --cause 352 --amount 10 [--dry-run]
+
 # Faucet de pruebas: envía MockUSDT (y HSK) desde la wallet del agente; solo testnet, con topes (1000 USDT / 0.05 HSK)
 python -m scripts.fund_wallet --user carlos --usdt 100 [--hsk 0.01] [--dry-run]
 python -m scripts.fund_wallet 0xDirección --usdt 50

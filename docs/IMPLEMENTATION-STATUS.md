@@ -86,7 +86,7 @@ Requisitos aún no terminados:
 
 | Crítica | Alta | Media | Baja | Abiertas | Resueltas | Total |
 |---------|------|-------|------|----------|-----------|-------|
-| 0 | 3 | 13 | 3 | 19 | 18 | 37 |
+| 0 | 3 | 15 | 3 | 21 | 18 | 39 |
 <!-- END SUMMARY -->
 
 ---
@@ -150,6 +150,7 @@ Requisitos aún no terminados:
 | 5 | **Retirar** (`withdrawFunds(onchain_cause_id)`) y añadir MockUSDT a Rabby (`wallet_watchAsset`) | Frontend | GAP-024 |
 | 6 | **Crear la causa de la demo con una necesidad genuina y ensayar su foto** con `try_ai_verdict` (3 de 3 aprobadas): la IA ya rechazó una petición sin necesidad real (#348), y una causa Rechazada no se puede reintentar | Miguel | GAP-033 |
 | 7 | ~~**Redesplegar Render** con el último `main`~~ **Hecho** (`/verify`, `/donate`, `/donations/confirm` y `/users/me/dashboard` desplegados); falta despertar el servicio antes de la demo | Miguel / Andres | GAP-035 |
+| 8a | **Donación de demostración hecha** (10 USDT de Miguel a la causa #352 con `scripts/donate.py`, on-chain confirmada); falta registrarla con la sesión de Miguel (`donations/confirm`) hasta que exista la pantalla de donar | Miguel | GAP-024 |
 | 8 | **Ejecutar TC-005 en vivo** y guardar la evidencia (hashes y capturas); depende de 3, 4 y 5 y de una causa Verified | Todos | — |
 | 8b | ~~**Exponer el veredicto** en la API y mostrarlo en el dashboard~~ **Hecho** (Andres, `de02450`: `verification_reason` y `verification_confidence` + modal "Ver por qué se rechazó"; prueba `test_uc006_br009_*`). No se expone el hash de la tx del veredicto | Backend / Frontend | GAP-037 |
 
@@ -191,10 +192,12 @@ Severidad: **Crítica** bloquea el MVP, **Alta** bloquea el flujo demostrable, *
 | GAP-025 | Media | `frontend/lib/causes.ts` tiene datos de muestra con otra forma (camelCase, números) que la API (snake_case, decimales como string) | NFR-016 |
 | GAP-027 | Media | El frontend no tiene pruebas ni la convención `describe('UC-###')` | NFR-017 |
 | GAP-030 | Media | Sin pruebas Foundry de `pause`, `unpause` ni `setAgent` (UC-012, TC-004) | NFR-001 |
-| GAP-031 | Media | NFR-002 (listado < 2 s con 500 causas) y NFR-003 (verificación < 60 s p95) nunca se han medido | NFR-002, NFR-003 |
+| GAP-031 | Media | NFR-002 (listado < 2 s con 500 causas) no se ha medido; NFR-003 (verificación < 60 s p95) solo tiene muestras sueltas en vivo: 12 s, 16 s, 37 s y 61 s desde la subida de la foto, la última por encima de la meta | NFR-002, NFR-003 |
 | GAP-032 | Media | La wallet del agente es la wallet personal de Miguel y la dueña del contrato; su llave privada vive en las variables de Render | NFR-008 |
 | GAP-033 | Media | Si la IA rechaza una foto legítima no hay revisión humana ni forma de forzar el veredicto (FR-014 diferido); mitigación: ensayar con `try_ai_verdict` | FR-014 |
 | GAP-034 | Media | Si el cliente no llama a `donations/confirm`, la donación existe on-chain pero no en la plataforma ni en el dashboard; falta una reconciliación por eventos | FR-020 |
+| GAP-038 | Media | El veredicto de la IA varía entre ejecuciones con la misma foto y descripción (0.90 y 0.70 el 2026-09-20) y las causas aprobadas quedan cerca del umbral 0.80 (0.85); una causa Rechazada no se puede reintentar. Mitigación: ensayar 3 veces con `try_ai_verdict` y describir lugar, fecha y daño | FR-006, FR-014 |
+| GAP-039 | Media | Una verificación en Render no produjo veredicto (causa #353): la tarea se perdió o falló sin dejar rastro y el barrido de arranque no la recuperó; sin logs accesibles ni métricas de la cola | FR-006, NFR-012 |
 | GAP-035 | Baja | El plan gratuito de Render duerme y tarda ~50 s en despertar | NFR-015 |
 | GAP-036 | Baja | iCloud Drive sincroniza el Escritorio y crea copias de archivos con sufijo ` 2`, ` 3` que pueden pisar código | — |
 | GAP-019 | Baja | `on_event`, `from_orm` y `datetime.utcnow` están deprecados | — |
