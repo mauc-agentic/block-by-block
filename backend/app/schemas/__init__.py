@@ -1,6 +1,8 @@
 from app.schemas.common import (
     UserCreate,
     UserLogin,
+    GoogleSignupRequest,
+    GoogleLoginRequest,
     UserResponse,
     TokenResponse,
     WalletLinkRequest,
@@ -14,6 +16,8 @@ from app.schemas.common import (
 __all__ = [
     "UserCreate",
     "UserLogin",
+    "GoogleSignupRequest",
+    "GoogleLoginRequest",
     "UserResponse",
     "TokenResponse",
     "WalletLinkRequest",

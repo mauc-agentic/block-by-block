@@ -14,9 +14,9 @@
 |-----------------------|---------------------------------------------------------------------------------------------------|
 | Documentación AIUP    | Vision, 22 FR, 15 NFR, 12 C, 14 UC, 4 TC, diagrama de casos de uso actualizado                   |
 | Contrato `CauseVault` | Desplegado en HSK testnet. Foundry: **7/9 pruebas pasan, 2 fallan**. Cobertura de líneas 88.5 %   |
-| Backend FastAPI       | 9 endpoints. `pytest`: **35 pasan, 3 skip**. Cobertura **66 %** (meta 85 %)                       |
+| Backend FastAPI       | 11 endpoints (+`POST /auth/google/signup`, `POST /auth/google/login`). Unit: **23/23 pasan** (verificado 2026-09-20); suite de integración no se corrió esta sesión (bloqueada por allowlist de IP de Supabase desde esta máquina) |
 | Agente IA (UC-006)    | Flujo IA + firma on-chain escrito; **no cierra el ciclo** (ver GAP-001..003)                      |
-| Frontend Next.js      | Landing, FAQ y términos con datos de muestra; **sin llamadas al backend ni wallet**               |
+| Frontend Next.js      | Landing, FAQ, términos y **auth (signup/login, email y Google) conectados al backend**; sin wallet ni causas |
 | Despliegue            | `Dockerfile`, `render.yaml`, `DEPLOYMENT.md` listos; **Render aún no desplegado**                 |
 
 ### Direcciones en HSK testnet
@@ -35,8 +35,8 @@ Leyenda de prueba: **A** = automatizada, **P** = parcial, **—** = ninguna.
 
 | UC     | Status doc  | Implementación                                                        | Pruebas                                                                                   | Estado real / faltante                                                                 |
 |--------|-------------|------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
-| UC-001 | Implemented | `POST /api/v1/auth/signup`                                             | P: `test_signup_persists_to_supabase`                                                     | A1 (duplicados) y BR-002 sin prueba tras retirar SQLite; A3 (OAuth) no implementado    |
-| UC-002 | Implemented | `POST /api/v1/auth/login`                                              | P: `test_login_queries_supabase`                                                          | A1 (credenciales inválidas) sin prueba                                                 |
+| UC-001 | Implemented | `POST /api/v1/auth/signup`, `POST /api/v1/auth/google/signup` (A3)     | P: `test_signup_persists_to_supabase`, `test_uc001_a3_google_signup_creates_user`, `test_uc001_a3_google_signup_rejects_duplicate_identity` (no corridas esta sesión, ver nota de allowlist arriba) | A1 (duplicados) y BR-002 sin prueba tras retirar SQLite; A3 (Google) implementado, sin ejecutar en Supabase real todavía |
+| UC-002 | Implemented | `POST /api/v1/auth/login`, `POST /api/v1/auth/google/login` (A3, A4)   | P: `test_login_queries_supabase`, `test_uc002_a3_google_login_existing_user`, `test_uc002_a4_google_login_unregistered_identity` (no corridas esta sesión) | A1 (credenciales inválidas) sin prueba; A3/A4 (Google) implementado, sin ejecutar en Supabase real todavía |
 | UC-003 | Implemented | `POST /api/v1/auth/wallet/link` + `verify_wallet_signature`            | A: 5 tests de firma (`test_helpers`, `test_wallet`); endpoint sin prueba                  | BR-003 (mensaje de un solo uso) **no aplicado**; A2 sin prueba                         |
 | UC-004 | Approved    | `POST /api/v1/causes` (solo BD)                                        | P: `test_uc004_uc009_authenticated_flow`                                                                                       | Contrato `createCause` existe pero nada lo llama ni asigna `onchain_cause_id` (UC-013) |
 | UC-005 | Approved    | `POST /api/v1/causes/{id}/upload-image`                                | —                                                                                         | Guarda solo un hash de 10 hex; la imagen no se almacena (FR-021)                       |
@@ -80,7 +80,9 @@ Leyenda de prueba: **A** = automatizada, **P** = parcial, **—** = ninguna.
 | GAP-013 | Media     | `Base.metadata.create_all` al arrancar y `migrations/` vacío                                                                                        | NFR-013     |
 | GAP-014 | Media     | Sin logging estructurado ni middleware global (`utils/logger.py`, `exceptions.py` a 0 % de cobertura)                                              | NFR-012     |
 | GAP-015 | Resuelta  | `get_current_user` devolvía la función `get_db` en vez de una sesión: todo endpoint autenticado respondía 500 en `main`. Corregido con `_db_session` (import diferido) y cubierto por `test_uc004_uc009_authenticated_flow` | UC-004..009 |
-| GAP-016 | Media     | Frontend sin integración: `lib/causes.ts` usa datos de muestra; sin wallet, sin rutas de UC-004..011                                              | C-006       |
+| GAP-016 | Media     | Frontend sin integración con el resto de la API: `lib/causes.ts` usa datos de muestra; sin wallet, sin rutas de UC-004..011. Auth (UC-001, UC-002) ya conecta a `/auth/*` | C-006       |
+| GAP-020 | Media     | El SQL Editor / conexión directa de Supabase rechaza la IP de esta máquina de desarrollo (`EADDRNOTALLOWED`); los tests de integración no se pueden correr localmente hasta agregarla al allowlist del proyecto en Supabase | NFR-001 |
+| GAP-021 | Baja      | `Base.metadata.create_all` no altera columnas existentes: `auth_provider`/`external_id`/`hashed_password NULL` en `users` requieren correr `backend/migrations/manual/2026-09-20_google_auth.sql` a mano en Supabase antes de desplegar | UC-001, UC-002 |
 | GAP-017 | Media     | `SECRET_KEY` real subido a `main` en el commit de configuración de Render (ya eliminado del árbol, sigue en el historial). Rotar.                   | NFR-008     |
 | GAP-018 | Baja      | `venv/` había sido versionado por un `git add -A`; se retira del índice y se agrega a `.gitignore`                                                | C-008       |
 | GAP-019 | Baja      | `on_event("shutdown")`, `from_orm` y `datetime.utcnow` están deprecados                                                                            | —           |
@@ -110,8 +112,10 @@ Leyenda de prueba: **A** = automatizada, **P** = parcial, **—** = ninguna.
 4. **GAP-005 / UC-014** y **GAP-004 / UC-011**: registrar donaciones y exponer el dashboard.
 5. **GAP-006**: corregir las dos pruebas de Foundry.
 6. **GAP-007 / GAP-008**: pruebas contra Supabase para auth, causas, donación y agente (OpenRouter simulado) hasta 85 %.
-7. **GAP-016**: conectar el frontend (lista de causas, detalle, wallet).
+7. **GAP-016**: conectar el resto del frontend (lista de causas, detalle, wallet); auth (UC-001, UC-002) ya está conectado.
 8. **GAP-017**: rotar `SECRET_KEY` y desplegar en Render.
+9. **GAP-020**: agregar la IP de desarrollo al allowlist de Supabase para poder correr `pytest` de integración localmente.
+10. **GAP-021**: correr `backend/migrations/manual/2026-09-20_google_auth.sql` contra Supabase antes del próximo despliegue.
 
 ## 6. Decisiones vigentes
 
@@ -121,3 +125,5 @@ Leyenda de prueba: **A** = automatizada, **P** = parcial, **—** = ninguna.
 - IA: `deepseek/deepseek-v4.1-flash` vía OpenRouter, umbral 0.80.
 - Tareas de fondo: `ThreadPoolExecutor` (MVP); ruta de migración a Celery en `backend/TASKS.md`.
 - Despliegue: Render con Docker (`render.yaml`).
+- Login/registro con Google: Google Identity Services (ID token) verificado en el backend con `google-auth`
+  (`GOOGLE_CLIENT_ID` como audience); sin NextAuth ni flujo de redirect/código OAuth.

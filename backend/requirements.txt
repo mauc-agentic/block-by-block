@@ -11,6 +11,7 @@ python-dotenv==1.0.0
 python-multipart==0.0.6
 passlib==1.7.4
 argon2-cffi==25.1.0
+google-auth==2.35.0
 web3==8.0.0
 eth-account==0.14.0
 eth-keys==0.8.0

@@ -4,6 +4,7 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.core.security import (
     hash_password,
     verify_password,
@@ -15,11 +16,15 @@ from app.db.models import User
 from app.schemas import (
     UserCreate,
     UserLogin,
+    GoogleSignupRequest,
+    GoogleLoginRequest,
     UserResponse,
     TokenResponse,
     WalletLinkRequest,
 )
-from app.utils.helpers import verify_wallet_signature
+from app.utils.helpers import verify_wallet_signature, verify_google_id_token, derive_username
+
+settings = get_settings()
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -55,6 +60,63 @@ def login(creds: UserLogin, db: Session = Depends(get_db)):
     if not user or not verify_password(creds.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
+    access_token = create_access_token(user.id)
+    return TokenResponse(access_token=access_token, user=UserResponse.from_orm(user))
+
+@router.post("/google/signup", response_model=TokenResponse)
+def google_signup(req: GoogleSignupRequest, db: Session = Depends(get_db)):
+    """UC-001 A3: Registro con proveedor externo (Google)."""
+
+    try:
+        profile = verify_google_id_token(req.id_token, settings.google_client_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid Google token")
+
+    if db.query(User).filter(User.external_id == profile["external_id"]).first():
+        raise HTTPException(status_code=400, detail="Account already registered, please log in")
+    if db.query(User).filter(User.email == profile["email"]).first():
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    # BR-004: garantizar un nombre de usuario derivado único
+    base_username = derive_username(profile["name"])
+    username = base_username
+    suffix = 1
+    while db.query(User).filter(User.username == username).first():
+        suffix += 1
+        username = f"{base_username}{suffix}"
+
+    db_user = User(
+        username=username,
+        email=profile["email"],
+        hashed_password=None,
+        auth_provider="google",
+        external_id=profile["external_id"],
+        user_type=req.user_type,
+    )
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+
+    access_token = create_access_token(db_user.id)
+    return TokenResponse(access_token=access_token, user=UserResponse.from_orm(db_user))
+
+@router.post("/google/login", response_model=TokenResponse)
+def google_login(req: GoogleLoginRequest, db: Session = Depends(get_db)):
+    """UC-002 A3: Inicio de sesión con proveedor externo (Google)."""
+
+    try:
+        profile = verify_google_id_token(req.id_token, settings.google_client_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid Google token")
+
+    user = db.query(User).filter(
+        User.external_id == profile["external_id"],
+        User.auth_provider == "google",
+    ).first()
+    if not user:
+        # UC-002 A4: identidad externa no registrada
+        raise HTTPException(status_code=404, detail="No account found, please sign up")
+
     access_token = create_access_token(user.id)
     return TokenResponse(access_token=access_token, user=UserResponse.from_orm(user))
 

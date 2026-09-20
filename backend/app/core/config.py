@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     secret_key: str = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
     algorithm: str = "HS256"
     access_token_expire_hours: int = 24
+    google_client_id: str = os.getenv("GOOGLE_CLIENT_ID", "")
 
     # Server
     port: int = int(os.getenv("PORT", 8000))
