@@ -2,13 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import {
-  AUTH_CHANGE_EVENT,
-  clearSession,
-  isAuthenticated,
-} from "@/lib/auth";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
+import { clearSession, getStoredUser, type AuthUser } from "@/lib/auth";
 
 const navLinks = [
   { href: "/#causas", label: "Causas" },
@@ -18,27 +14,23 @@ const navLinks = [
 
 export function Header() {
   const router = useRouter();
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  // UC-011: la sesión vive en localStorage (sin cookies para el MVP), así
-  // que el estado inicial es "sin sesión" hasta que el efecto la confirme
-  // en el cliente; evita mismatches de hidratación con el render del server.
-  const [authed, setAuthed] = useState(false);
+  const [user, setUser] = useState<AuthUser | null>(() => getStoredUser());
 
-  useEffect(() => {
-    const sync = () => setAuthed(isAuthenticated());
-    sync();
-    window.addEventListener(AUTH_CHANGE_EVENT, sync);
-    window.addEventListener("storage", sync);
-    return () => {
-      window.removeEventListener(AUTH_CHANGE_EVENT, sync);
-      window.removeEventListener("storage", sync);
-    };
-  }, []);
+  // Vuelve a leer la sesión cuando cambia la ruta (p.ej. tras login/logout,
+  // que no remontan el header) para reflejar el estado actual.
+  const [lastPathname, setLastPathname] = useState(pathname);
+  if (pathname !== lastPathname) {
+    setLastPathname(pathname);
+    setUser(getStoredUser());
+  }
 
   function handleLogout() {
     clearSession();
+    setUser(null);
     setMenuOpen(false);
-    router.push("/auth/login");
+    router.push("/");
   }
 
   return (
@@ -71,18 +63,18 @@ export function Header() {
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
-          {authed ? (
+          {user ? (
             <>
               <Link
-                href="/dashboard"
+                href="/wallet"
                 className="text-sm font-medium text-ink-soft transition-colors hover:text-ink"
               >
-                Dashboard
+                Mi wallet
               </Link>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="border border-line px-4 py-2 text-sm font-medium text-ink-soft transition-colors hover:border-ink hover:text-ink"
+                className="text-sm font-medium text-ink-soft transition-colors hover:text-ink"
               >
                 Cerrar sesión
               </button>
@@ -140,19 +132,19 @@ export function Header() {
                 {link.label}
               </Link>
             ))}
-            {authed ? (
+            {user ? (
               <>
                 <Link
-                  href="/dashboard"
+                  href="/wallet"
                   className="rounded-sm px-2 py-2 text-sm text-ink-soft hover:bg-paper-raised hover:text-ink"
                   onClick={() => setMenuOpen(false)}
                 >
-                  Dashboard
+                  Mi wallet
                 </Link>
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="mt-1 border border-line px-4 py-2 text-center text-sm font-medium text-ink-soft hover:border-ink hover:text-ink"
+                  className="rounded-sm px-2 py-2 text-left text-sm text-ink-soft hover:bg-paper-raised hover:text-ink"
                 >
                   Cerrar sesión
                 </button>
