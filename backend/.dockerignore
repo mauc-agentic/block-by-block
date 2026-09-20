@@ -1,20 +1,64 @@
-__pycache__
-.pytest_cache
-.mypy_cache
-.venv
-venv
-.env
-.env.local
+# Git
 .git
 .gitignore
-.DS_Store
-*.pyc
-*.pyo
-*.pyd
+.gitattributes
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.pytest_cache/
 .coverage
-htmlcov
-dist
-build
-*.egg-info
-.idea
-.vscode
+htmlcov/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Tests
+tests/
+pytest.ini
+
+# Documentation
+*.md
+docs/
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Node (if any)
+node_modules/
+npm-debug.log
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
