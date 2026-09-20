@@ -9,16 +9,20 @@ import hashlib
 from app.core import get_settings
 from app.core.security import get_current_user
 from app.db import get_db
-from app.db.models import Cause, CauseStatus, Evidence
+from decimal import Decimal
+from sqlalchemy import func
+
+from app.db.models import Cause, CauseStatus, Donation, Evidence
 from app.schemas import (
     UserResponse,
     CauseCreate,
     CauseResponse,
     CauseListResponse,
+    DonationItem,
     PublishInstruction,
     PublishConfirmRequest,
 )
-from app.services.chain import read_cause_created
+from app.services.chain import read_cause_created, vault_address
 from app.tasks import enqueue_verification
 from app.core.constants import MAX_IMAGE_SIZE_BYTES
 from app.utils.helpers import convert_usdt_to_wei
@@ -36,6 +40,9 @@ def create_cause(
     
     if current_user.user_type != "recipient":
         raise HTTPException(status_code=403, detail="Only recipients can create causes")
+
+    if not current_user.wallet_address:
+        raise HTTPException(status_code=400, detail="Link a wallet first")  # A2
     
     db_cause = Cause(
         recipient_id=current_user.id,
@@ -50,23 +57,55 @@ def create_cause(
     
     return CauseResponse.from_orm(db_cause)
 
+def collected_by_cause(db: Session, cause_ids: list[int]) -> dict[int, Decimal]:
+    """Suma de donaciones confirmadas por causa (UC-014 BR-005)."""
+    if not cause_ids:
+        return {}
+    rows = (
+        db.query(Donation.cause_id, func.sum(Donation.amount))
+        .filter(Donation.cause_id.in_(cause_ids))
+        .group_by(Donation.cause_id)
+        .all()
+    )
+    return {cause_id: total for cause_id, total in rows}
+
+
 @router.get("", response_model=list[CauseListResponse])
 def list_causes(db: Session = Depends(get_db)):
-    """UC-007: Listar causas verificadas."""
-    
+    """UC-007: Listar causas verificadas con su monto recaudado real."""
+
     causes = db.query(Cause).filter(Cause.status == CauseStatus.Verified.value).all()
-    return [CauseListResponse.from_orm(c) for c in causes]
+    collected = collected_by_cause(db, [c.id for c in causes])
+    result = []
+    for c in causes:
+        item = CauseListResponse.from_orm(c)
+        item.collected = collected.get(c.id, Decimal("0"))
+        result.append(item)
+    return result
 
 @router.get("/{cause_id}", response_model=CauseResponse)
 def get_cause(cause_id: int, db: Session = Depends(get_db)):
-    """UC-008: Ver detalle de causa."""
-    
+    """UC-008: Ver detalle de causa con avance y donaciones confirmadas."""
+
     cause = db.query(Cause).filter(Cause.id == cause_id).first()
-    
+
     if not cause:
         raise HTTPException(status_code=404, detail="Cause not found")
-    
-    return CauseResponse.from_orm(cause)
+
+    donations = (
+        db.query(Donation).filter(Donation.cause_id == cause_id).order_by(Donation.created_at.desc()).all()
+    )
+    # No se usa from_orm: la relación ORM `Cause.donations` chocaría con el campo `donations` del esquema
+    base = {name: getattr(cause, name) for name in CauseResponse.model_fields if name not in ("collected", "donations")}
+    return CauseResponse(
+        **base,
+        collected=sum((d.amount for d in donations), Decimal("0")),
+        donations=[
+            DonationItem(amount=d.amount, tx_hash=d.tx_hash,
+                         donor_wallet=d.donor.wallet_address if d.donor else None, created_at=d.created_at)
+            for d in donations
+        ],
+    )
 
 IMAGE_SIGNATURES = {
     "image/png": b"\x89PNG\r\n\x1a\n",
@@ -99,7 +138,7 @@ def publish_cause(
         raise HTTPException(status_code=409, detail="Cause already published on-chain")  # A2
 
     return PublishInstruction(
-        contract=settings.cause_vault_address,
+        contract=vault_address(),
         params=[cause.title, cause.description, convert_usdt_to_wei(cause.target_amount)],
         message=f"Sign to publish '{cause.title}' on-chain",
     )

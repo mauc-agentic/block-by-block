@@ -6,7 +6,7 @@
 **Use Case Name:** Browse Verified Causes  
 **Primary Actor:** Visitante o Donante  
 **Goal:** Descubrir causas verificadas a las que se puede donar  
-**Status:** Approved
+**Status:** Implemented
 
 **Requirements:** [FR-008, NFR-002](../requirements.md)
 

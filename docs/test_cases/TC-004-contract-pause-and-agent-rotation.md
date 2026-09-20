@@ -40,3 +40,7 @@
 ## Postconditions
 
 - El contrato está activo con el nuevo agente y la causa sin fondos disponibles
+
+## Automation
+
+Sin automatizar: falta una prueba Foundry de `pause`/`unpause`/`setAgent` (UC-012). Los efectos de `onlyAgent` sobre el agente anterior sí se cubren en `test_UC006_OnlyAgentCanVerify`.

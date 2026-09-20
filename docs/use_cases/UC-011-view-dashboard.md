@@ -7,7 +7,7 @@
 **Primary Actor:** Donante  
 **Secondary Actors:** Receptor  
 **Goal:** Ver un resumen personal según el rol del usuario  
-**Status:** Approved
+**Status:** Implemented
 
 **Requirements:** [FR-012, FR-013, FR-020](../requirements.md)
 

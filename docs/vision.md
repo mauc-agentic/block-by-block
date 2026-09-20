@@ -36,6 +36,7 @@ on-chain, en stablecoins, desde el donante hasta el receptor, y cada movimiento 
 - Donación en stablecoin (USDT, 6 decimales) a través del contrato `CauseVault`.
 - Retiro de fondos por el receptor.
 - Dashboards de donante y de receptor.
+- Registro de la evidencia (imagen) para que el agente y los auditores evalúen la misma foto.
 
 ### Out of scope
 
@@ -73,7 +74,10 @@ on-chain, en stablecoins, desde el donante hasta el receptor, y cada movimiento 
 | Firma de wallet sin validar                    | Alta         | ✅ Validada con eth_account (UC-003 BR-001); falta mensaje de un solo uso (BR-003) |
 | Background tasks para agente                   | Alta         | ✅ ThreadPoolExecutor (MVP); Celery/Redis como ruta de escalamiento        |
 | Tests y cobertura 85%                          | Media        | 🟡 Contrato 88.5 %, backend 66 % (NFR-001)                                 |
-| Ciclo de verificación incompleto               | Alta         | 🔲 La causa no pasa a Verified, la imagen no se guarda y `createCause` no se invoca (FR-019, FR-021, FR-022) |
-| Donaciones sin reflejo en la plataforma        | Alta         | 🔲 UC-014 / FR-020 sin implementar; dashboards (UC-011) dependen de ello   |
+| Ciclo de verificación incompleto               | Alta         | ✅ Cerrado y verificado en HSK testnet (FR-019, FR-021, FR-022; `scripts/e2e_verification.py`) |
+| Donaciones sin reflejo en la plataforma        | Alta         | ✅ UC-014 y dashboards (UC-011) implementados y verificados (`scripts/e2e_donation.py`) |
+| RPC de HSK con nodos desfasados                | Media        | 🟡 `confirm` puede responder "not confirmed" justo tras firmar; el cliente reintenta (UC-014 A4, GAP-021) |
+| Donaciones sobre la meta en el contrato        | Media        | 🔲 `donate` solo exige `verified`; corregir en el contrato (GAP-020, UC-009 A4) |
+| Nonce del agente con verificaciones simultáneas | Media       | ✅ Nonce `pending` y bloqueo de envío en `sign_verification_tx` |
 | Secreto versionado por error                   | Media        | 🟡 `SECRET_KEY` estuvo en `main`; retirado del árbol, pendiente rotar (NFR-008) |
 | Token real vs MockUSDT                         | Media        | 🟡 Testnet usa `MockUSDT` (C-012); configurar USDT real por constructor en mainnet |

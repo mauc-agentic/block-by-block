@@ -54,14 +54,14 @@ Prefijo de la API: `/api/v1`. Estado real y brechas en `docs/IMPLEMENTATION-STAT
 | UC-004 | Crear causa                   | `POST /causes` (publicación on-chain: UC-013)                  | `createCause`                            | `/cause/create` (pendiente)              | FR-004, FR-019                    | Approved    |
 | UC-005 | Subir evidencia              | `POST /causes/{id}/upload-image`, `GET /causes/{id}/evidence`  | —                                        | `/cause/create`, `/dashboard/recipient`  | FR-005, FR-006, FR-021            | Implemented |
 | UC-006 | Verificar causa con IA        | `services/agent.py` (`verify_cause_with_ai`, `sign_verification_tx`, `verify_cause_task`), `tasks.py` | `verifyCause` (`onlyAgent`) | —                                        | FR-006, FR-007, FR-019, FR-021, FR-022, NFR-003/004/008 | Implemented |
-| UC-007 | Explorar causas verificadas   | `GET /causes`                                                  | `getCause`, `getCausesCount`             | `/dashboard/donor`; landing con datos de muestra | FR-008, NFR-002          | Approved    |
-| UC-008 | Ver detalle de causa          | `GET /causes/{id}`                                             | `getCause`, `getDonationsForCause`       | `/cause/[id]` (pendiente)                | FR-009, NFR-011                   | Approved    |
-| UC-009 | Donar                         | `POST /causes/{id}/donate` (instrucción de firma)              | `donate` (+ `approve` del USDT)          | `/cause/[id]` (pendiente)                | FR-010, FR-020, NFR-005/009/011   | Approved    |
+| UC-007 | Explorar causas verificadas   | `GET /causes` (con `collected`)                                | `getCause`, `getCausesCount`             | `/dashboard/donor`; landing con datos de muestra | FR-008, NFR-002          | Implemented |
+| UC-008 | Ver detalle de causa          | `GET /causes/{id}` (avance y donaciones)                       | `getCause`, `getDonationsForCause`       | `/cause/[id]` (pendiente)                | FR-009, NFR-011                   | Implemented |
+| UC-009 | Donar                         | `POST /causes/{id}/donate` (instrucción `approve` + `donate`)  | `donate` (+ `approve` del USDT)          | `/cause/[id]` (pendiente)                | FR-010, FR-020, NFR-005/009/011   | Implemented |
 | UC-010 | Retirar fondos                | — (solo on-chain)                                              | `withdrawFunds`                          | `/dashboard/recipient` (pendiente)       | FR-011, NFR-005/009/011           | Implemented |
-| UC-011 | Ver dashboard                 | **No implementado** (previsto `GET /users/{id}`)               | `getRecipientCauses`, `getDonationsForCause` | `/dashboard/donor`, `/dashboard/recipient` | FR-012, FR-013, FR-020      | Approved    |
+| UC-011 | Ver dashboard                 | `GET /users/{id}`                                              | `getCause` (saldo retirable)             | `/dashboard/donor`, `/dashboard/recipient` | FR-012, FR-013, FR-020      | Implemented |
 | UC-012 | Administrar contrato          | —                                                              | `pause`, `unpause`, `setAgent` (`onlyOwner`) | —                                    | FR-018, NFR-008, NFR-009          | Implemented |
 | UC-013 | Publicar causa on-chain       | `POST /causes/{id}/publish`, `POST /causes/{id}/publish/confirm` (`services/chain.py`) | `createCause`, evento `CauseCreated` | `/cause/create` (firma pendiente)        | FR-004, FR-019, C-009             | Implemented |
-| UC-014 | Registrar donación            | Por definir (validar tx en la red, guardar `Donation`)         | evento `DonationReceived`                | `/cause/[id]`                            | FR-020, FR-009, FR-012, NFR-011   | Draft       |
+| UC-014 | Registrar donación            | `POST /causes/{id}/donations/confirm`                          | evento `DonationReceived`                | `/cause/[id]`                            | FR-020, FR-009, FR-012, NFR-011   | Implemented |
 
 Test cases (journeys end-to-end): **TC-001** flujo feliz receptor→donante→retiro (UC-001,003,004,013,005,006,007,008,009,014,011,010) ·
 **TC-002** causa rechazada bloquea fondos (UC-004,005,006,007,009,010) · **TC-003** fallo del proveedor de IA deja la causa Pending
@@ -116,5 +116,5 @@ render.yaml · DEPLOYMENT.md · TESTING_STATUS.md
 ## Verificación
 
 Tras implementar, ejecutar y reportar: `forge test` + `forge coverage` (contrato), `pytest --cov=app` desde `backend/` (backend),
-lint/build del frontend. Cobertura mínima combinada 85 % (NFR-001); medido 2026-09-20: contrato 88.5 %, backend 71 %. Prueba real de punta a punta: `cd backend && python -m scripts.e2e_verification`.
+lint/build del frontend. Cobertura mínima combinada 85 % (NFR-001); medido 2026-09-20: contrato 88.5 %, backend 71 %. Pruebas reales de punta a punta (gastan HSK testnet): `cd backend && python -m scripts.e2e_verification` y `python -m scripts.e2e_donation`.
 Reportar cualquier verificación que no se pudo completar. Las pruebas de backend corren contra Supabase real (sin SQLite).

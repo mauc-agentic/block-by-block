@@ -6,7 +6,7 @@
 **Use Case Name:** Donate To Cause  
 **Primary Actor:** Donante  
 **Goal:** Enviar una donación en stablecoin directamente al contrato de la causa  
-**Status:** Approved
+**Status:** Implemented
 
 **Requirements:** [FR-010, NFR-005, NFR-009, NFR-011, FR-020](../requirements.md)
 

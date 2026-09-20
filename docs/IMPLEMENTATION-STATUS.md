@@ -38,17 +38,17 @@ Leyenda de prueba: **A** = automatizada, **P** = parcial, **—** = ninguna.
 | UC-001 | Implemented | `POST /api/v1/auth/signup`                                             | P: `test_signup_persists_to_supabase`                                                     | A1 (duplicados) y BR-002 sin prueba tras retirar SQLite; A3 (OAuth) no implementado    |
 | UC-002 | Implemented | `POST /api/v1/auth/login`                                              | P: `test_login_queries_supabase`                                                          | A1 (credenciales inválidas) sin prueba                                                 |
 | UC-003 | Implemented | `POST /api/v1/auth/wallet/link` + `verify_wallet_signature`            | A: 5 tests de firma (`test_helpers`, `test_wallet`); endpoint sin prueba                  | BR-003 (mensaje de un solo uso) **no aplicado**; A2 sin prueba                         |
-| UC-004 | Approved    | `POST /api/v1/causes`; publicación on-chain en UC-013                  | P: `test_uc004_uc009_authenticated_flow`, `scripts/e2e_verification.py`                    | Falta que el frontend firme `createCause` con la wallet (el backend ya entrega la instrucción) |
+| UC-004 | Implemented | `POST /api/v1/causes` (exige wallet, A2); pasos 7-8 en UC-013                | A: `test_uc004_uc009_authenticated_flow` (A2, BR-001), `scripts/e2e_*.py`                  | Falta que el frontend firme `createCause` con la wallet (el backend ya entrega la instrucción) |
 | UC-005 | Implemented | `POST /api/v1/causes/{id}/upload-image`, `GET /causes/{id}/evidence`   | A: `TestEvidenceUC005` (A1, A3, BR-001, BR-003, tamaño, firma del archivo)                 | Imagen guardada en tabla `evidences` (Postgres); A2 con otro usuario autenticado sin prueba |
 | UC-006 | Implemented | `services/agent.py`, `tasks.py`                                        | A: `test_agent.py` (20) + `TestAgentCycleUC006` (7) + E2E real en HSK/OpenRouter           | BR-004: huella SHA-256, no CID IPFS. Sin RPC de respaldo (spec ajustada)               |
-| UC-007 | Approved    | `GET /api/v1/causes` (filtra `Verified`)                               | A: lista solo causas Verified (`test_uc006_br005…`, `test_uc006_a1…`)                      | No devuelve monto recaudado (BR-002) hasta UC-014                                      |
-| UC-008 | Approved    | `GET /api/v1/causes/{id}`                                              | P: `test_uc004_uc009_authenticated_flow`                                                                                       | Devuelve causas no verificadas sin marcarlo; sin donaciones ni avance                  |
-| UC-009 | Approved    | `POST /api/v1/causes/{id}/donate` (instrucción de firma) + `donate`    | Foundry: `test_TC001_HappyPath`, `test_UC009_DonateWithZeroAmount`                        | El backend no registra la donación (UC-014); sin prueba del endpoint                   |
-| UC-010 | Implemented | `CauseVault.withdrawFunds` (sin endpoint, por diseño)                  | Foundry: `test_TC001_HappyPath`, `test_UC010_OnlyRecipientCanWithdraw`                    | `test_TC002_RejectedCauseBlocksFunds` falla (ver GAP-006)                              |
-| UC-011 | Approved    | **No existe** `GET /users/{id}` (el router solo monta auth/causes/donations) | —                                                                                   | FR-012/013 abiertos; el documento previo lo marcaba implementado por error             |
+| UC-007 | Implemented | `GET /api/v1/causes` (filtra `Verified`, con `collected`)               | A: `test_uc014_registers_donation_and_updates_progress`, `test_uc006_*` (listado)         | Monto recaudado = suma de donaciones confirmadas (UC-014 BR-005)                        |
+| UC-008 | Implemented | `GET /api/v1/causes/{id}` (avance y donaciones con wallet del donante) | A: `test_uc014_registers_donation_and_updates_progress`, `test_uc004_uc009_authenticated_flow` | A2/A3 (causa no verificada/completada) devuelven el detalle con su estado                |
+| UC-009 | Implemented | `POST /causes/{id}/donate` (instrucción `approve` + `donate` con id on-chain) | A: `TestDonateInstructionUC009` (BR-001, A1, A4, A5, wallet) + E2E real (`e2e_donation.py`) | El contrato acepta donaciones sobre la meta (Completed); ver GAP-020                    |
+| UC-010 | Implemented | `CauseVault.withdrawFunds` (sin endpoint, por diseño)                  | Foundry: `test_TC001_HappyPath`, `test_UC010_OnlyRecipientCanWithdraw`; E2E real (`e2e_donation.py`) | `test_TC002_RejectedCauseBlocksFunds` falla (ver GAP-006)                              |
+| UC-011 | Implemented | `GET /api/v1/users/{id}` (`users.py`)                                   | A: `TestDashboardUC011` (A1, A2, A3, BR-001, BR-002) + E2E real                            | El saldo retirable se lee del contrato por causa (best effort)                          |
 | UC-012 | Implemented | `CauseVault.pause/unpause/setAgent`                                    | Foundry: `test_UC006_OnlyAgentCanVerify` (indirecto)                                      | Sin pruebas de pausa ni de rotación de agente                                          |
 | UC-013 | Implemented | `POST /causes/{id}/publish`, `POST /causes/{id}/publish/confirm`, `services/chain.py` | A: `TestPublishUC013` (A2..A6, BR-002) + E2E real con `createCause` en HSK                | A1 (firma rechazada) es del frontend; el frontend aún no firma                        |
-| UC-014 | Draft       | —                                                                      | —                                                                                         | Nuevo. Requiere revisión antes de implementar (regla 2)                                |
+| UC-014 | Implemented | `POST /causes/{id}/donations/confirm`, `services/chain.py`              | A: `TestRegisterDonationUC014` (A1..A4, BR-001, BR-002, BR-004) + `test_chain.py` + E2E real | El frontend debe reintentar si el RPC aún no ve la tx (nodos desfasados)               |
 
 ### Test cases
 
@@ -68,8 +68,8 @@ Leyenda de prueba: **A** = automatizada, **P** = parcial, **—** = ninguna.
 | GAP-001 | Resuelta  | `verify_cause_task` guarda `Verification` pero **nunca actualiza `Cause.status`**: ninguna causa llega a `Verified`, el listado siempre queda vacío | FR-022      |
 | GAP-002 | Resuelta  | El agente evalúa una imagen **PNG de 1×1 píxel fija**; la foto del receptor no se guarda ni se lee                                                  | FR-021      |
 | GAP-003 | Resuelta  | `createCause` on-chain no se invoca; `onchain_cause_id` queda nulo, por lo que `verifyCause(cause_id)` usa el id de la BD, no el del contrato       | FR-019      |
-| GAP-004 | Alta      | No hay endpoint de dashboard (`GET /users/{id}`)                                                                                                   | FR-012/013  |
-| GAP-005 | Alta      | Ningún código escribe filas en `donations`                                                                                                         | FR-020      |
+| GAP-004 | Resuelta  | No hay endpoint de dashboard (`GET /users/{id}`)                                                                                                   | FR-012/013  |
+| GAP-005 | Resuelta  | Ningún código escribe filas en `donations`                                                                                                         | FR-020      |
 | GAP-006 | Alta      | Foundry: `test_TC002_RejectedCauseBlocksFunds` espera "no funds to withdraw" pero el contrato revierte con "cause not verified" (correcto según UC-010 A3); `test_GetRecipientCauses` falla por índice fuera de rango | NFR-001 |
 | GAP-007 | Alta      | Cobertura backend 66 % (`agent.py` 17 %, `tasks.py` 48 %; `causes.py` y `donations.py` cubiertos solo parcialmente)                                                                         | NFR-001     |
 | GAP-008 | Media     | Se eliminaron las pruebas de integración SQLite (duplicados, credenciales inválidas, link wallet) sin sustituirlas por equivalentes contra Supabase | UC-001..003 |
@@ -83,6 +83,8 @@ Leyenda de prueba: **A** = automatizada, **P** = parcial, **—** = ninguna.
 | GAP-016 | Media     | Frontend sin integración: `lib/causes.ts` usa datos de muestra; sin wallet, sin rutas de UC-004..011                                              | C-006       |
 | GAP-017 | Media     | `SECRET_KEY` real subido a `main` en el commit de configuración de Render (ya eliminado del árbol, sigue en el historial). Rotar.                   | NFR-008     |
 | GAP-018 | Baja      | `venv/` había sido versionado por un `git add -A`; se retira del índice y se agrega a `.gitignore`                                                | C-008       |
+| GAP-020 | Media     | El contrato acepta donaciones a causas `Completed` (solo exige `verified`), contradiciendo UC-009 A4; el backend ya no emite la instrucción, pero un cliente puede llamar al contrato directamente | UC-009 A4 |
+| GAP-021 | Media     | El RPC de HSK es un balanceador con nodos desfasados: `confirm` puede responder 400 "not confirmed" justo tras firmar; el cliente debe reintentar | UC-014 A4 |
 | GAP-019 | Baja      | `on_event("shutdown")`, `from_orm` y `datetime.utcnow` están deprecados                                                                            | —           |
 
 ---
@@ -104,13 +106,14 @@ Leyenda de prueba: **A** = automatizada, **P** = parcial, **—** = ninguna.
 
 ## 5. Camino a MVP demostrable (orden sugerido)
 
-Hecho: GAP-001, 002, 003 (ciclo de verificación), verificado con `backend/scripts/e2e_verification.py`
-(Supabase + `createCause`/`verifyCause` en HSK testnet + OpenRouter real).
+Hecho y verificado en HSK testnet con `backend/scripts/e2e_verification.py` y `e2e_donation.py`:
+crear causa → publicar on-chain → evidencia → IA → veredicto on-chain → listado → donar (`approve` + `donate`)
+→ registrar donación → dashboards → retirar.
 
-1. **GAP-005 / UC-014** y **GAP-004 / UC-011**: registrar donaciones confirmadas y exponer el dashboard.
-2. **GAP-006**: corregir las dos pruebas de Foundry.
-3. **GAP-007 / GAP-008**: llegar a 85 % (auth, donaciones, `chain.py` al 42 %).
-4. **GAP-016**: conectar el frontend (lista, detalle, wallet que firma `createCause`, `donate`, `withdrawFunds`).
+1. **GAP-016**: conectar el frontend (lista, detalle, wallet que firma `createCause`, `approve`, `donate`, `withdrawFunds`, y reintento de `confirm`).
+2. **GAP-006**: corregir las dos pruebas de Foundry y cerrar GAP-020 (bloquear donaciones a `Completed` en el contrato).
+3. **GAP-007/008**: cerrar el 85 % de cobertura (auth, seguridad) y **GAP-009** (mensaje de wallet de un solo uso).
+4. **GAP-013/014**: Alembic y logging estructurado; **reintento de verificación** si Render reinicia a mitad.
 5. **GAP-017**: rotar `SECRET_KEY` (hecho por el equipo) y actualizar `OPENROUTER_URL` en Render.
 
 ## 6. Decisiones vigentes

@@ -16,19 +16,19 @@ Vocabulario de estado FR: `Open → In Progress → Implemented → Verified`. `
 | FR-005 | Subir evidencia            | As a receptor, I want subir una foto de mi necesidad so that el agente pueda verificarla.                                                       | High     | Verified  |
 | FR-006 | Verificación por IA        | As a receptor, I want que mi causa sea evaluada automáticamente por IA so that pueda recibir donaciones sin esperar a un revisor humano.        | High     | Verified  |
 | FR-007 | Registro on-chain          | As a donante, I want que el resultado de la verificación quede registrado on-chain so that pueda confiar en que la causa fue validada.          | High     | Verified  |
-| FR-008 | Explorar causas            | As a donante, I want listar solo causas verificadas so that no dono a solicitudes sin validar.                                                  | High     | In Progress  |
-| FR-009 | Detalle de causa           | As a donante, I want ver el detalle, avance y donaciones de una causa so that decido cuánto donar con transparencia.                            | Medium   | In Progress  |
-| FR-010 | Donar                      | As a donante, I want donar stablecoins a una causa verificada so that el dinero llegue directo al receptor sin intermediarios.                  | High     | In Progress  |
-| FR-011 | Retirar fondos             | As a receptor, I want retirar los fondos recaudados por mi causa verificada so that pueda usarlos para mi necesidad.                            | High     | Implemented  |
-| FR-012 | Dashboard de donante       | As a donante, I want ver mis donaciones y las causas disponibles so that llevo control de mi aporte.                                            | Medium   | Open         |
-| FR-013 | Dashboard de receptor      | As a receptor, I want ver mis causas, su estado y fondos disponibles so that sé cuándo puedo retirar.                                           | Medium   | Open         |
+| FR-008 | Explorar causas            | As a donante, I want listar solo causas verificadas so that no dono a solicitudes sin validar.                                                  | High     | Implemented  |
+| FR-009 | Detalle de causa           | As a donante, I want ver el detalle, avance y donaciones de una causa so that decido cuánto donar con transparencia.                            | Medium   | Implemented  |
+| FR-010 | Donar                      | As a donante, I want donar stablecoins a una causa verificada so that el dinero llegue directo al receptor sin intermediarios.                  | High     | Verified  |
+| FR-011 | Retirar fondos             | As a receptor, I want retirar los fondos recaudados por mi causa verificada so that pueda usarlos para mi necesidad.                            | High     | Verified  |
+| FR-012 | Dashboard de donante       | As a donante, I want ver mis donaciones y las causas disponibles so that llevo control de mi aporte.                                            | Medium   | Implemented         |
+| FR-013 | Dashboard de receptor      | As a receptor, I want ver mis causas, su estado y fondos disponibles so that sé cuándo puedo retirar.                                           | Medium   | Implemented         |
 | FR-014 | Revisión humana            | As a receptor, I want que un revisor humano valide mi causa so that se reduzca el riesgo de fraude.                                             | Low      | Deferred     |
 | FR-015 | Reporte de fraude          | As a donante, I want reportar una causa sospechosa so that la comunidad se proteja del fraude.                                                  | Low      | Deferred     |
 | FR-016 | Reputación on-chain        | As a donante, I want ver el historial on-chain de un receptor so that evalúo su confiabilidad.                                                  | Low      | Deferred     |
 | FR-017 | Rampa de pesos             | As a donante, I want convertir pesos colombianos a stablecoin (Bre-B) so that pueda donar sin conocimientos cripto.                             | Low      | Deferred     |
 | FR-018 | Administración del contrato | As a administrador de la plataforma, I want pausar y reanudar el contrato y rotar la dirección del agente so that puedo reaccionar ante un incidente o una llave comprometida. | Medium | Implemented |
 | FR-019 | Publicar causa on-chain    | As a receptor, I want que mi causa quede registrada en el contrato y enlazada con su registro en la plataforma so that la verificación y las donaciones apunten a la misma causa. | High | Verified |
-| FR-020 | Registrar donación         | As a donante, I want que mi donación confirmada quede reflejada en la plataforma so that aparezca en mi dashboard y en el avance de la causa. | High | Open |
+| FR-020 | Registrar donación         | As a donante, I want que mi donación confirmada quede reflejada en la plataforma so that aparezca en mi dashboard y en el avance de la causa. | High | Verified |
 | FR-021 | Almacenar evidencia        | As a receptor, I want que mi foto se conserve de forma consultable so that el agente la evalúe con la imagen real y la evidencia sea auditable. | High | Verified |
 | FR-022 | Sincronizar estado de causa | As a donante, I want que el estado de la causa en la plataforma refleje el veredicto registrado on-chain so that el listado solo muestre causas realmente verificadas. | High | Verified |
 
@@ -77,3 +77,4 @@ Vocabulario de estado FR: `Open → In Progress → Implemented → Verified`. `
 | 2026-09-20 | Estados de FR-004..FR-013 rebajados tras auditoría: el backend no actualiza `Cause.status`, no expone dashboard, no guarda la imagen y no registra donaciones. |
 | 2026-09-20 | Nuevos: FR-018..FR-022, NFR-012..NFR-015, C-010..C-012 (derivados del código y despliegue existentes).                                                       |
 | 2026-09-20 | FR-004..007, FR-019, FR-021, FR-022: Implemented/Verified tras prueba real (Supabase + HSK testnet + OpenRouter) con `scripts/e2e_verification.py`. |
+| 2026-09-20 | FR-010, FR-011, FR-020: Verified con `scripts/e2e_donation.py` (donante con wallet propia: approve + donate, registro, dashboards y retiro en HSK testnet). FR-008/009/012/013: Implemented (endpoints y pruebas). |

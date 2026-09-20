@@ -5,7 +5,7 @@
 **ID:** TC-003  
 **Goal:** Si el proveedor de IA no responde o devuelve una respuesta inválida, la causa permanece Pending, no admite donaciones y puede reintentarse  
 **Priority:** High  
-**Status:** Draft
+**Status:** Implemented
 
 ## Roles
 
@@ -42,3 +42,8 @@
 ## Postconditions
 
 - Existe una causa Pending sin veredicto, sin donaciones y disponible para reintentar la verificación
+
+## Automation
+
+- `test_uc006_a3_ai_unavailable_keeps_pending`, `test_uc006_a5_onchain_failure_keeps_pending`, `test_uc006_br006_without_evidence_nothing_happens` (BD real, IA y cadena simuladas).
+- `tests/unit/test_agent.py`: 3 reintentos, respuesta ilegible (A4), timeout, umbral 0.80 y huella del veredicto.

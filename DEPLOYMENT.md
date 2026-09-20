@@ -225,3 +225,27 @@ Upgrade anytime from Render dashboard.
 ---
 
 **✅ Backend deployed and ready for frontend integration!** 🎉
+
+---
+
+## Notas operativas (actualizado 2026-09-20)
+
+### Supabase: Network Restrictions
+Si están activadas, la lista debe incluir las IP de salida de Render (`74.220.48.0/24`, `74.220.56.0/24`) y la IP de cada
+desarrollador (un desarrollo local sin su IP falla con `address not in tenant allow_list`).
+
+### Render: comprobar que el servicio corre el último commit
+- `GET /api/v1/openapi.json` debe listar `/causes/{id}/publish`, `/causes/{id}/donations/confirm` y `/users/{id}`; si no, el
+  servicio corre código anterior: *Manual Deploy → Deploy latest commit* (rama `main`).
+- Variables que deben existir: `PYTHON_VERSION=3.12.4`, `OPENROUTER_URL=https://openrouter.ai/api/v1/chat/completions`
+  y `ALLOWED_ORIGINS` con la URL del frontend en Vercel.
+- El *Start Command* del panel debe ser `uvicorn app.main:app --host 0.0.0.0 --port $PORT` (un servicio creado a mano no
+  lee `render.yaml`). La tabla `evidences` se crea sola al arrancar.
+
+### Frontend en Vercel
+Root Directory `frontend`, Build Command `npm run build` (sin punto final), variable `NEXT_PUBLIC_API_URL` con la URL del
+backend. Nada secreto en variables `NEXT_PUBLIC_*`.
+
+### Entorno de desarrollo en macOS
+Con iCloud Drive sincronizando el Escritorio aparecen copias de archivos con sufijo ` 2`, ` 3` que pueden pisar código
+(`chain 2.py`, `test_agent 2.py`). Mantén el repositorio fuera de carpetas sincronizadas (por ejemplo `~/dev`).
