@@ -59,7 +59,8 @@ Variables públicas nuevas (`frontend/.env.example`): `NEXT_PUBLIC_TOKEN_ADDRESS
 8. **Red y cuenta:** antes de firmar, la wallet debe estar en la red 133 (cambiar/agregar automáticamente, ya implementado en `lib/wallet.ts`) **y** la cuenta activa debe ser la
    wallet vinculada del usuario (`user.wallet_address`); si no, se bloquea con el mensaje del §7.
 9. **Trazabilidad:** cada página y cada hook lleva `// UC-###` y sus pruebas `describe('UC-### …')`.
-10. **Sin secretos** en variables `NEXT_PUBLIC_*` ni HTML de la API renderizado como HTML.
+10. **Identidad visual:** colores, tipografía, cards, botones y estados salen de [design_system.md](design_system.md) (NFR-018); nada de colores sueltos y cada estado de causa se ve igual en toda pantalla.
+11. **Sin secretos** en variables `NEXT_PUBLIC_*` ni HTML de la API renderizado como HTML.
 
 ## 4. Pantallas
 

@@ -58,6 +58,7 @@ Vocabulario de estado FR: `Open → In Progress → Implemented → Verified`. `
 | NFR-015 | Disponibilidad del servicio  | El backend debe exponer un health check (`GET /api/v1/health`) y desplegarse en contenedor con reinicio automático.   | Reliability     | Medium   | In Progress  |
 | NFR-016 | Coherencia frontend-backend  | El contrato de API es único (`docs/api_contract.md`), su bloque de endpoints y esquemas se genera desde el código y una prueba falla si se desalinea; el vocabulario sale de `docs/glossary.md`. | Maintainability | High | Implemented |
 | NFR-017 | Pruebas de frontend          | Cada pantalla ligada a un UC debe tener al menos una prueba (`describe('UC-### …')`), y `npm run lint` y `npm run build` deben pasar. | Maintainability | Medium | Open |
+| NFR-018 | Identidad visual             | La interfaz sigue `docs/design_system.md` (paleta, tipografía, tokens y contraste AA); no se usan colores fuera de los tokens y los estados de causa se ven igual en toda pantalla. | Usability       | Medium   | Open         |
 
 ## Constraints
 

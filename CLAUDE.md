@@ -22,6 +22,7 @@ arquitectura, lee:
 - `docs/traceability.md` (estado por capa de cada UC y definición de terminado)
 - `docs/use_case_audit.md` (qué falta de cada UC: implementación, pruebas, ajustes de spec y decisiones abiertas)
 - `docs/frontend_spec.md` (qué debe construir el frontend para el flujo completo, con criterios de aceptación y guion de la prueba de punta a punta)
+- `docs/design_system.md` (ADN visual: paleta EAG × ETH × HSK, tipografía, tokens, contraste; NFR-018; toda UI nueva lo respeta)
 - `docs/requirements.md` (FR-*, NFR-*, C-*)
 - `docs/entity_model.md`
 - `docs/use_cases.puml` y los `docs/use_cases/UC-*.md` relevantes

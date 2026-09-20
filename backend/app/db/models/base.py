@@ -118,5 +118,5 @@ class WalletMessage(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     message_hash = Column(String(64), unique=True, nullable=False, index=True)  # SHA-256 del mensaje firmado
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

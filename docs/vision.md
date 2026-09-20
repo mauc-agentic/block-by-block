@@ -26,6 +26,10 @@ on-chain, en stablecoins, desde el donante hasta el receptor, y cada movimiento 
 
 Frontend, backend y contrato inteligente son **un único producto**: comparten el mismo vocabulario ([glossary.md](glossary.md)), el mismo contrato de API ([api_contract.md](api_contract.md)) y la misma trazabilidad por caso de uso ([traceability.md](traceability.md)). Un cambio de comportamiento empieza en el UC y se propaga a las tres capas antes de darse por terminado.
 
+## Identidad visual
+
+Producto Web3 premium, oscuro y sobrio: **"Linear meets Web3 infrastructure"**. EAG (comunidad/builders) es el color dominante, Ethereum marca lo on-chain y HSK Chain la red y el rendimiento. La confianza manda sobre el efecto: montos, estados y hashes se leen primero. Especificación completa en [design_system.md](design_system.md) (NFR-018).
+
 ## Scope
 
 ### In scope
