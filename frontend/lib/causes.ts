@@ -28,6 +28,31 @@ export type PublishInstruction = {
   message: string;
 };
 
+// UC-009 — instrucción de firma (2.1) que entrega POST /causes/{id}/donate:
+// `donate` en CauseVault, precedido por `approve` del token si hace falta.
+export type DonateInstruction = {
+  status?: string;
+  contract: string;
+  function?: string;
+  params: (string | number)[];
+  message: string;
+  approve: {
+    contract: string;
+    function: string;
+    params: (string | number)[];
+  } | null;
+};
+
+// UC-014 — donación ya registrada (POST /causes/{id}/donations/confirm).
+export type DonationRecordResponse = {
+  id: number;
+  cause_id: number;
+  amount: string | number;
+  tx_hash: string;
+  created_at: string;
+  cause_status: "Pending" | "Verified" | "Rejected" | "Completed";
+};
+
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
@@ -124,6 +149,60 @@ export async function confirmPublish(
     lastMessage = detailToMessage(data?.detail, lastMessage);
     if (res.status !== 400) throw new CauseError(lastMessage);
     await new Promise((resolve) => setTimeout(resolve, 2500));
+  }
+
+  throw new CauseError(lastMessage);
+}
+
+// UC-009: pide la instrucción de firma (approve + donate) para donar `amount`
+// USDT a una causa Verified. El backend valida monto y wallet vinculada (BR-003, BR-004).
+export async function requestDonateInstruction(
+  token: string,
+  causeId: number,
+  amount: string
+): Promise<DonateInstruction> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/causes/${causeId}/donate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ amount }),
+    });
+  } catch {
+    throw new CauseError("No se pudo conectar con el servidor. Intenta de nuevo.");
+  }
+  return parseCauseResponse<DonateInstruction>(res, "No se pudo preparar la donación.");
+}
+
+// UC-014: confirma la donación leyendo la tx en la cadena. Igual que
+// confirmPublish, reintenta mientras el RPC no vea la transacción todavía
+// (api_contract.md 2.2); es idempotente por tx_hash (A2).
+export async function confirmDonation(
+  token: string,
+  causeId: number,
+  txHash: string
+): Promise<DonationRecordResponse> {
+  const deadline = Date.now() + 30_000;
+  let lastMessage = "No se pudo registrar la donación.";
+
+  while (Date.now() < deadline) {
+    let res: Response;
+    try {
+      res = await fetch(`${API_URL}/causes/${causeId}/donations/confirm`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ tx_hash: txHash }),
+      });
+    } catch {
+      throw new CauseError("No se pudo conectar con el servidor. Intenta de nuevo.");
+    }
+
+    if (res.ok) return res.json();
+
+    const data = await res.json().catch(() => null);
+    lastMessage = detailToMessage(data?.detail, lastMessage);
+    if (res.status !== 400) throw new CauseError(lastMessage);
+    await new Promise((resolve) => setTimeout(resolve, 3000));
   }
 
   throw new CauseError(lastMessage);

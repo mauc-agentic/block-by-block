@@ -78,5 +78,5 @@ def verify_google_id_token(token: str, client_id: str) -> dict:
 def derive_username(seed: str) -> str:
     """UC-001 BR-004: deriva un nombre de usuario válido a partir de un perfil externo."""
     normalized = unicodedata.normalize("NFKD", seed).encode("ascii", "ignore").decode("ascii")
-    slug = re.sub(r"[^a-zA-Z0-9]+", "", normalized).lower()
+    slug = re.sub(r"[^a-zA-Z0-9]+", " ", normalized).strip().lower()
     return slug[:100] or "usuario"
