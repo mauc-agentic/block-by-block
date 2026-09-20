@@ -91,6 +91,14 @@ export function getStoredToken(): string | null {
   }
 }
 
+export function updateStoredUser(user: AuthUser) {
+  try {
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+  } catch {
+    // no-op: ver storeSession
+  }
+}
+
 export function clearSession() {
   try {
     localStorage.removeItem(TOKEN_KEY);
